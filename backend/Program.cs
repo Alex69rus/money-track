@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MoneyTrack.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 
 var app = builder.Build();
+
+// Apply migrations and seed data
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MoneyTrackContext>();
+    await context.Database.MigrateAsync();
+    await CategorySeeder.SeedCategoriesAsync(context);
+}
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
@@ -25,11 +34,3 @@ app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
 app.MapGet("/health", () => "OK");
 
 app.Run();
-
-// Placeholder for MoneyTrackContext
-public class MoneyTrackContext : DbContext
-{
-    public MoneyTrackContext(DbContextOptions<MoneyTrackContext> options) : base(options)
-    {
-    }
-}

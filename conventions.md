@@ -17,6 +17,7 @@
 - **Logging**: ILogger with simple Info/Error levels
 - **No Abstractions**: Direct service injection, no repository pattern
 - **Async methods**: Write async API if possible by default
+- **EmptyCollection Initializations**: Use '[]' initializer instead of 'Array.Empty<T>()'
 
 ## React Frontend Conventions
 
@@ -32,6 +33,7 @@
 - **PostgreSQL**: Standard types, use arrays for tags
 - **Migrations**: EF Core migrations from the .net BE
 - **No ORM Magic**: Explicit Entity Framework configurations: `IEntityTypeConfiguration<T>`
+- **Primary Keys**: If primary key is auto increment number it should be long (not int)
 - **Foreign Keys**: Standard FK relationships, no complex joins explicitly specified in the EF Entity Configuration files
 
 ## Testing Conventions
