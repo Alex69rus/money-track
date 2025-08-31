@@ -37,6 +37,7 @@ Clean separation:
 ```
 money-track/
 ├── backend/                    # Single .NET Minimal API project
+│   ├── Endpoints/             # Minimal API endpoints
 │   ├── Models/                # Data models & DTOs
 │   ├── Services/              # Business logic
 │   ├── Data/                  # Database context

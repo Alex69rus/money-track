@@ -22,6 +22,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=moneytrack;Username=postgres;Password=password
       - ASPNETCORE_ENVIRONMENT=Development
+      - Telegram__BotToken=test-bot-token-placeholder
     depends_on:
       postgres:
         condition: service_healthy

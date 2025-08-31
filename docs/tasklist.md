@@ -5,8 +5,8 @@
 | Iteration | Feature | Status | Start Date | End Date | Notes |
 |-----------|---------|--------|------------|----------|-------|
 | 1 | Project Setup | ✅ Complete | 2024-08-31 | 2024-08-31 | Initial project structure |
-| 2 | Database & Models | ⏳ Pending | - | - | Core data layer |
-| 3 | Basic API | ⏳ Pending | - | - | Transaction CRUD endpoints |
+| 2 | Database & Models | ✅ Complete | 2024-08-31 | 2024-08-31 | Core data layer |
+| 3 | Basic API | ✅ Complete | 2024-08-31 | 2024-08-31 | Transaction CRUD endpoints |
 | 4 | React Setup | ⏳ Pending | - | - | Frontend foundation |
 | 5 | Transaction List | ⏳ Pending | - | - | Display transactions |
 | 6 | Filters & Search | ⏳ Pending | - | - | Transaction filtering |
@@ -50,14 +50,23 @@
 ### Iteration 3: Basic API
 **Goal:** Core transaction CRUD endpoints
 
-- [ ] Implement GET /api/transactions endpoint
-- [ ] Implement POST /api/transactions endpoint  
-- [ ] Implement PUT /api/transactions/{id} endpoint
-- [ ] Implement DELETE /api/transactions/{id} endpoint
-- [ ] Add basic Telegram auth validation
-- [ ] Add API documentation (Swagger)
+- [x] Implement GET /api/transactions endpoint
+- [x] Implement POST /api/transactions endpoint  
+- [x] Implement PUT /api/transactions/{id} endpoint
+- [x] Implement DELETE /api/transactions/{id} endpoint
+- [x] Add basic Telegram auth validation
+- [x] Add API documentation (Swagger)
+- [x] Refactor endpoints into separate files
+- [x] Add global exception handling
+- [x] Add categories endpoint
 
-**Test:** All CRUD operations work via Swagger UI
+**Test:** ✅ COMPLETED - All CRUD operations work via Swagger UI
+- ✅ Health endpoint returns "OK" 
+- ✅ Categories endpoint returns 49 seeded categories
+- ✅ All transaction endpoints properly secured with 401 responses
+- ✅ Global exception handling works correctly
+- ✅ Swagger UI accessible at http://localhost:5000/swagger/index.html
+- ✅ API documentation shows all endpoints with proper tags
 
 ---
 
