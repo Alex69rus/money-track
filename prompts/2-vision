@@ -1,0 +1,26 @@
+Let's create vision.md file
+There we will put vision of the project @idea.md:
+- Technologies
+- Development Principles
+- Project Structure
+- Project Architecture
+- Data Model
+- LLM Integration
+- LLM Monitoring
+- Usage Scenarios
+- Deployment
+- Configuration Approach
+- Logging Approach
+
+This document will serve as our starting point and technical design for subsequent development.
+
+Let's create sequentially.
+Analyze the composition of the document.
+Go sequentially through the sections.
+Ask me questions, offer a final vision, and after agreeing with me, record it in the document.
+Then move on to the next section.
+
+The most important thing:
+We need to create the simplest possible solution to test our idea, according to the KISS principles.
+No overengineering.
+Only the most necessary and simple in all sections!
