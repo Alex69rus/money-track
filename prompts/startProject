@@ -1,0 +1,11 @@
+I'm going to implement a Telegram bot and a Telegram web app. 
+
+This application will allow users to send sms from the bank, which will be parsed by a Telegram bot and saved to the database. 
+The Telegram web app (accessible through this Telegram bot) will display transactions, analytics for the user's transactions, and provide CRUD functionality for managing their transactions. 
+Also, the Telegram web app will have a dedicated screen for AI Chat: "Talk to your money," which will answer questions about users' transactions. 
+
+Already made decisions:
+- n8n workflows for implementing a Telegram bot, which will parse sms and answer questions about the user's money.
+- react for the front-end of the Telegram web app
+- database: postgres
+- containerization: docker
