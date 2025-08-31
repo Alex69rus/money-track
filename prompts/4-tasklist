@@ -1,0 +1,10 @@
+Create a step-by-step iterative development plan: docs/tasklist.md
+
+Each step should allow you to test the application.
+Each iteration adds new functionality.
+
+At the top, set aside space for a progress report that will be updated after each iteration.
+A beautiful report in a table, with statuses, icons.
+
+Each task should be marked with a checkbox for visual progress tracking
+The plan should also be concise, contain only the main thing and follow the KISS principle

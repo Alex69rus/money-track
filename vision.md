@@ -110,7 +110,7 @@ Users: id, telegram_id, username, created_at
 Transactions: id, user_id, date, amount, note, category_id (FK), 
               tags (string array), currency, sms_text, message_id, created_at
 
--- Categories (predefined global set)
+-- Categories (predefined global set: 'Medical Services','Education','Beauty','Clothing & Shoes','Furniture','Charity','Taxis','Savings interests','Maintenance & Renovation','Kids','Utility','Healthcare','Internet-Services','Entertainment','Communication','Medicines','Baby Clothes','Accessories & Toys','Luda’s job','Groceries','Gifts','Home','Rent','Alcohol','Public transport','Pets','Carsharing','Rus transfer','Etc.','Apique salary Transfer from USD','Veterinary Services','Car','Fuel','Classes','Parking & Toll roads','Toys','Household Goods','Eating Out','Hotel','Travel','Tickets','Car Wash','Cellular','Apique salary','Hardware','Luda’s income','Other income','Legalisation','Pet Food')
 Categories: id, name, type (income/expense), created_at
 ```
 
@@ -156,8 +156,9 @@ Categories: id, name, type (income/expense), created_at
 1. **SMS Processing**: User forwards bank SMS to Telegram bot → Transaction automatically saved
 2. **View Transactions**: User opens Telegram Web App → sees transaction list with advanced filters
 3. **Manage Transactions**: User can edit/delete transactions, change categories/tags
-4. **Analytics**: User views spending trends, category breakdown, tags breakdown
-5. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
+4. **Set transaction category and tags manually quickly**: User on the view transactions screen quickly can select category and/or tags for transaction without opennint its details view
+5. **Analytics**: User views spending trends, category breakdown, tags breakdown
+6. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
 
 **MVP Screens:**
 - **Dashboard**: Recent transactions + basic stats
