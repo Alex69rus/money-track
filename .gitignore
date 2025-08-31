@@ -140,6 +140,12 @@ logs
 *.tsbuildinfo
 *.d.ts.map
 
+# .NET
+bin/
+obj/
+*.user
+*.cache
+
 # Build outputs
 build/
 dist/
