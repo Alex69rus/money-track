@@ -1,6 +1,6 @@
 # Money Track - Technical Vision
 
-## Technologies
+## 1. Technologies
 
 - **SMS Processing & AI Chat**: Existing n8n workflows
 - **Backend API**: .NET Web API (for UI requests and transaction CRUD)
@@ -16,7 +16,7 @@ Clean separation:
 - .NET Web API serves the React UI
 - Both systems share the same PostgreSQL database
 
-## Development Principles
+## 2. Development Principles
 
 **Core Principles:**
 - **KISS (Keep It Simple, Stupid)** - Simplest solution that works
@@ -32,7 +32,7 @@ Clean separation:
 - **Code Style**: Follow framework conventions (.NET conventions, Prettier for React)
 - **Documentation**: Inline comments for complex logic only, README for setup
 
-## Project Structure
+## 3. Project Structure
 
 ```
 money-track/
@@ -52,7 +52,30 @@ money-track/
 └── docker-compose.yml        # Local development setup
 ```
 
-## Project Architecture
+## 4. Project Architecture
+
+**System Overview:**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│                 │    │                 │    │                 │
+│  Telegram User  │────│  Telegram Bot   │────│      n8n        │
+│                 │    │                 │    │   Workflows     │
+└─────────────────┘    └─────────────────┘    └─────────┬───────┘
+                                                        │
+                                              ┌─────────▼───────┐
+                                              │                 │
+                                              │   PostgreSQL    │
+                                              │    Database     │
+                                              │                 │
+                                              └─────────▲───────┘
+                                                        │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────┴───────┐
+│                 │    │                 │    │                 │
+│ Telegram Web App│◄───│   React UI      │◄───│  .NET Minimal   │
+│   (Browser)     │    │   (Frontend)    │    │      API        │
+│                 │    │                 │    │   (Backend)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
 **System Components:**
 - **Telegram Bot (n8n)** → **PostgreSQL** ← **Minimal API** ← **React Web App**
@@ -76,7 +99,7 @@ money-track/
 - Standard REST API design
 - Periodic refresh for MVP (no real-time updates needed)
 
-## Data Model
+## 5. Data Model
 
 **Core Tables:**
 ```sql
@@ -101,7 +124,7 @@ Categories: id, name, type (income/expense), created_at
 **Predefined Categories:**
 [Space reserved for category definitions]
 
-## LLM Integration
+## 6. LLM Integration
 
 **Current Setup:**
 - LLM integration already handled by existing n8n workflow
@@ -119,7 +142,7 @@ Categories: id, name, type (income/expense), created_at
 - Simple user-friendly error message if n8n workflow unavailable
 - Basic chat UI with standard components
 
-## LLM Monitoring
+## 7. LLM Monitoring
 
 **MVP Approach:**
 - Rely on n8n's built-in workflow monitoring
@@ -127,7 +150,7 @@ Categories: id, name, type (income/expense), created_at
 - Simple error logging in .NET API when n8n webhooks fail
 - No usage metrics, rate limiting, or alerting for MVP
 
-## Usage Scenarios
+## 8. Usage Scenarios
 
 **Primary User Journey:**
 1. **SMS Processing**: User forwards bank SMS to Telegram bot → Transaction automatically saved
@@ -148,7 +171,7 @@ Categories: id, name, type (income/expense), created_at
 - Filtering: Date range, amount operators, tags, categories
 - No export functionality for MVP
 
-## Deployment
+## 9. Deployment
 
 **MVP Deployment:**
 - Single AWS EC2 instance
@@ -173,7 +196,7 @@ Categories: id, name, type (income/expense), created_at
 3. Deploy to EC2 via SSH
 4. Docker Compose restart services
 
-## Configuration Approach
+## 10. Configuration Approach
 
 **Single Environment (Production):**
 - Environment variables for all configuration
@@ -195,7 +218,7 @@ Categories: id, name, type (income/expense), created_at
 - Environment variables only (no Docker secrets)
 - Default values in code where possible
 
-## Logging Approach
+## 11. Logging Approach
 
 **MVP Logging:**
 - Built-in .NET logging (ILogger)
