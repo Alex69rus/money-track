@@ -1,29 +1,34 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AppBar, Toolbar, Typography, Container } from '@mui/material';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Transactions from './pages/Transactions';
+import Analytics from './pages/Analytics';
+import AiChat from './pages/AiChat';
+import TelegramService from './services/telegram';
 
 const theme = createTheme();
 
 function App() {
+  useEffect(() => {
+    TelegramService.getInstance();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div">
-            Money Track
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 2 }}>
-        <Typography variant="h4" gutterBottom>
-          Welcome to Money Track
-        </Typography>
-        <Typography variant="body1">
-          Your personal money tracking application is starting up...
-        </Typography>
-      </Container>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/chat" element={<AiChat />} />
+          </Routes>
+        </Layout>
+      </Router>
     </ThemeProvider>
   );
 }
