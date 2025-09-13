@@ -53,9 +53,30 @@ export interface TransactionFilters {
   startDate?: string;
   endDate?: string;
   categoryId?: number;
+  categoryIds?: number[];
   tags?: string[];
   minAmount?: number;
   maxAmount?: number;
+  searchText?: string;
+}
+
+export interface FilterState {
+  dateRange: {
+    startDate: string | null;
+    endDate: string | null;
+  };
+  categories: number[];
+  tags: string[];
+  amountRange: {
+    min: number | null;
+    max: number | null;
+  };
+  searchText: string;
+}
+
+export interface FilterValidation {
+  isValid: boolean;
+  errors: string[];
 }
 
 export interface ApiResponse<T> {
