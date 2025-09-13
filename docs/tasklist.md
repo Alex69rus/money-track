@@ -8,7 +8,7 @@
 | 2 | Database & Models | ✅ Complete | 2024-08-31 | 2024-08-31 | Core data layer |
 | 3 | Basic API | ✅ Complete | 2024-08-31 | 2024-08-31 | Transaction CRUD endpoints |
 | 4 | React Setup | ✅ Complete | 2024-09-13 | 2024-09-13 | Frontend foundation |
-| 5 | Transaction List | ⏳ Pending | - | - | Display transactions |
+| 5 | Transaction List | ✅ Complete | 2024-09-13 | 2024-09-13 | Display transactions |
 | 6 | Filters & Search | ⏳ Pending | - | - | Transaction filtering |
 | 7 | Transaction Edit | ⏳ Pending | - | - | Edit/delete functionality |
 | 8 | Basic Analytics | ⏳ Pending | - | - | Charts and summaries |
@@ -92,13 +92,23 @@
 ### Iteration 5: Transaction List
 **Goal:** Display transactions with basic functionality
 
-- [ ] Create TransactionList component
-- [ ] Implement transaction fetching from API
-- [ ] Display transactions in MUI Table/List
-- [ ] Add loading states and error handling
-- [ ] Show transaction details (amount, date, category)
+- [x] Create TransactionList component
+- [x] Implement transaction fetching from API
+- [x] Display transactions in MUI Table/List
+- [x] Add loading states and error handling
+- [x] Show transaction details (amount, date/time/seconds, category)
 
-**Test:** Transactions display correctly, loading and error states work
+**Test:** ✅ COMPLETED - Transactions display correctly, loading and error states work
+- ✅ TransactionList component with responsive design (mobile cards + desktop table)
+- ✅ API integration with proper error handling and retry functionality
+- ✅ Date/time display with seconds (DD/MM/YYYY HH:MM:SS format)
+- ✅ Currency formatting with color coding (AED with + for income, - for expenses)
+- ✅ Category display with "Uncategorized" fallback
+- ✅ Tags displayed as MUI chips
+- ✅ Loading skeletons for both mobile and desktop layouts
+- ✅ Error alert with retry button when API fails
+- ✅ Empty state component when no transactions
+- ✅ Mobile-responsive design with card layout for small screens
 
 ---
 

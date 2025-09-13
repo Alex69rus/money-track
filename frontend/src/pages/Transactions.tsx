@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container, Typography, Box } from '@mui/material';
+import TransactionList from '../components/TransactionList';
 
 const Transactions: React.FC = () => {
   return (
@@ -9,9 +10,7 @@ const Transactions: React.FC = () => {
       </Typography>
       
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body1" color="text.secondary">
-          Transaction list will be implemented in the next iteration
-        </Typography>
+        <TransactionList />
       </Box>
     </Container>
   );

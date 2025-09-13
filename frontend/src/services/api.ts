@@ -54,10 +54,11 @@ class ApiService {
       return await response.json();
     } catch (error) {
       if (error instanceof TypeError) {
-        throw {
+        const networkError: ApiError = {
           message: 'Network error. Please check your connection.',
           statusCode: 0
-        } as ApiError;
+        };
+        throw networkError;
       }
       throw error;
     }
