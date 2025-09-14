@@ -18,13 +18,21 @@ import {
   Card,
   CardContent,
   Stack,
+  IconButton,
+  Snackbar,
 } from '@mui/material';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { 
+  Refresh as RefreshIcon, 
+  Edit as EditIcon, 
+  Delete as DeleteIcon 
+} from '@mui/icons-material';
 import { Transaction, ApiError, TransactionFilters } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
 import { formatDateTime, formatCurrency, getCurrencyColor } from '../utils/formatters';
 import EmptyState from './EmptyState';
+import TransactionEdit from './TransactionEdit';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 interface TransactionListProps {
   refreshTrigger?: number;
@@ -35,6 +43,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
+  const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -60,9 +72,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
         }
       }
 
-      // Amount range filter
-      if (filters.minAmount !== undefined && transaction.amount < filters.minAmount) return false;
-      if (filters.maxAmount !== undefined && transaction.amount > filters.maxAmount) return false;
+      // Amount range filter (ignore sign - filter by absolute value)
+      if (filters.minAmount !== undefined && Math.abs(transaction.amount) < filters.minAmount) return false;
+      if (filters.maxAmount !== undefined && Math.abs(transaction.amount) > filters.maxAmount) return false;
 
       // Tags filter
       if (filters.tags && filters.tags.length > 0) {
@@ -110,6 +122,45 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
     fetchTransactions();
   };
 
+  const handleEditClick = (transaction: Transaction) => {
+    setEditTransaction(transaction);
+  };
+
+  const handleDeleteClick = (transaction: Transaction) => {
+    setDeleteTransaction(transaction);
+  };
+
+  const handleEditClose = () => {
+    setEditTransaction(null);
+  };
+
+  const handleDeleteClose = () => {
+    setDeleteTransaction(null);
+  };
+
+  const handleTransactionUpdated = (updatedTransaction: Transaction) => {
+    setTransactions(prev => 
+      prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
+    );
+    setSnackbarMessage('Transaction updated successfully');
+    setSnackbarOpen(true);
+  };
+
+  const handleTransactionDeleted = (deletedTransactionId: number) => {
+    setTransactions(prev => prev.filter(t => t.id !== deletedTransactionId));
+    setSnackbarMessage('Transaction deleted successfully');
+    setSnackbarOpen(true);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setSnackbarMessage(errorMessage);
+    setSnackbarOpen(true);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   if (loading) {
     return (
       <Box>
@@ -145,6 +196,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                     <TableCell><Skeleton variant="text" width={100} /></TableCell>
                     <TableCell><Skeleton variant="text" width={120} /></TableCell>
                     <TableCell><Skeleton variant="rectangular" width={60} height={24} /></TableCell>
+                    <TableCell><Skeleton variant="rectangular" width={80} height={32} /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -186,13 +238,29 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
           <Typography variant="body2" color="text.secondary">
             {formatDateTime(transaction.transactionDate)}
           </Typography>
-          <Typography 
-            variant="h6" 
-            color={getCurrencyColor(transaction.amount)}
-            sx={{ fontWeight: 'bold' }}
-          >
-            {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography 
+              variant="h6" 
+              color={getCurrencyColor(transaction.amount)}
+              sx={{ fontWeight: 'bold' }}
+            >
+              {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
+            </Typography>
+            <IconButton 
+              size="small" 
+              onClick={() => handleEditClick(transaction)}
+              sx={{ color: 'primary.main' }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              onClick={() => handleDeleteClick(transaction)}
+              sx={{ color: 'error.main' }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </Box>
         
         {transaction.category && (
@@ -233,6 +301,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
             <TableCell>Category</TableCell>
             <TableCell>Note</TableCell>
             <TableCell>Tags</TableCell>
+            <TableCell align="center">Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -287,6 +356,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                   )}
                 </Stack>
               </TableCell>
+              <TableCell align="center">
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => handleEditClick(transaction)}
+                    sx={{ color: 'primary.main' }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => handleDeleteClick(transaction)}
+                    sx={{ color: 'error.main' }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -303,6 +390,32 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
       ) : (
         renderDesktopTable()
       )}
+      
+      {/* Edit Dialog */}
+      <TransactionEdit
+        open={!!editTransaction}
+        transaction={editTransaction}
+        onClose={handleEditClose}
+        onSave={handleTransactionUpdated}
+        onError={handleError}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTransaction}
+        transaction={deleteTransaction}
+        onClose={handleDeleteClose}
+        onDelete={handleTransactionDeleted}
+        onError={handleError}
+      />
+      
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+      />
     </Box>
   );
 };

@@ -10,7 +10,7 @@
 | 4 | React Setup | ✅ Complete | 2024-09-13 | 2024-09-13 | Frontend foundation |
 | 5 | Transaction List | ✅ Complete | 2024-09-13 | 2024-09-13 | Display transactions |
 | 6 | Filters & Search | ✅ Complete | 2024-09-13 | 2024-09-13 | Transaction filtering |
-| 7 | Transaction Edit | ⏳ Pending | - | - | Edit/delete functionality |
+| 7 | Transaction Edit | ✅ Complete | 2024-09-13 | 2024-09-13 | Edit/delete functionality |
 | 8 | Basic Analytics | ⏳ Pending | - | - | Charts and summaries |
 | 9 | AI Chat Integration | ⏳ Pending | - | - | Connect to n8n workflow |
 | 10 | Deployment | ⏳ Pending | - | - | Docker & AWS setup |
@@ -139,13 +139,23 @@
 ### Iteration 7: Transaction Edit
 **Goal:** Edit and delete transaction functionality
 
-- [ ] Create TransactionEdit dialog/modal
-- [ ] Implement category selection dropdown
-- [ ] Add tags input with autocomplete
-- [ ] Enable inline editing from transaction list
-- [ ] Add delete confirmation dialog
+- [x] Create TransactionEdit dialog/modal
+- [x] Implement category selection dropdown
+- [x] Add tags input with autocomplete
+- [x] Enable inline editing from transaction list
+- [x] Add delete confirmation dialog
 
-**Test:** Can edit transactions, changes persist, delete works
+**Test:** ✅ COMPLETED - Edit and delete functionality works correctly
+- ✅ TransactionEdit dialog with complete form (date/time, amount, category, tags, note)
+- ✅ HTML5 datetime-local input for date/time selection (replaced MUI DateTimePicker)
+- ✅ Category dropdown with MockApiService fallback when API unavailable
+- ✅ Tags displayed as removable chips with autocomplete for adding new tags
+- ✅ Form validation with error messages for required fields
+- ✅ Edit/delete buttons in both mobile card and desktop table layouts
+- ✅ DeleteConfirmationDialog with transaction details preview
+- ✅ Success/error snackbar notifications for user feedback
+- ✅ Amount filter fix: ignores transaction sign (uses Math.abs for filtering)
+- ✅ Categories list fix: MockApiService fallback prevents empty dropdown
 
 ---
 

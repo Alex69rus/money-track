@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Category } from '../../types';
 import ApiService from '../../services/api';
+import { MockApiService } from '../../services/mockApi';
 
 interface CategoryFilterProps {
   selectedCategories: number[];
@@ -32,7 +33,10 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
         const data = await apiService.getCategories();
         setCategories(data);
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        console.error('Backend not available, using mock categories:', error);
+        // Fallback to mock data when API is not available
+        const mockData = await MockApiService.getCategories();
+        setCategories(mockData);
       } finally {
         setLoading(false);
       }
