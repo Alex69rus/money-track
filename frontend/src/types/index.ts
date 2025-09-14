@@ -97,3 +97,17 @@ export interface PaginatedResponse<T> {
   totalCount: number;
   totalPages: number;
 }
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+  isLoading?: boolean;
+}
+
+export interface ChatResponse {
+  response: string;
+  success: boolean;
+  error?: string;
+}
