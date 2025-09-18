@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
-  BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
+  FRONTEND_IMAGE_NAME: alex69rus/money-track/frontend
+  BACKEND_IMAGE_NAME: alex69rus/money-track/backend
 
 jobs:
   test-frontend:
@@ -161,8 +161,8 @@ jobs:
           POSTGRES_USER=postgres
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-          BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest
-          FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+          BACKEND_IMAGE=ghcr.io/alex69rus/money-track/backend:latest
+          FRONTEND_IMAGE=ghcr.io/alex69rus/money-track/frontend:latest
           DOMAIN=${{ secrets.DOMAIN || 'localhost' }}
           EMAIL=${{ secrets.EMAIL || 'admin@localhost.com' }}
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
@@ -173,14 +173,14 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
           
           # Pull latest images
-          docker pull ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
-          docker pull ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest
+          docker pull ghcr.io/alex69rus/money-track/frontend:latest
+          docker pull ghcr.io/alex69rus/money-track/backend:latest
           
           # Stop existing services
-          docker-compose -f docker-compose.prod.yml down || true
+          docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
           
           # Start services
-          docker-compose -f docker-compose.prod.yml up -d
+          docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
           
           # Wait for services to be ready
           sleep 30
@@ -198,7 +198,7 @@ jobs:
               -d ${{ secrets.DOMAIN }} || echo "SSL setup failed, continuing without HTTPS"
             
             # Restart nginx to use SSL
-            docker-compose -f docker-compose.prod.yml restart nginx || true
+            docker-compose -f docker-compose.prod.yml --env-file .env.prod restart nginx || true
           fi
           
           # Health check

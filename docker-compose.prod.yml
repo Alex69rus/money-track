@@ -18,7 +18,7 @@ services:
       - backend
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/akukharev/money-track/backend:latest}
+    image: ${BACKEND_IMAGE:-ghcr.io/alex69rus/money-track/backend:latest}
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-moneytrack};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
       - ASPNETCORE_ENVIRONMENT=Production
@@ -33,7 +33,7 @@ services:
       - frontend
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/akukharev/money-track/frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/alex69rus/money-track/frontend:latest}
     restart: unless-stopped
     networks:
       - frontend
