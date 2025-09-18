@@ -134,12 +134,17 @@ jobs:
           # Navigate to deployment directory
           cd /opt/money-track
           
-          # Clone or update repository
-          if [ ! -d ".git" ]; then
-            git clone https://github.com/${{ github.repository }} .
-          else
+          # Update repository safely without removing files
+          if [ -d ".git" ]; then
+            # Repository exists, update it
             git fetch origin
             git reset --hard origin/main
+          else
+            # Initialize git and pull files without removing existing ones
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+            git fetch origin
+            git checkout -t origin/main
           fi
           
           # Create production environment file
