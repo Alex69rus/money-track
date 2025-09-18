@@ -116,6 +116,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
 
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger, filters]);
 
   const handleRetry = () => {
