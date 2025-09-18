@@ -88,7 +88,7 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
+        username: alex69rus
         password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Extract metadata
@@ -106,6 +106,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: ./${{ matrix.service }}
+        platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -131,21 +132,25 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          set -e  # Exit on any error
+          set -u  # Exit on undefined variables
+          set -o pipefail  # Exit on pipe failures
+          
           # Navigate to deployment directory
           cd /opt/money-track
           
           # Update repository safely without removing files
           if [ -d ".git" ]; then
-            # Repository exists, update it
-            git fetch origin
-            git reset --hard origin/main
+            echo "Updating existing repository..."
+            git fetch origin || { echo "ERROR: Failed to fetch from origin"; exit 1; }
+            git reset --hard origin/main || { echo "ERROR: Failed to reset to origin/main"; exit 1; }
           else
-            # Initialize git and pull files without removing existing ones
-            git init
-            git remote add origin https://github.com/${{ github.repository }}.git
-            git fetch origin
-            git reset --hard origin/main
-            git branch --set-upstream-to=origin/main main
+            echo "Initializing new repository..."
+            git init || { echo "ERROR: Failed to initialize git repository"; exit 1; }
+            git remote add origin https://github.com/${{ github.repository }}.git || { echo "ERROR: Failed to add remote origin"; exit 1; }
+            git fetch origin || { echo "ERROR: Failed to fetch from origin"; exit 1; }
+            git reset --hard origin/main || { echo "ERROR: Failed to reset to origin/main"; exit 1; }
+            git branch --set-upstream-to=origin/main main || { echo "ERROR: Failed to set upstream branch"; exit 1; }
           fi
           
           # Verify critical files exist
@@ -154,6 +159,7 @@ jobs:
             ls -la
             exit 1
           fi
+          echo "✅ Repository updated successfully"
           
           # Create production environment file
           cat > .env.prod << EOF
@@ -170,20 +176,32 @@ jobs:
           EOF
           
           # Login to container registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          echo "Logging in to container registry..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u alex69rus --password-stdin || { echo "ERROR: Failed to login to container registry"; exit 1; }
+          echo "✅ Logged in successfully"
           
           # Pull latest images
-          docker pull ghcr.io/alex69rus/money-track/frontend:latest
-          docker pull ghcr.io/alex69rus/money-track/backend:latest
+          echo "Pulling latest Docker images..."
+          docker pull ghcr.io/alex69rus/money-track/frontend:latest || { echo "ERROR: Failed to pull frontend image"; exit 1; }
+          docker pull ghcr.io/alex69rus/money-track/backend:latest || { echo "ERROR: Failed to pull backend image"; exit 1; }
+          echo "✅ Images pulled successfully"
           
-          # Stop existing services
-          docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
+          # Stop existing services (allow this to fail for first-time deployment)
+          echo "Stopping existing services..."
+          docker-compose -f docker-compose.prod.yml --env-file .env.prod down || echo "No existing services to stop"
           
           # Start services
-          docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+          echo "Starting services..."
+          docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d || { echo "ERROR: Failed to start services"; exit 1; }
+          echo "✅ Services started successfully"
           
           # Wait for services to be ready
+          echo "Waiting for services to initialize..."
           sleep 30
+          
+          # Verify services are running
+          echo "Verifying services are running..."
+          docker-compose -f docker-compose.prod.yml --env-file .env.prod ps || { echo "ERROR: Failed to check service status"; exit 1; }
           
           # SSL certificate setup (first time only)
           if [ ! -f "./certbot/conf/live/${{ secrets.DOMAIN || 'localhost' }}/fullchain.pem" ] && [ "${{ secrets.DOMAIN }}" != "localhost" ]; then
@@ -195,19 +213,27 @@ jobs:
               --webroot-path /var/www/certbot \
               --email ${{ secrets.EMAIL || 'admin@localhost.com' }} \
               --agree-tos --no-eff-email \
-              -d ${{ secrets.DOMAIN }} || echo "SSL setup failed, continuing without HTTPS"
+              -d ${{ secrets.DOMAIN }} || echo "⚠️  SSL setup failed, continuing without HTTPS"
             
             # Restart nginx to use SSL
-            docker-compose -f docker-compose.prod.yml --env-file .env.prod restart nginx || true
+            echo "Restarting nginx with SSL..."
+            docker-compose -f docker-compose.prod.yml --env-file .env.prod restart nginx || echo "⚠️  Failed to restart nginx"
           fi
           
           # Health check
-          curl -f http://localhost/health || curl -f http://localhost/api/health || echo "Health check failed but continuing"
+          echo "Performing health checks..."
+          if curl -f http://localhost/health >/dev/null 2>&1 || curl -f http://localhost/api/health >/dev/null 2>&1; then
+            echo "✅ Health check passed"
+          else
+            echo "⚠️  Health check failed - services may still be starting up"
+            # Don't fail deployment on health check failure as services might still be initializing
+          fi
           
           # Clean up old images
-          docker image prune -f
+          echo "Cleaning up old Docker images..."
+          docker image prune -f || echo "⚠️  Failed to clean up old images"
           
-          echo "Deployment completed successfully"
+          echo "🎉 Deployment completed successfully"
 
   notify:
     needs: deploy
