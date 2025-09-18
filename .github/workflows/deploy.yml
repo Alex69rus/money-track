@@ -144,7 +144,15 @@ jobs:
             git init
             git remote add origin https://github.com/${{ github.repository }}.git
             git fetch origin
-            git checkout -t origin/main
+            git reset --hard origin/main
+            git branch --set-upstream-to=origin/main main
+          fi
+          
+          # Verify critical files exist
+          if [ ! -f "docker-compose.prod.yml" ]; then
+            echo "ERROR: docker-compose.prod.yml not found after git checkout"
+            ls -la
+            exit 1
           fi
           
           # Create production environment file
