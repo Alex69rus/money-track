@@ -190,8 +190,16 @@ jobs:
           echo "Stopping existing services..."
           docker-compose -f docker-compose.prod.yml --env-file .env.prod down || echo "No existing services to stop"
           
+          # Create SSL certificate directory and deploy Cloudflare certificates
+          echo "Setting up Cloudflare Origin Certificates..."
+          mkdir -p ssl
+          echo "${{ secrets.CLOUDFLARE_CERT }}" > ssl/cloudflare-cert.pem || { echo "ERROR: Failed to create certificate file"; exit 1; }
+          echo "${{ secrets.CLOUDFLARE_KEY }}" > ssl/cloudflare-key.pem || { echo "ERROR: Failed to create private key file"; exit 1; }
+          chmod 600 ssl/cloudflare-key.pem
+          echo "✅ Cloudflare certificates deployed"
+          
           # Start services
-          echo "Starting services..."
+          echo "Starting services with Cloudflare SSL..."
           docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d || { echo "ERROR: Failed to start services"; exit 1; }
           echo "✅ Services started successfully"
           
@@ -202,23 +210,6 @@ jobs:
           # Verify services are running
           echo "Verifying services are running..."
           docker-compose -f docker-compose.prod.yml --env-file .env.prod ps || { echo "ERROR: Failed to check service status"; exit 1; }
-          
-          # SSL certificate setup (first time only)
-          if [ ! -f "./certbot/conf/live/${{ secrets.DOMAIN || 'localhost' }}/fullchain.pem" ] && [ "${{ secrets.DOMAIN }}" != "localhost" ]; then
-            echo "Setting up SSL certificate..."
-            docker run --rm \
-              -v /opt/money-track/certbot/www:/var/www/certbot \
-              -v /opt/money-track/certbot/conf:/etc/letsencrypt \
-              certbot/certbot certonly --webroot \
-              --webroot-path /var/www/certbot \
-              --email ${{ secrets.EMAIL || 'admin@localhost.com' }} \
-              --agree-tos --no-eff-email \
-              -d ${{ secrets.DOMAIN }} || echo "⚠️  SSL setup failed, continuing without HTTPS"
-            
-            # Restart nginx to use SSL
-            echo "Restarting nginx with SSL..."
-            docker-compose -f docker-compose.prod.yml --env-file .env.prod restart nginx || echo "⚠️  Failed to restart nginx"
-          fi
           
           # Health check
           echo "Performing health checks..."

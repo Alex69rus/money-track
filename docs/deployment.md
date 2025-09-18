@@ -1,5 +1,13 @@
 # Production Deployment Guide
 
+This guide covers automated deployment using GitHub Actions with Cloudflare Origin Certificates for SSL.
+
+## Prerequisites
+
+- Domain managed by Cloudflare
+- AWS EC2 instance (ARM64)
+- GitHub repository with Actions enabled
+
 ## AWS EC2 Setup
 
 ### 1. Launch EC2 Instance
@@ -48,76 +56,64 @@ sudo mkdir -p /opt/money-track
 sudo chown $USER:$USER /opt/money-track
 cd /opt/money-track
 
-# Clone repository (or copy files)
-git clone https://github.com/akukharev/money-track.git .
-
-# Set up environment
-cp .env.prod.example .env.prod
-# Edit .env.prod with your actual values
-sudo yum install -y nano
-nano .env.prod
+# Clone repository (or copy files) - Optional for manual setup
+# GitHub Actions will handle this automatically
+git clone https://github.com/Alex69rus/money-track.git .
 ```
 
-### 3. SSL Certificate Setup
+**Note**: The above manual setup is optional. The recommended approach is to use GitHub Actions for automated deployment.
 
-```bash
-# Create directories for SSL
-sudo mkdir -p /opt/money-track/certbot/www
-sudo mkdir -p /opt/money-track/certbot/conf
+## Automated Deployment with GitHub Actions
 
-# Start services without SSL first
-docker-compose -f docker-compose.prod.yml up -d postgres backend frontend nginx
+The deployment is fully automated via GitHub Actions. You only need to configure secrets and certificates.
 
-# Wait for services to be ready
-sleep 30
+### 3. SSL Certificate Setup (Cloudflare)
 
-# Request SSL certificate
-docker run --rm \
-  -v /opt/money-track/certbot/www:/var/www/certbot \
-  -v /opt/money-track/certbot/conf:/etc/letsencrypt \
-  certbot/certbot certonly --webroot \
-  --webroot-path /var/www/certbot \
-  --email your-email@domain.com \
-  --agree-tos --no-eff-email \
-  -d your-domain.com
+We use Cloudflare Origin Certificates for SSL, which are:
+- Valid for 3 years (no renewal needed)
+- Trusted by Cloudflare's edge servers
+- Simpler than Let's Encrypt ACME challenges
 
-# Update nginx config with your domain
-sed -i 's/money-track/your-domain.com/g' nginx/conf.d/default.conf
-
-# Restart with SSL
-docker-compose -f docker-compose.prod.yml restart nginx
-```
+Follow the detailed guide: [Cloudflare SSL Setup](./cloudflare-ssl-setup.md)
 
 ### 4. GitHub Actions Secrets
 
 Set the following secrets in your GitHub repository:
 
+**Required secrets:**
 ```
-SERVER_HOST=your-ec2-public-ip
+# Server connection
+SERVER_HOST=your-ec2-hostname
 SERVER_USER=ec2-user
 SSH_PRIVATE_KEY=your-private-key-content
+
+# SSL certificates (from Cloudflare)
+CLOUDFLARE_CERT=your-cloudflare-origin-certificate
+CLOUDFLARE_KEY=your-cloudflare-private-key
+
+# Application secrets
 POSTGRES_PASSWORD=your-secure-database-password
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+DOMAIN=your-domain.com
+EMAIL=your-email@domain.com
 REACT_APP_API_URL=https://your-domain.com/api
 REACT_APP_AI_WEBHOOK_URL=https://your-n8n-webhook-url.com/webhook/chat
 ```
 
+**How to get certificates:** See [Cloudflare SSL Setup Guide](./cloudflare-ssl-setup.md)
+
 ### 5. Domain Configuration
 
-1. **DNS Setup:**
+1. **Cloudflare DNS Setup:**
    - Point your domain A record to EC2 public IP
-   - Wait for DNS propagation (up to 24 hours)
+   - Enable Cloudflare proxy (orange cloud) ☁️
+   - Set SSL mode to "Full (strict)" in Cloudflare dashboard
+   - Enable "Always Use HTTPS"
 
-2. **Update Configuration:**
-   ```bash
-   # Update nginx config with your domain
-   sudo nano /opt/money-track/nginx/conf.d/default.conf
-   # Replace 'money-track' with your actual domain
-   
-   # Update SSL certificate path
-   sudo nano /opt/money-track/nginx/conf.d/default.conf
-   # Update certificate paths to match your domain
-   ```
+2. **Automatic Configuration:**
+   - No manual nginx config needed
+   - GitHub Actions handles SSL certificate deployment
+   - Deployment is fully automated
 
 ### 6. Health Monitoring
 
@@ -155,34 +151,48 @@ find $BACKUP_DIR -name "db-*.sql" -mtime +7 -delete
 
 1. **SSL Certificate Issues:**
    ```bash
-   # Check certificate status
-   docker-compose logs certbot
+   # Check nginx logs for SSL errors
+   docker-compose -f docker-compose.prod.yml logs nginx
    
-   # Renew certificate manually
-   docker run --rm -v /opt/money-track/certbot/conf:/etc/letsencrypt certbot/certbot renew
+   # Verify certificates are properly mounted
+   docker-compose -f docker-compose.prod.yml exec nginx ls -la /etc/nginx/ssl/
+   
+   # Test SSL configuration
+   docker-compose -f docker-compose.prod.yml exec nginx nginx -t
    ```
 
-2. **Database Connection Issues:**
+2. **GitHub Actions Deployment Issues:**
+   ```bash
+   # Check if certificates were deployed
+   ls -la /opt/money-track/ssl/
+   
+   # Verify certificate permissions
+   ls -la /opt/money-track/ssl/cloudflare-key.pem
+   # Should show: -rw------- (600 permissions)
+   ```
+
+3. **Database Connection Issues:**
    ```bash
    # Check database health
-   docker-compose exec postgres pg_isready -U postgres
+   docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U postgres
    
    # Reset database
-   docker-compose down
+   docker-compose -f docker-compose.prod.yml down
    docker volume rm money-track_postgres_data
-   docker-compose up -d
+   docker-compose -f docker-compose.prod.yml up -d
    ```
 
-3. **Service Not Starting:**
+4. **Service Not Starting:**
    ```bash
    # Check logs
-   docker-compose logs backend
-   docker-compose logs frontend
+   docker-compose -f docker-compose.prod.yml logs backend
+   docker-compose -f docker-compose.prod.yml logs frontend
+   docker-compose -f docker-compose.prod.yml logs nginx
    
    # Rebuild images
-   docker-compose down
-   docker-compose pull
-   docker-compose up -d
+   docker-compose -f docker-compose.prod.yml down
+   docker-compose -f docker-compose.prod.yml pull
+   docker-compose -f docker-compose.prod.yml up -d
    ```
 
 ### 9. Security Considerations
@@ -207,14 +217,32 @@ find $BACKUP_DIR -name "db-*.sql" -mtime +7 -delete
 
 ## Deployment Checklist
 
-- [ ] EC2 instance launched and configured
+### Initial Setup
+- [ ] EC2 instance launched and configured (ARM64)
 - [ ] Docker and Docker Compose installed
-- [ ] Repository cloned to /opt/money-track
-- [ ] Environment variables configured
-- [ ] SSL certificate obtained
-- [ ] Domain DNS configured
-- [ ] GitHub Actions secrets set
+- [ ] GitHub repository configured with Actions
+- [ ] Domain managed by Cloudflare
+
+### Certificate & DNS Setup
+- [ ] Cloudflare Origin Certificate generated
+- [ ] Certificate added to `CLOUDFLARE_CERT` secret
+- [ ] Private key added to `CLOUDFLARE_KEY` secret
+- [ ] Domain DNS pointed to EC2 IP (proxied)
+- [ ] Cloudflare SSL mode set to "Full (strict)"
+- [ ] "Always Use HTTPS" enabled
+
+### GitHub Actions Configuration
+- [ ] All required secrets configured
+- [ ] SSH access to EC2 verified
 - [ ] Deployment pipeline tested
+- [ ] ARM64 Docker images building successfully
+
+### Verification
+- [ ] HTTPS site accessible
 - [ ] Health checks passing
+- [ ] SSL certificate valid
+- [ ] All services running
+
+### Optional
 - [ ] Monitoring setup
 - [ ] Backup strategy implemented
