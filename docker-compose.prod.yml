@@ -44,7 +44,7 @@ services:
       - N8N_HOST=money-track.org
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
-      - N8N_PATH=/n8n
+      - N8N_PATH=/n8n/
       - N8N_EDITOR_BASE_URL=https://money-track.org/n8n/
       - VUE_APP_URL_BASE_API=https://money-track.org/n8n/
       - WEBHOOK_URL=https://money-track.org/webhook
