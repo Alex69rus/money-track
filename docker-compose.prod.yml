@@ -38,6 +38,34 @@ services:
     networks:
       - frontend
 
+  n8n:
+    image: n8nio/n8n:latest
+    environment:
+      - N8N_HOST=money-track.org
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://money-track.org/webhook
+      - TZ=Asia/Dubai
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-moneytrack}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-postgres}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-your-default-encryption-key}
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend
+      - frontend
+
   nginx:
     image: nginx:alpine
     ports:
@@ -50,6 +78,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - n8n
     restart: unless-stopped
     networks:
       - frontend
@@ -57,6 +86,7 @@ services:
 
 volumes:
   postgres_data:
+  n8n_data:
 
 networks:
   frontend:

@@ -173,6 +173,7 @@ jobs:
           EMAIL=${{ secrets.EMAIL || 'admin@localhost.com' }}
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
           REACT_APP_AI_WEBHOOK_URL=${{ secrets.REACT_APP_AI_WEBHOOK_URL }}
+          N8N_ENCRYPTION_KEY=${{ secrets.N8N_ENCRYPTION_KEY || 'default-encryption-key-change-me' }}
           EOF
           
           # Login to container registry
