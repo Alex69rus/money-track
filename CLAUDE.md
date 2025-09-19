@@ -73,12 +73,12 @@ frontend/src/
 ## Data Model
 
 Core entities:
-- **Users**: Telegram user data
-- **Transactions**: Parsed SMS data with tags array, category FK
+- **Transactions**: Parsed SMS data with tags array, category FK, UserId as BIGINT (Telegram user ID)
 - **Categories**: Predefined global categories
 
 Currency: AED only
 Authentication: Telegram Web App initData validation
+Note: No separate Users table - UserId field stores Telegram user ID directly
 
 ## Never Do
 - Add microservices or complex architecture

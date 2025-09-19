@@ -47,7 +47,6 @@ public static class TransactionEndpoints
 
         var query = context.Transactions
             .Include(t => t.Category)
-            .Include(t => t.User)
             .Where(t => t.UserId == userId);
 
         if (fromDate.HasValue)

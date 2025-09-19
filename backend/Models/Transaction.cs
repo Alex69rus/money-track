@@ -15,6 +15,5 @@ public class Transaction
     public DateTime CreatedAt { get; set; }
 
     // Navigation properties
-    public User User { get; set; } = null!;
     public Category? Category { get; set; }
 }

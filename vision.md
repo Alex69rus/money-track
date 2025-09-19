@@ -104,14 +104,12 @@ money-track/
 
 **Core Tables:**
 ```sql
--- Users (from Telegram)
-Users: id, telegram_id, username, created_at
-
 -- Transactions (parsed from SMS)
-Transactions: id, user_id, transaction_date, amount, note (optional), category_id (FK) (optional), 
+-- Note: user_id is now BIGINT storing Telegram user ID directly (no Users table)
+Transactions: id, user_id (BIGINT), transaction_date, amount, note (optional), category_id (FK) (optional), 
               tags (string array) (optional), currency, sms_text (optional), message_id (optional), created_at
 
--- Categories (predefined global set: 'Medical Services','Education','Beauty','Clothing & Shoes','Furniture','Charity','Taxis','Savings interests','Maintenance & Renovation','Kids','Utility','Healthcare','Internet-Services','Entertainment','Communication','Medicines','Baby Clothes','Accessories & Toys','Luda’s job','Groceries','Gifts','Home','Rent','Alcohol','Public transport','Pets','Carsharing','Rus transfer','Etc.','Apique salary Transfer from USD','Veterinary Services','Car','Fuel','Classes','Parking & Toll roads','Toys','Household Goods','Eating Out','Hotel','Travel','Tickets','Car Wash','Cellular','Apique salary','Hardware','Luda’s income','Other income','Legalisation','Pet Food')
+-- Categories (predefined global set: 'Medical Services','Education','Beauty','Clothing & Shoes','Furniture','Charity','Taxis','Savings interests','Maintenance & Renovation','Kids','Utility','Healthcare','Internet-Services','Entertainment','Communication','Medicines','Baby Clothes','Accessories & Toys','Luda's job','Groceries','Gifts','Home','Rent','Alcohol','Public transport','Pets','Carsharing','Rus transfer','Etc.','Apique salary Transfer from USD','Veterinary Services','Car','Fuel','Classes','Parking & Toll roads','Toys','Household Goods','Eating Out','Hotel','Travel','Tickets','Car Wash','Cellular','Apique salary','Hardware','Luda's income','Other income','Legalisation','Pet Food')
 Categories: id, name, type (income/expense), color, icon, parent_category_id, created_at
 ```
 
