@@ -3,8 +3,16 @@ using MoneyTrack.Api.Data;
 using MoneyTrack.Api.Services;
 using MoneyTrack.Api.Endpoints;
 using MoneyTrack.Api.Middleware;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure JSON serialization to handle reference cycles
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+});
 
 // Add services
 builder.Services.AddDbContext<MoneyTrackContext>(options =>
