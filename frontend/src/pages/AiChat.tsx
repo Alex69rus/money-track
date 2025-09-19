@@ -26,7 +26,7 @@ import {
   Person as PersonIcon,
   RestartAlt as ResetIcon
 } from '@mui/icons-material';
-import { ChatMessage } from '../types';
+import { ChatMessage, ChatSession } from '../types';
 import AIService from '../services/aiService';
 
 const AIChat: React.FC = () => {
@@ -42,6 +42,7 @@ const AIChat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -53,6 +54,13 @@ const AIChat: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize session when component mounts
+  useEffect(() => {
+    const aiService = AIService.getInstance();
+    const session = aiService.getCurrentSession();
+    setCurrentSession(session);
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -125,6 +133,10 @@ const AIChat: React.FC = () => {
   };
 
   const handleConfirmReset = () => {
+    const aiService = AIService.getInstance();
+    const newSession = aiService.resetSession();
+    setCurrentSession(newSession);
+    
     setMessages([
       {
         id: '1',
@@ -293,7 +305,7 @@ const AIChat: React.FC = () => {
               placeholder="Ask me about your spending, transactions, or financial insights..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               disabled={isLoading}
               variant="outlined"
               size="small"

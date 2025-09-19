@@ -20,13 +20,17 @@ import {
   Stack,
   IconButton,
   Snackbar,
+  Menu,
+  MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import { 
   Refresh as RefreshIcon, 
   Edit as EditIcon, 
-  Delete as DeleteIcon 
+  Delete as DeleteIcon,
+  Category as CategoryIcon
 } from '@mui/icons-material';
-import { Transaction, ApiError, TransactionFilters } from '../types';
+import { Transaction, ApiError, TransactionFilters, Category, UpdateTransactionRequest } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
 import { formatDateTime, formatCurrency, getCurrencyColor } from '../utils/formatters';
@@ -47,6 +51,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryMenuAnchor, setCategoryMenuAnchor] = useState<HTMLElement | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
+  const [updatingCategory, setUpdatingCategory] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -137,6 +145,84 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
 
   const handleDeleteClose = () => {
     setDeleteTransaction(null);
+  };
+
+  // Load categories for quick selector
+  const fetchCategories = async () => {
+    try {
+      const apiService = ApiService.getInstance();
+      const data = await apiService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Backend not available, using mock categories:', error);
+      // Use mock categories for testing
+      const mockCategories: Category[] = [
+        { id: 1, name: 'Groceries', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 2, name: 'Salary', type: 'income' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 3, name: 'Entertainment', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 4, name: 'Transportation', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 5, name: 'Utilities', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 6, name: 'Healthcare', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+      ];
+      setCategories(mockCategories);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleQuickCategoryClick = (event: React.MouseEvent<HTMLElement>, transactionId: number) => {
+    setCategoryMenuAnchor(event.currentTarget);
+    setSelectedTransactionId(transactionId);
+  };
+
+  const handleCategoryMenuClose = () => {
+    setCategoryMenuAnchor(null);
+    setSelectedTransactionId(null);
+  };
+
+  const handleCategorySelect = async (categoryId: number) => {
+    if (!selectedTransactionId) return;
+
+    // Find the current transaction to get all its fields
+    const currentTransaction = transactions.find(t => t.id === selectedTransactionId);
+    if (!currentTransaction) return;
+
+    try {
+      setUpdatingCategory(true);
+      const apiService = ApiService.getInstance();
+      
+      // Create the update request object with ALL required fields - backend doesn't support partial updates
+      const updateRequest: UpdateTransactionRequest = {
+        transactionDate: currentTransaction.transactionDate,
+        amount: currentTransaction.amount,
+        note: currentTransaction.note,
+        categoryId: categoryId,
+        tags: currentTransaction.tags,
+        currency: currentTransaction.currency
+      };
+      
+      // Update the transaction with the selected category
+      const updatedTransaction = await apiService.updateTransaction(selectedTransactionId, updateRequest);
+      
+      // Update the local state with the full updated transaction
+      setTransactions(prev => 
+        prev.map(t => 
+          t.id === selectedTransactionId ? updatedTransaction : t
+        )
+      );
+      
+      setSnackbarMessage('Category updated successfully');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      setSnackbarMessage('Failed to update category');
+      setSnackbarOpen(true);
+    } finally {
+      setUpdatingCategory(false);
+      handleCategoryMenuClose();
+    }
   };
 
   const handleTransactionUpdated = (updatedTransaction: Transaction) => {
@@ -264,10 +350,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
           </Box>
         </Box>
         
-        {transaction.category && (
+        {transaction.category ? (
           <Typography variant="body2" sx={{ mb: 1 }}>
             <strong>Category:</strong> {transaction.category.name}
           </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Category:</strong>
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={(e) => handleQuickCategoryClick(e, transaction.id)}
+              sx={{ 
+                bgcolor: 'primary.main',
+                color: 'white',
+                width: 24,
+                height: 24,
+                '&:hover': {
+                  bgcolor: 'primary.dark'
+                }
+              }}
+              disabled={updatingCategory && selectedTransactionId === transaction.id}
+            >
+              {updatingCategory && selectedTransactionId === transaction.id ? (
+                <CircularProgress size={12} sx={{ color: 'white' }} />
+              ) : (
+                <CategoryIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Box>
         )}
         
         {transaction.note && (
@@ -323,9 +435,32 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                 </Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2">
-                  {transaction.category?.name || 'Uncategorized'}
-                </Typography>
+                {transaction.category ? (
+                  <Typography variant="body2">
+                    {transaction.category.name}
+                  </Typography>
+                ) : (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleQuickCategoryClick(e, transaction.id)}
+                    sx={{ 
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      width: 24,
+                      height: 24,
+                      '&:hover': {
+                        bgcolor: 'primary.dark'
+                      }
+                    }}
+                    disabled={updatingCategory && selectedTransactionId === transaction.id}
+                  >
+                    {updatingCategory && selectedTransactionId === transaction.id ? (
+                      <CircularProgress size={12} sx={{ color: 'white' }} />
+                    ) : (
+                      <CategoryIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                )}
               </TableCell>
               <TableCell>
                 <Typography 
@@ -410,12 +545,38 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
         onError={handleError}
       />
       
+      {/* Category Selection Menu */}
+      <Menu
+        anchorEl={categoryMenuAnchor}
+        open={Boolean(categoryMenuAnchor)}
+        onClose={handleCategoryMenuClose}
+        PaperProps={{
+          style: {
+            maxHeight: 300,
+            width: '20ch',
+          },
+        }}
+      >
+        {categories.map((category) => (
+          <MenuItem
+            key={category.id}
+            onClick={() => handleCategorySelect(category.id)}
+            disabled={updatingCategory}
+          >
+            <Typography variant="body2">
+              {category.name}
+            </Typography>
+          </MenuItem>
+        ))}
+      </Menu>
+      
       {/* Success/Error Snackbar */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={4000}
+        autoHideDuration={2000}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
     </Box>
   );

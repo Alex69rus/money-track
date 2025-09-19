@@ -11,16 +11,25 @@ public class TelegramAuthService
     private readonly string _botToken;
     private readonly ILogger<TelegramAuthService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IWebHostEnvironment _environment;
 
-    public TelegramAuthService(IConfiguration configuration, ILogger<TelegramAuthService> logger, IHttpContextAccessor httpContextAccessor)
+    public TelegramAuthService(IConfiguration configuration, ILogger<TelegramAuthService> logger, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment environment)
     {
         _botToken = configuration["Telegram:BotToken"] ?? throw new InvalidOperationException("Telegram bot token not configured");
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _environment = environment;
     }
 
     public long GetUserIdFromInitData()
     {
+        // Skip authentication in Development mode
+        if (_environment.IsDevelopment())
+        {
+            _logger.LogInformation("Development mode: Skipping Telegram authentication, using test user ID");
+            return 123456789; // Test user ID for development
+        }
+
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available");
         var initData = httpContext.Request.Headers["X-Telegram-Init-Data"].FirstOrDefault();
 

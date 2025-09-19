@@ -96,11 +96,12 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
       setLoading(true);
 
       const updateRequest: UpdateTransactionRequest = {
-        transactionDate: formData.transactionDate ? new Date(formData.transactionDate).toISOString() : undefined,
+        transactionDate: formData.transactionDate ? new Date(formData.transactionDate).toISOString() : transaction.transactionDate,
         amount: parseFloat(formData.amount) * (transaction.amount < 0 ? -1 : 1), // Preserve sign
         note: formData.note || undefined,
         categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
+        currency: transaction.currency, // Required by backend
       };
 
       const apiService = ApiService.getInstance();

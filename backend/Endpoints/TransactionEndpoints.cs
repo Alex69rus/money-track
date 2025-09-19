@@ -80,12 +80,26 @@ public static class TransactionEndpoints
     private static async Task<IResult> CreateTransaction(
         MoneyTrackContext context,
         TelegramAuthService authService,
-        Transaction transaction)
+        CreateTransactionDto createDto)
     {
         var userId = authService.GetUserIdFromInitData();
 
-        transaction.UserId = userId;
-        transaction.CreatedAt = DateTime.UtcNow;
+        var transaction = new Transaction
+        {
+            UserId = userId,
+            TransactionDate = createDto.TransactionDate.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(createDto.TransactionDate, DateTimeKind.Utc) 
+                : createDto.TransactionDate.ToUniversalTime(),
+            Amount = createDto.Amount,
+            Note = createDto.Note,
+            CategoryId = createDto.CategoryId,
+            Tags = createDto.Tags ?? Array.Empty<string>(),
+            Currency = createDto.Currency,
+            SmsText = createDto.SmsText,
+            MessageId = createDto.MessageId,
+            CreatedAt = DateTime.UtcNow
+        };
+
         context.Transactions.Add(transaction);
         await context.SaveChangesAsync();
         return Results.Created($"/api/transactions/{transaction.Id}", transaction);
@@ -95,7 +109,7 @@ public static class TransactionEndpoints
         MoneyTrackContext context,
         TelegramAuthService authService,
         long id,
-        Transaction updatedTransaction)
+        UpdateTransactionDto updateDto)
     {
         var userId = authService.GetUserIdFromInitData();
 
@@ -103,15 +117,23 @@ public static class TransactionEndpoints
         if (transaction == null || transaction.UserId != userId)
             return Results.NotFound();
 
-        transaction.TransactionDate = updatedTransaction.TransactionDate;
-        transaction.Amount = updatedTransaction.Amount;
-        transaction.Note = updatedTransaction.Note;
-        transaction.CategoryId = updatedTransaction.CategoryId;
-        transaction.Tags = updatedTransaction.Tags;
-        transaction.Currency = updatedTransaction.Currency;
+        transaction.TransactionDate = updateDto.TransactionDate.Kind == DateTimeKind.Unspecified 
+            ? DateTime.SpecifyKind(updateDto.TransactionDate, DateTimeKind.Utc) 
+            : updateDto.TransactionDate.ToUniversalTime();
+        transaction.Amount = updateDto.Amount;
+        transaction.Note = updateDto.Note;
+        transaction.CategoryId = updateDto.CategoryId;
+        transaction.Tags = updateDto.Tags ?? Array.Empty<string>();
+        transaction.Currency = updateDto.Currency;
 
         await context.SaveChangesAsync();
-        return Results.Ok(transaction);
+        
+        // Reload the transaction with category information to return complete data
+        var updatedTransactionWithCategory = await context.Transactions
+            .Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        
+        return Results.Ok(updatedTransactionWithCategory);
     }
 
     private static async Task<IResult> DeleteTransaction(

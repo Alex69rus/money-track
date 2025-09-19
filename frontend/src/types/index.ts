@@ -42,11 +42,12 @@ export interface CreateTransactionRequest {
 }
 
 export interface UpdateTransactionRequest {
-  transactionDate?: string;
-  amount?: number;
+  transactionDate: string;  // Required by backend
+  amount: number;           // Required by backend
   note?: string;
   categoryId?: number;
   tags?: string[];
+  currency: string;         // Required by backend
 }
 
 export interface TransactionFilters {
@@ -104,10 +105,19 @@ export interface ChatMessage {
   isUser: boolean;
   timestamp: Date;
   isLoading?: boolean;
+  sessionId?: string;
 }
 
 export interface ChatResponse {
   response: string;
   success: boolean;
   error?: string;
+  sessionId?: string;
+}
+
+export interface ChatSession {
+  id: string;
+  userId: number;
+  createdAt: Date;
+  lastActivityAt: Date;
 }

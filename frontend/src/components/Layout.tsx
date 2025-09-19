@@ -44,7 +44,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </Box>
       
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+      <Paper sx={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0,
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }} elevation={3}>
         <BottomNavigation
           value={getNavigationValue()}
           onChange={handleNavigationChange}
