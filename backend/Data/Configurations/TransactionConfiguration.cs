@@ -40,6 +40,8 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 
+        builder.HasIndex(t=> new{ t.UserId, t.MessageId }).IsUnique();
+
         // Relationships
         builder.HasOne(t => t.Category)
             .WithMany(c => c.Transactions)
