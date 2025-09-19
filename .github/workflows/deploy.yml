@@ -37,7 +37,7 @@ jobs:
     - name: Build frontend
       run: npm run build
       env:
-        REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'https://localhost/api' }}
+        REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'https://localhost' }}
         REACT_APP_AI_WEBHOOK_URL: ${{ secrets.REACT_APP_AI_WEBHOOK_URL || 'https://localhost/webhook' }}
         DISABLE_ESLINT_PLUGIN: true
 

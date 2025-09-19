@@ -6,9 +6,9 @@ class AIService {
 
   private constructor() {
     // Make the webhook URL configurable through environment variable
-    // Fallback to the provided URL if not set
+    // Fallback to the production webhook URL if not set
     this.baseUrl = process.env.REACT_APP_AI_WEBHOOK_URL || 
-                   'https://delicate-halibut-tolerant.ngrok-free.app/webhook/944a3301-513d-4628-803c-1c3edbfd698d/chat';
+                   'https://money-track.org/webhook/chat';
   }
 
   public static getInstance(): AIService {

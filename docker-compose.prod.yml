@@ -44,6 +44,7 @@ services:
       - N8N_HOST=money-track.org
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
+      - N8N_PATH=/n8n/
       - WEBHOOK_URL=https://money-track.org/webhook
       - TZ=Asia/Dubai
       - DB_TYPE=postgresdb
