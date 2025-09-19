@@ -17,7 +17,7 @@ Setup details:
 - AWS EC2 instance with Docker installed
 - PostgreSQL, .NET API, React app (via Nginx) in containers
 - n8n in existing setup
-- Let's Encrypt for SSL certificates
+- Cloudflare Origin Certificates for SSL (see ADR-009)
 - Basic PostgreSQL backup strategy
 
 Deployment flow:
