@@ -41,7 +41,9 @@ services:
   n8n:
     image: n8nio/n8n:latest
     environment:
-      - WEBHOOK_URL=https://money-track.org/webhook
+      - N8N_HOST=https://money-track.org
+      - N8N_PATH=/n8n/
+      - WEBHOOK_URL=https://money-track.org
       - TZ=Asia/Dubai
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres

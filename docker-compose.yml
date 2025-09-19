@@ -35,7 +35,7 @@ services:
       - backend
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:stable
     ports:
       - "5678:5678"
     environment:
