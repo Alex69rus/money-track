@@ -19,6 +19,7 @@ Also, the Telegram web app will have a dedicated screen for AI Chat: "Talk to yo
 
 1. **SMS Processing**: Parse bank SMS messages through Telegram bot
 2. **Transaction Management**: Full CRUD functionality for transactions
-3. **Analytics Dashboard**: Display transaction analytics and insights
-4. **AI Chat**: "Talk to your money" - AI-powered transaction queries
-5. **Database Integration**: Store and manage all transaction data
+3. **Transaction Search**: Text-based search across transaction amount, note, tags, and category name
+4. **Analytics Dashboard**: Display transaction analytics and insights
+5. **AI Chat**: "Talk to your money" - AI-powered transaction queries
+6. **Database Integration**: Store and manage all transaction data

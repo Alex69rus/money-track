@@ -23,13 +23,24 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 
 ## Development Process
 
-**CRITICAL**: Follow the iterative development workflow defined in `docs/workflow.md`. 
+**CRITICAL**: Follow the iterative development workflow defined in `docs/workflow.md`.
 
 **Workflow Steps:**
 1. **Plan → Approve → Implement → Test → Confirm → Commit → Next**
 2. Always propose solution with code snippets before implementing
 3. Update progress in `docs/tasklist.md` after each iteration
 4. Wait for explicit approval before moving to next iteration
+
+## Local Testing
+
+**Frontend/Backend Testing:**
+- **Development Mode**: Run backend with `ASPNETCORE_ENVIRONMENT=Development` to bypass Telegram authentication
+- **Command**: `cd backend && ASPNETCORE_ENVIRONMENT=Development dotnet run --urls=http://localhost:5000`
+- **Frontend**: `cd frontend && REACT_APP_API_URL=http://localhost:5000 npm start`
+- **Access**: Open browser at `http://localhost:3000` - no Telegram context required
+- **Database**: Uses real PostgreSQL data, full API functionality available for testing
+- **Testing**: Use Playwright to test frontend/backend features end-to-end and verify network requests
+- **Verification**: Check network requests to confirm correct front-end to back-end interaction. Always pay attention to network
 
 ## Code Conventions
 

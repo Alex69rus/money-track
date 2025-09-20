@@ -1,0 +1,404 @@
+{
+  "name": "TalkToData_old",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "71080fe5-333a-4e26-9d09-5dadd54f640e",
+      "name": "When chat message received",
+      "webhookId": "944a3301-513d-4628-803c-1c3edbfd698d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User question:\n{{ $json.message }}",
+        "options": {
+          "systemMessage": "You are a data assistant. The user will ask questions about their financial transactions. \nYour job is to generate a SQL SELECT query for a PostgreSQL database with a table named `transactions`.\n\n### Database schema has to be fetched via tool: **DbSchemaExtractor**\n\n### Instructions:\n- **Spending** or **Expenses** means `amount < 0`\n- **Earning** means `amount > 0`\n- Grouping and ordering should always consider absolute values when comparing spends or earnings.\n- When calculating total or top categories, use `ABS(amount)` or filter with `amount < 0` accordingly.\n- Always return a valid SQL query that can run in PostgreSQL.\n- Never return explanations, comments, or markdown formatting.\n- Always return **only** the SQL query in plain text.\n- If you are going to apply filter by the `category` field - always use postgres tool to extract proper value for filter\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c1cdff21-f73a-444c-afa2-7cfdbe9c9efc",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        240
+      ],
+      "id": "8e6066d3-0402-4651-9229-e646bdd40440",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "c5jV4m4vxuZ6naT1",
+          "name": "MyJarvisK"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "33ac81ff-a31f-4935-966f-69ef5598be8f",
+      "name": "Postgres",
+      "credentials": {
+        "postgres": {
+          "id": "Au9olJq6kAFSG402",
+          "name": "MoneyTrack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here's the user request: {{ $json.user_request }}\nHere's the result of a SQL query about user transactions:\n{{ $json.formatted }}\n\nPlease summarize the result in a short and clear answer for the user. All amounts are in AED currency",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "643db857-97f0-4458-9046-3274cbfb4083",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        224
+      ],
+      "id": "e2e73455-1681-49ec-8eb0-20d2072d965c",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "c5jV4m4vxuZ6naT1",
+          "name": "MyJarvisK"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input items\nconst items = $input.all();\nif (items.length === 0) {\n  return [{ \n    json: { \n      formatted: \"No results.\",\n      user_request: $('When chat message received').first().json.chatInput,\n      session_id: $('When chat message received').first().json.sessionId \n    } \n  }];\n}\n\n// Map to row JSONs\nconst rows = items.map(item => item.json);\n\n// Support for aggregation (single row, single column)\nif (rows.length === 1) {\n  const keys = Object.keys(rows[0]);\n  // Single key, simple value → treat as scalar\n  if (keys.length === 1) {\n    const key = keys[0];\n    const value = rows[0][key];\n    return [{ \n      json: { \n        formatted: `Result: **${value}** (${key})`,\n        user_request: $('When chat message received').first().json.chatInput,\n        session_id: $('When chat message received').first().json.sessionId \n      } \n    }];\n  }\n}\n\n// Else: multi-column or multi-row → format as table\nconst headers = Object.keys(rows[0]);\nconst table = [];\n\n// Create markdown table header\ntable.push('| ' + headers.join(' | ') + ' |');\ntable.push('| ' + headers.map(() => '---').join(' | ') + ' |');\n\n// Add table rows\nrows.forEach(row => {\n  table.push('| ' + headers.map(h => String(row[h])).join(' | ') + ' |');\n});\n\nreturn [{\n  json: {\n    formatted: table.join('\\n'),\n    user_request: $('When chat message received').first().json.chatInput,\n    session_id: $('When chat message received').first().json.sessionId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "824e823e-b4ce-4a38-875c-16c84021b56a",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f2051b7a-ed83-40f9-9c2b-12ffd7ef442b",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "DELETE",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "29cc6d37-ec75-49da-a5fe-695537c692aa",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "UPDATE",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "fb3570d3-5d64-4148-bf40-3e75795c855b",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "TRUNCATE",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "c3b6c4ef-31b1-4625-8f0f-16c13d7d1f77",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "DROP",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "4245c99a-a85f-49df-a779-4d0a0785195f",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "MERGE",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "6c304265-a4a5-4540-9b2d-3b30489be69a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}",
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        240
+      ],
+      "id": "e6931620-51a5-49e6-bd0c-e35469d771ee",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "Au9olJq6kAFSG402",
+          "name": "MoneyTrack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Extracts set of categories user can ask about. Helps to apply proper filter by the `category_id` column",
+        "operation": "executeQuery",
+        "query": "SELECT * FROM category",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        592,
+        336
+      ],
+      "id": "22dba6d9-bd1f-4300-93c4-7a1d381ccafd",
+      "name": "CategoriesExtractor",
+      "credentials": {
+        "postgres": {
+          "id": "Au9olJq6kAFSG402",
+          "name": "MoneyTrack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Returns Information about tables and their columns. Has to be used in the very beginning for fetching info about database schema.",
+        "operation": "executeQuery",
+        "query": "SELECT table_name, column_name, data_type, is_nullable, column_default\nFROM information_schema.columns \nWHERE table_name in ('transaction', 'category')\nORDER BY table_name, ordinal_position;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        384
+      ],
+      "id": "fee7d414-69a2-45e1-b2a9-7b96555ac7d2",
+      "name": "DbSchemaExtractor",
+      "credentials": {
+        "postgres": {
+          "id": "Au9olJq6kAFSG402",
+          "name": "MoneyTrack"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When chat message received": [
+      {
+        "json": {
+          "message": "What did I spend on groceries?",
+          "userId": 1,
+          "timestamp": "2025-09-19T17:01:54.378Z"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CategoriesExtractor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DbSchemaExtractor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a2e612b2-4745-402c-a05f-7b290151815f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3f7b36e6277c889b0b0a3be38e976ee96685d5ed057a8471a61bf778ed8f94a5"
+  },
+  "id": "T9TRmW7RSimi8WWN",
+  "tags": []
+}

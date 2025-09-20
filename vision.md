@@ -154,14 +154,15 @@ Categories: id, name, type (income/expense), color, icon, parent_category_id, cr
 **Primary User Journey:**
 1. **SMS Processing**: User forwards bank SMS to Telegram bot → Transaction automatically saved
 2. **View Transactions**: User opens Telegram Web App → sees transaction list with advanced filters
-3. **Manage Transactions**: User can edit/delete transactions, change categories/tags
-4. **Set transaction category and tags manually quickly**: User on the view transactions screen quickly can select category and/or tags for transaction without opennint its details view
-5. **Analytics**: User views spending trends, category breakdown, tags breakdown
-6. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
+3. **Search Transactions**: User can search transactions by typing text to match amount, note, tags, or category name
+4. **Manage Transactions**: User can edit/delete transactions, change categories/tags
+5. **Set transaction category and tags manually quickly**: User on the view transactions screen quickly can select category and/or tags for transaction without opening its details view
+6. **Analytics**: User views spending trends, category breakdown, tags breakdown
+7. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
 
 **MVP Screens:**
 - **Dashboard**: Recent transactions + basic stats
-- **Transactions**: Full list with filters (date, amount <,>,=, tag, category)
+- **Transactions**: Full list with filters (date, amount <,>,=, tag, category) + text search
 - **Analytics**: Spending trends, category breakdown, tags breakdown
 - **AI Chat**: "Talk to your money" interface
 - **Transaction Detail/Edit**: Edit/delete operations only
@@ -169,6 +170,7 @@ Categories: id, name, type (income/expense), color, icon, parent_category_id, cr
 **MVP Decisions:**
 - Transaction creation: Only via SMS forwarding (no manual entry)
 - Filtering: Date range, amount operators, tags, categories
+- Search: Text-based search across amount, note, tags, category name
 - No export functionality for MVP
 
 ## 9. Deployment

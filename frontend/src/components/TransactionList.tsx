@@ -58,45 +58,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Client-side filtering for testing purposes
-  const applyFilters = (data: Transaction[], filters?: TransactionFilters): Transaction[] => {
-    if (!filters) return data;
-
-    return data.filter(transaction => {
-      // Date range filter
-      if (filters.startDate) {
-        const transactionDate = new Date(transaction.transactionDate).toISOString().split('T')[0];
-        if (transactionDate < filters.startDate) return false;
-      }
-      if (filters.endDate) {
-        const transactionDate = new Date(transaction.transactionDate).toISOString().split('T')[0];
-        if (transactionDate > filters.endDate) return false;
-      }
-
-      // Category filter
-      if (filters.categoryIds && filters.categoryIds.length > 0) {
-        if (!transaction.categoryId || !filters.categoryIds.includes(transaction.categoryId)) {
-          return false;
-        }
-      }
-
-      // Amount range filter (ignore sign - filter by absolute value)
-      if (filters.minAmount !== undefined && Math.abs(transaction.amount) < filters.minAmount) return false;
-      if (filters.maxAmount !== undefined && Math.abs(transaction.amount) > filters.maxAmount) return false;
-
-      // Tags filter
-      if (filters.tags && filters.tags.length > 0) {
-        const hasMatchingTag = filters.tags.some(filterTag => 
-          transaction.tags.some(transactionTag => 
-            transactionTag.toLowerCase().includes(filterTag.toLowerCase())
-          )
-        );
-        if (!hasMatchingTag) return false;
-      }
-
-      return true;
-    });
-  };
 
   const fetchTransactions = async () => {
     try {
@@ -109,10 +70,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
         setTransactions(data);
       } catch (apiError) {
         console.log('Backend not available, using mock data for testing filters');
-        const mockData = await MockApiService.getTransactions();
-        // Apply client-side filtering for testing
-        const filteredData = applyFilters(mockData, filters);
-        setTransactions(filteredData);
+        const mockData = await MockApiService.getTransactions(filters);
+        setTransactions(mockData);
       }
     } catch (err) {
       const apiError = err as ApiError;

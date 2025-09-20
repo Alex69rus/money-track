@@ -14,6 +14,7 @@
 | 8 | Basic Analytics | ✅ Complete | 2024-09-13 | 2024-09-14 | Charts and summaries |
 | 9 | AI Chat Integration | ✅ Complete | 2024-09-14 | 2024-09-14 | Connect to n8n workflow |
 | 10 | Deployment | ✅ Complete | 2024-09-14 | 2024-09-14 | Docker & AWS setup |
+| 11 | Transaction Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Text-based search |
 
 **Legend:** ⏳ Pending | 🔄 In Progress | ✅ Complete | ❌ Blocked
 
@@ -222,3 +223,28 @@
 - ✅ AWS EC2 deployment guide with security best practices
 - ✅ Environment configuration templates
 - ✅ Monitoring, backup, and troubleshooting documentation
+
+---
+
+### Iteration 11: Transaction Search
+**Goal:** Add text-based search functionality for transactions
+
+- [x] Add search icon/button to the right of filters on Transactions page
+- [x] Create search input component with debouncing
+- [x] Implement backend search by text field (search across amount, note, tags, category name) adding new parameter: text to the existing GET /api/transactions endpoint
+- [x] Update API service to support search parameter
+- [x] Add case-insensitive search logic in backend
+- [x] Integrate search with existing filters (combine search + filters)
+- [x] Add clear search functionality
+- [x] Show search term in active filters area
+
+**Test:** ✅ COMPLETED - Search UI implemented, backend filtering logic added, proper API integration
+- ✅ Search icon positioned correctly to the right of filters button
+- ✅ Search input appears/disappears on click with auto-focus
+- ✅ Search text displayed as active filter chip when not editing
+- ✅ Clear search functionality works (both X button and Clear All)
+- ✅ Active filter count badge updates correctly
+- ✅ Backend API accepts `text` parameter and performs case-insensitive search across amount, note, tags, and category name
+- ✅ Frontend sends search filters to backend via query parameters
+- ✅ Debounced search input (500ms) for optimal performance
+- ✅ Mobile-responsive design with appropriate input width

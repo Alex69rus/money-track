@@ -1,4 +1,4 @@
-import { Transaction, Category } from '../types';
+import { Transaction, Category, TransactionFilters } from '../types';
 
 const mockCategories: Category[] = [
   { id: 1, name: 'Groceries', type: 'expense', createdAt: '2024-09-13T10:00:00Z' },
@@ -79,10 +79,23 @@ const mockTransactions: Transaction[] = [
 ];
 
 export class MockApiService {
-  public static async getTransactions(): Promise<Transaction[]> {
+  public static async getTransactions(filters?: TransactionFilters): Promise<Transaction[]> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return mockTransactions;
+
+    let filteredTransactions = [...mockTransactions];
+
+    if (filters?.searchText) {
+      const searchTerm = filters.searchText.toLowerCase();
+      filteredTransactions = filteredTransactions.filter(t =>
+        t.amount.toString().includes(searchTerm) ||
+        (t.note && t.note.toLowerCase().includes(searchTerm)) ||
+        t.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+        (t.category && t.category.name.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    return filteredTransactions;
   }
 
   public static async getCategories(): Promise<Category[]> {

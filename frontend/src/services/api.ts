@@ -77,21 +77,26 @@ class ApiService {
   // Transactions
   public async getTransactions(filters?: TransactionFilters): Promise<Transaction[]> {
     const params = new URLSearchParams();
-    
+
     if (filters) {
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.startDate) params.append('fromDate', filters.startDate);
+      if (filters.endDate) params.append('toDate', filters.endDate);
       if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
+      // Backend currently supports single categoryId only, so use first category if multiple selected
+      if (filters.categoryIds && filters.categoryIds.length > 0) {
+        params.append('categoryId', filters.categoryIds[0].toString());
+      }
       if (filters.minAmount) params.append('minAmount', filters.minAmount.toString());
       if (filters.maxAmount) params.append('maxAmount', filters.maxAmount.toString());
-      if (filters.tags) {
-        filters.tags.forEach(tag => params.append('tags', tag));
+      if (filters.tags && filters.tags.length > 0) {
+        params.append('tags', filters.tags.join(','));
       }
+      if (filters.searchText) params.append('text', filters.searchText);
     }
-    
+
     const queryString = params.toString();
     const endpoint = queryString ? `/api/transactions?${queryString}` : '/api/transactions';
-    
+
     return await this.makeRequest<Transaction[]>(endpoint);
   }
   

@@ -14,8 +14,8 @@ public static class TransactionEndpoints
 
         transactions.MapGet("/", GetTransactions)
             .WithName("GetTransactions")
-            .WithSummary("Get user's transactions with optional filters")
-            .WithDescription("Retrieves transactions for the authenticated user with optional date range, amount, category and tag filters");
+            .WithSummary("Get user's transactions with optional filters and search")
+            .WithDescription("Retrieves transactions for the authenticated user with optional date range, amount, category, tag filters and text search across amount, note, tags and category name");
 
         transactions.MapPost("/", CreateTransaction)
             .WithName("CreateTransaction")
@@ -41,7 +41,8 @@ public static class TransactionEndpoints
         decimal? minAmount = null,
         decimal? maxAmount = null,
         int? categoryId = null,
-        string? tags = null)
+        string? tags = null,
+        string? text = null)
     {
         var userId = authService.GetUserIdFromInitData();
 
@@ -70,6 +71,17 @@ public static class TransactionEndpoints
             query = query.Where(t => t.Tags.Any(tag => tagList.Contains(tag)));
         }
 
+        if (!string.IsNullOrEmpty(text))
+        {
+            var lowerText = text.ToLower();
+            query = query.Where(t =>
+                t.Amount.ToString().ToLower().Contains(lowerText) ||
+                (t.Note != null && t.Note.ToLower().Contains(lowerText)) ||
+                t.Tags.Any(tag => tag.ToLower().Contains(lowerText)) ||
+                (t.Category != null && t.Category.Name.ToLower().Contains(lowerText))
+            );
+        }
+
         var transactions = await query
             .OrderByDescending(t => t.TransactionDate)
             .ToListAsync();
@@ -93,7 +105,7 @@ public static class TransactionEndpoints
             Amount = createDto.Amount,
             Note = createDto.Note,
             CategoryId = createDto.CategoryId,
-            Tags = createDto.Tags ?? Array.Empty<string>(),
+            Tags = createDto.Tags ?? [],
             Currency = createDto.Currency,
             SmsText = createDto.SmsText,
             MessageId = createDto.MessageId,
@@ -123,7 +135,7 @@ public static class TransactionEndpoints
         transaction.Amount = updateDto.Amount;
         transaction.Note = updateDto.Note;
         transaction.CategoryId = updateDto.CategoryId;
-        transaction.Tags = updateDto.Tags ?? Array.Empty<string>();
+        transaction.Tags = updateDto.Tags ?? [];
         transaction.Currency = updateDto.Currency;
 
         await context.SaveChangesAsync();

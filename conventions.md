@@ -18,6 +18,7 @@
 - **No Abstractions**: Direct service injection, no repository pattern
 - **Async methods**: Write async API if possible by default
 - **EmptyCollection Initializations**: Use '[]' initializer instead of 'Array.Empty<T>()'
+- **Search API**: Single search endpoint returning filtered transactions, case-insensitive matching
 
 ## React Frontend Conventions
 
@@ -27,6 +28,7 @@
 - **Simple State**: useState/useEffect only, no complex state management
 - **API Calls**: Direct fetch calls in services/, no axios or complex HTTP clients
 - **Telegram Web App**: Use official SDK methods only
+- **Search Implementation**: Simple text search with debouncing, search icon placement to the right of filters
 
 ## Database Conventions
 

@@ -11,12 +11,15 @@ import {
   useTheme,
   useMediaQuery,
   Stack,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Clear as ClearIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { FilterState, TransactionFilters as TTransactionFilters } from '../../types';
 import DateRangePicker from './DateRangePicker';
@@ -36,6 +39,7 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   onApplyFilters,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [showSearch, setShowSearch] = useState(!!filters.searchText);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -109,6 +113,40 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
             )}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {!showSearch ? (
+              <IconButton
+                onClick={() => setShowSearch(true)}
+                size="small"
+                sx={{ color: filters.searchText ? 'primary.main' : 'inherit' }}
+              >
+                <SearchIcon />
+              </IconButton>
+            ) : (
+              <TextField
+                size="small"
+                placeholder="Search transactions..."
+                value={filters.searchText}
+                onChange={(e) => updateFilters({ searchText: e.target.value })}
+                onBlur={() => !filters.searchText && setShowSearch(false)}
+                autoFocus
+                sx={{ width: isMobile ? 150 : 250 }}
+                InputProps={{
+                  endAdornment: filters.searchText && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          updateFilters({ searchText: '' });
+                          setShowSearch(false);
+                        }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
             {activeFiltersCount > 0 && (
               <Button
                 size="small"
@@ -125,6 +163,18 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
           </Box>
         </Box>
       </Box>
+
+      {filters.searchText && !showSearch && (
+        <Box sx={{ px: 2, pb: 1 }}>
+          <Chip
+            label={`Search: "${filters.searchText}"`}
+            onDelete={() => updateFilters({ searchText: '' })}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
+        </Box>
+      )}
 
       <Collapse in={expanded}>
         <CardContent sx={{ pt: 0 }}>
