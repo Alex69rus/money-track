@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Container,
-  Typography, 
-  Grid, 
+  Typography,
+  Grid,
   Alert,
   Button,
   Box
@@ -11,15 +11,38 @@ import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { Transaction, ApiError } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
+import { DateFilter, filterTransactionsByDate } from '../utils/analyticsHelpers';
 import BasicStatistics from '../components/analytics/BasicStatistics';
 import SpendingByCategory from '../components/analytics/SpendingByCategory';
 import SpendingTrends from '../components/analytics/SpendingTrends';
 import SpendingByTags from '../components/analytics/SpendingByTags';
+import DateRangeFilter from '../components/analytics/DateRangeFilter';
 
 const Analytics: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Set default to current month
+  const getCurrentMonthDates = () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Format as YYYY-MM-DD in local timezone
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      startDate: formatLocalDate(startOfMonth),
+      endDate: formatLocalDate(endOfMonth)
+    };
+  };
+
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getCurrentMonthDates());
 
   const fetchTransactions = async () => {
     try {
@@ -78,31 +101,41 @@ const Analytics: React.FC = () => {
     );
   }
 
+  // Apply date filter to transactions
+  const filteredTransactions = filterTransactionsByDate(transactions, dateFilter);
+
   return (
     <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
       <Typography variant="h4" gutterBottom>
         Analytics
       </Typography>
-      
+
+      {/* Date Range Filter */}
+      <DateRangeFilter
+        startDate={dateFilter.startDate}
+        endDate={dateFilter.endDate}
+        onDateChange={setDateFilter}
+      />
+
       {/* Basic Statistics */}
       <Box sx={{ mb: 4 }}>
-        <BasicStatistics transactions={transactions} loading={loading} />
+        <BasicStatistics transactions={filteredTransactions} loading={loading} />
       </Box>
 
       <Grid container spacing={3}>
         {/* Category Breakdown */}
         <Grid item xs={12} md={6}>
-          <SpendingByCategory transactions={transactions} loading={loading} />
+          <SpendingByCategory transactions={filteredTransactions} loading={loading} />
         </Grid>
 
         {/* Tags Breakdown */}
         <Grid item xs={12} md={6}>
-          <SpendingByTags transactions={transactions} loading={loading} />
+          <SpendingByTags transactions={filteredTransactions} loading={loading} />
         </Grid>
 
         {/* Monthly Trends */}
         <Grid item xs={12}>
-          <SpendingTrends transactions={transactions} loading={loading} />
+          <SpendingTrends transactions={filteredTransactions} loading={loading} />
         </Grid>
       </Grid>
 
@@ -110,7 +143,10 @@ const Analytics: React.FC = () => {
       {!loading && transactions.length > 0 && (
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="caption" color="text.secondary">
-            Analytics based on {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+            Analytics based on {filteredTransactions.length} of {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+            {filteredTransactions.length !== transactions.length && (
+              <> (filtered by date range)</>
+            )}
           </Typography>
         </Box>
       )}

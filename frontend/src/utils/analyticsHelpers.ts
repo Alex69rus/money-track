@@ -140,6 +140,35 @@ const formatMonthDisplay = (monthKey: string): string => {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
+export interface DateFilter {
+  startDate: string;
+  endDate: string;
+}
+
+export const filterTransactionsByDate = (transactions: Transaction[], dateFilter: DateFilter): Transaction[] => {
+  if (!dateFilter.startDate && !dateFilter.endDate) {
+    return transactions; // No filter applied
+  }
+
+  return transactions.filter(transaction => {
+    const transactionDate = new Date(transaction.transactionDate);
+
+    if (dateFilter.startDate) {
+      const startDate = new Date(dateFilter.startDate);
+      startDate.setHours(0, 0, 0, 0); // Start of day
+      if (transactionDate < startDate) return false;
+    }
+
+    if (dateFilter.endDate) {
+      const endDate = new Date(dateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999); // End of day
+      if (transactionDate > endDate) return false;
+    }
+
+    return true;
+  });
+};
+
 export const formatCurrency = (amount: number, currency: string = 'AED'): string => {
   return `${amount.toFixed(2)} ${currency}`;
 };
