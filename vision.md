@@ -110,7 +110,7 @@ Transactions: id, user_id (BIGINT), transaction_date, amount, note (optional), c
               tags (string array) (optional), currency, sms_text (optional), message_id (optional), created_at
 
 -- Categories (predefined global set: 'Medical Services','Education','Beauty','Clothing & Shoes','Furniture','Charity','Taxis','Savings interests','Maintenance & Renovation','Kids','Utility','Healthcare','Internet-Services','Entertainment','Communication','Medicines','Baby Clothes','Accessories & Toys','Luda's job','Groceries','Gifts','Home','Rent','Alcohol','Public transport','Pets','Carsharing','Rus transfer','Etc.','Apique salary Transfer from USD','Veterinary Services','Car','Fuel','Classes','Parking & Toll roads','Toys','Household Goods','Eating Out','Hotel','Travel','Tickets','Car Wash','Cellular','Apique salary','Hardware','Luda's income','Other income','Legalisation','Pet Food')
-Categories: id, name, type (income/expense), color, icon, parent_category_id, created_at
+Categories: id, name, type (income/expense), color, icon, parent_category_id, order_index, created_at
 ```
 
 **MVP Decisions:**
@@ -119,6 +119,13 @@ Categories: id, name, type (income/expense), color, icon, parent_category_id, cr
 - Single currency: AED
 - User-specific data isolation
 - Date-based filtering and analytics
+
+**Enhanced Features:**
+- Categories ordered by order_index field and grouped by parent_category_id
+- Tag autocomplete with existing tag suggestions from database
+- Search functionality in category selectors for improved UX
+- Quick category/tag selection directly from transaction list view
+- Date range filtering for analytics components
 
 **Predefined Categories:**
 [Space reserved for category definitions]
@@ -153,19 +160,20 @@ Categories: id, name, type (income/expense), color, icon, parent_category_id, cr
 
 **Primary User Journey:**
 1. **SMS Processing**: User forwards bank SMS to Telegram bot → Transaction automatically saved
-2. **View Transactions**: User opens Telegram Web App → sees transaction list with advanced filters
+2. **Open App**: User opens Telegram Web App → lands directly on transactions list with advanced filters
 3. **Search Transactions**: User can search transactions by typing text to match amount, note, tags, or category name
 4. **Manage Transactions**: User can edit/delete transactions, change categories/tags
 5. **Set transaction category and tags manually quickly**: User on the view transactions screen quickly can select category and/or tags for transaction without opening its details view
-6. **Analytics**: User views spending trends, category breakdown, tags breakdown
-7. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
+6. **Enhanced Category Selection**: User searches for categories in dropdown for quick selection
+7. **Smart Tag Management**: User gets tag suggestions based on existing tags when adding new ones
+8. **View Analytics**: User navigates to analytics tab to view spending trends, category breakdown, tags breakdown with custom date ranges
+9. **AI Chat**: User asks "How much did I spend on food this month?" → Gets AI response
 
 **MVP Screens:**
-- **Dashboard**: Recent transactions + basic stats
-- **Transactions**: Full list with filters (date, amount <,>,=, tag, category) + text search
-- **Analytics**: Spending trends, category breakdown, tags breakdown
+- **Transactions** (Default/Home): Full list with filters (date, amount <,>,=, tag, category) + text search + quick category/tag selection
+- **Analytics**: Spending trends, category breakdown, tags breakdown + date range filtering
 - **AI Chat**: "Talk to your money" interface
-- **Transaction Detail/Edit**: Edit/delete operations only
+- **Transaction Detail/Edit**: Edit/delete operations with enhanced category search and tag autocomplete
 
 **MVP Decisions:**
 - Transaction creation: Only via SMS forwarding (no manual entry)

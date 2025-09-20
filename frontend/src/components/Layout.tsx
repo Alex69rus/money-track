@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
-import { Home, Receipt, Analytics, Chat } from '@mui/icons-material';
+import { Receipt, Analytics, Chat } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
@@ -14,19 +14,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const getNavigationValue = () => {
     switch (location.pathname) {
       case '/': return 0;
-      case '/transactions': return 1;
-      case '/analytics': return 2;
-      case '/chat': return 3;
+      case '/transactions': return 0;
+      case '/analytics': return 1;
+      case '/chat': return 2;
       default: return 0;
     }
   };
 
   const handleNavigationChange = (_event: React.SyntheticEvent, newValue: number) => {
     switch (newValue) {
-      case 0: navigate('/'); break;
-      case 1: navigate('/transactions'); break;
-      case 2: navigate('/analytics'); break;
-      case 3: navigate('/chat'); break;
+      case 0: navigate('/transactions'); break;
+      case 1: navigate('/analytics'); break;
+      case 2: navigate('/chat'); break;
     }
   };
 
@@ -56,7 +55,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           onChange={handleNavigationChange}
           showLabels
         >
-          <BottomNavigationAction label="Dashboard" icon={<Home />} />
           <BottomNavigationAction label="Transactions" icon={<Receipt />} />
           <BottomNavigationAction label="Analytics" icon={<Analytics />} />
           <BottomNavigationAction label="AI Chat" icon={<Chat />} />

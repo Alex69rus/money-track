@@ -8,13 +8,19 @@
 | 2 | Database & Models | ✅ Complete | 2024-08-31 | 2024-08-31 | Core data layer |
 | 3 | Basic API | ✅ Complete | 2024-08-31 | 2024-08-31 | Transaction CRUD endpoints |
 | 4 | React Setup | ✅ Complete | 2024-09-13 | 2024-09-13 | Frontend foundation |
-| 5 | Transaction List | ✅ Complete | 2024-09-13 | 2024-09-13 | Display transactions |
+| 5 | Transaction List | ✅ Complete | 2024-09-13 | 2024-09-13 | Primary screen - no dashboard |
 | 6 | Filters & Search | ✅ Complete | 2024-09-13 | 2024-09-13 | Transaction filtering |
 | 7 | Transaction Edit | ✅ Complete | 2024-09-13 | 2024-09-13 | Edit/delete functionality |
 | 8 | Basic Analytics | ✅ Complete | 2024-09-13 | 2024-09-14 | Charts and summaries |
 | 9 | AI Chat Integration | ✅ Complete | 2024-09-14 | 2024-09-14 | Connect to n8n workflow |
 | 10 | Deployment | ✅ Complete | 2024-09-14 | 2024-09-14 | Docker & AWS setup |
 | 11 | Transaction Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Text-based search |
+| 12 | Remove Dashboard | ✅ Complete | 2025-09-20 | 2025-09-20 | Start from transactions tab |
+| 13 | Analytics Date Filter | ⏳ Pending | - | - | Date range filtering for analytics |
+| 14 | Category Search | ⏳ Pending | - | - | Search in category selectors |
+| 15 | Category Organization | ⏳ Pending | - | - | Ordering and grouping |
+| 16 | Tag Autocomplete | ⏳ Pending | - | - | Smart tag suggestions |
+| 17 | Quick Tag Selection | ⏳ Pending | - | - | Rapid tag editing |
 
 **Legend:** ⏳ Pending | 🔄 In Progress | ✅ Complete | ❌ Blocked
 
@@ -81,7 +87,7 @@
 - [x] Set up TypeScript types for entities
 
 **Test:** ✅ COMPLETED - App loads in browser, navigation works, API connection established
-- ✅ React Router configured with 4 main pages (Dashboard, Transactions, Analytics, AI Chat)
+- ✅ React Router configured with 3 main pages (Transactions as default, Analytics, AI Chat)
 - ✅ MUI layout with AppBar and bottom navigation for mobile-first design
 - ✅ Telegram Web App SDK integrated with authentication service
 - ✅ Complete API service layer with error handling and auth headers
@@ -91,9 +97,9 @@
 ---
 
 ### Iteration 5: Transaction List
-**Goal:** Display transactions with basic functionality
+**Goal:** Primary screen - display transactions with basic functionality
 
-- [x] Create TransactionList component
+- [x] Create TransactionList component as default home screen
 - [x] Implement transaction fetching from API
 - [x] Display transactions in MUI Table/List
 - [x] Add loading states and error handling
@@ -248,3 +254,93 @@
 - ✅ Frontend sends search filters to backend via query parameters
 - ✅ Debounced search input (500ms) for optimal performance
 - ✅ Mobile-responsive design with appropriate input width
+
+---
+
+### Iteration 12: Remove Dashboard
+**Goal:** Remove Dashboard tab and start user journey from Transactions tab
+
+- [ ] Remove Dashboard page component from React app
+- [ ] Update React Router to default to Transactions page
+- [ ] Remove Dashboard navigation item from bottom navigation
+- [ ] Update page routing logic to redirect to Transactions
+- [ ] Ensure Transactions page is the landing screen when app opens
+- [ ] Update any references to Dashboard in the codebase
+
+**Test:** App opens directly to Transactions tab, no Dashboard option in navigation
+
+---
+
+### Iteration 13: Analytics Date Filter
+**Goal:** Add date range filtering to analytics page components
+
+- [ ] Add date range picker component to Analytics page header
+- [ ] Implement date filter state management in Analytics page
+- [ ] Update BasicStatistics component to accept date filter parameters
+- [ ] Update SpendingByCategory component to filter by date range
+- [ ] Update SpendingTrends component to filter by date range
+- [ ] Update SpendingByTags component to filter by date range
+- [ ] Add API endpoint parameter for date filtering in analytics data
+- [ ] Integrate date filter with all analytics API calls
+
+**Test:** All analytics components respect date filter, data updates correctly when date range changes
+
+---
+
+### Iteration 13: Category Search
+**Goal:** Add search functionality to category selectors
+
+- [ ] Create SearchableSelect component for category selection
+- [ ] Implement category search on FE side with debounced input
+- [ ] Update TransactionEdit dialog to use SearchableSelect for categories
+- [ ] Update quick category selection on transaction list to use search
+- [ ] Add case-insensitive category name matching on FE side
+- [ ] Ensure search works with both category name and parent category, filtering catefories on FE side
+
+**Test:** Category search works smoothly in both edit dialog and quick selection, performance is responsive
+
+---
+
+### Iteration 14: Category Organization
+**Goal:** Implement category ordering and hierarchical grouping
+
+- [ ] Add order_index field to Category entity in backend
+- [ ] Update Category entity configuration for new field
+- [ ] Create database migration for order_index field
+- [ ] Seed existing categories with appropriate order values
+- [ ] Update category API endpoints to sort by order_index
+- [ ] Implement category grouping by parent_category_id in API responses
+- [ ] Update frontend category displays to show hierarchical structure
+- [ ] Add visual indentation or grouping in category selectors
+
+**Test:** Categories display in correct order, grouped by parent categories, hierarchy is clear in UI
+
+---
+
+### Iteration 15: Tag Autocomplete
+**Goal:** Smart tag suggestions based on existing tags
+
+- [ ] Create API endpoint to fetch existing tags for current user
+- [ ] Implement TagAutocomplete component with suggestion dropdown
+- [ ] Add debounced tag search functionality on FE side
+- [ ] Update TransactionEdit dialog to use TagAutocomplete
+- [ ] Implement "create new tag" vs "select existing tag" logic
+- [ ] Add proper keyboard navigation in tag suggestions
+
+**Test:** Tag autocomplete suggests relevant existing tags, allows creation of new tags, smooth UX
+
+---
+
+### Iteration 17: Quick Tag Selection
+**Goal:** Rapid tag editing directly from transaction list
+
+- [ ] Design quick tag selector UI component for transaction rows
+- [ ] Implement tag addition without opening edit dialog
+- [ ] Add tag removal functionality from transaction list
+- [ ] Integrate TagAutocomplete into quick tag selector
+- [ ] Update transaction list layout to accommodate tag selector
+- [ ] Ensure mobile responsiveness for quick tag selection
+- [ ] Add visual feedback for tag changes (success/error states)
+- [ ] Implement optimistic updates for better UX
+
+**Test:** Users can quickly add/remove tags from transaction list, changes persist correctly, mobile UX is smooth

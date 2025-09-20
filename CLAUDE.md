@@ -100,6 +100,7 @@ Note: No separate Users table - UserId field stores Telegram user ID directly
 
 ## Always Do
 - Reference `vision.md` for feature scope
+- Follow workflow described in [docs/workflow.md](docs/workflow.md) file
 - Update `docs/tasklist.md` progress table
 - Use async/await for API operations
 - Implement basic error handling and logging
