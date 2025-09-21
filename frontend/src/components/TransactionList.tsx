@@ -20,15 +20,12 @@ import {
   Stack,
   IconButton,
   Snackbar,
-  Menu,
-  MenuItem,
   CircularProgress,
 } from '@mui/material';
-import { 
-  Refresh as RefreshIcon, 
-  Edit as EditIcon, 
-  Delete as DeleteIcon,
-  Category as CategoryIcon
+import {
+  Refresh as RefreshIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { Transaction, ApiError, TransactionFilters, Category, UpdateTransactionRequest } from '../types';
 import ApiService from '../services/api';
@@ -37,6 +34,7 @@ import { formatDateTime, formatCurrency, getCurrencyColor } from '../utils/forma
 import EmptyState from './EmptyState';
 import TransactionEdit from './TransactionEdit';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
+import SearchableSelect from './SearchableSelect';
 
 interface TransactionListProps {
   refreshTrigger?: number;
@@ -52,7 +50,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryMenuAnchor, setCategoryMenuAnchor] = useState<HTMLElement | null>(null);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState(false);
   const theme = useTheme();
@@ -131,47 +128,42 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
     fetchCategories();
   }, []);
 
-  const handleQuickCategoryClick = (event: React.MouseEvent<HTMLElement>, transactionId: number) => {
-    setCategoryMenuAnchor(event.currentTarget);
-    setSelectedTransactionId(transactionId);
-  };
 
-  const handleCategoryMenuClose = () => {
-    setCategoryMenuAnchor(null);
-    setSelectedTransactionId(null);
-  };
+  const handleCategorySelect = async (categoryId: string | number | number[], transactionId: number) => {
+    if (Array.isArray(categoryId)) return;
 
-  const handleCategorySelect = async (categoryId: number) => {
-    if (!selectedTransactionId) return;
+    const finalCategoryId = typeof categoryId === 'string' ? parseInt(categoryId) : categoryId;
+    if (isNaN(finalCategoryId)) return;
 
     // Find the current transaction to get all its fields
-    const currentTransaction = transactions.find(t => t.id === selectedTransactionId);
+    const currentTransaction = transactions.find(t => t.id === transactionId);
     if (!currentTransaction) return;
 
     try {
       setUpdatingCategory(true);
+      setSelectedTransactionId(transactionId);
       const apiService = ApiService.getInstance();
-      
+
       // Create the update request object with ALL required fields - backend doesn't support partial updates
       const updateRequest: UpdateTransactionRequest = {
         transactionDate: currentTransaction.transactionDate,
         amount: currentTransaction.amount,
         note: currentTransaction.note,
-        categoryId: categoryId,
+        categoryId: finalCategoryId,
         tags: currentTransaction.tags,
         currency: currentTransaction.currency
       };
-      
+
       // Update the transaction with the selected category
-      const updatedTransaction = await apiService.updateTransaction(selectedTransactionId, updateRequest);
-      
+      const updatedTransaction = await apiService.updateTransaction(transactionId, updateRequest);
+
       // Update the local state with the full updated transaction
-      setTransactions(prev => 
-        prev.map(t => 
-          t.id === selectedTransactionId ? updatedTransaction : t
+      setTransactions(prev =>
+        prev.map(t =>
+          t.id === transactionId ? updatedTransaction : t
         )
       );
-      
+
       setSnackbarMessage('Category updated successfully');
       setSnackbarOpen(true);
     } catch (error) {
@@ -180,7 +172,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
       setSnackbarOpen(true);
     } finally {
       setUpdatingCategory(false);
-      handleCategoryMenuClose();
+      setSelectedTransactionId(null);
     }
   };
 
@@ -309,37 +301,28 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
           </Box>
         </Box>
         
-        {transaction.category ? (
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            <strong>Category:</strong> {transaction.category.name}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ minWidth: 'fit-content' }}>
+            <strong>Category:</strong>
           </Typography>
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Category:</strong>
+          {transaction.category ? (
+            <Typography variant="body2">
+              {transaction.category.name}
             </Typography>
-            <IconButton
-              size="small"
-              onClick={(e) => handleQuickCategoryClick(e, transaction.id)}
-              sx={{ 
-                bgcolor: 'primary.main',
-                color: 'white',
-                width: 24,
-                height: 24,
-                '&:hover': {
-                  bgcolor: 'primary.dark'
-                }
-              }}
-              disabled={updatingCategory && selectedTransactionId === transaction.id}
-            >
-              {updatingCategory && selectedTransactionId === transaction.id ? (
-                <CircularProgress size={12} sx={{ color: 'white' }} />
-              ) : (
-                <CategoryIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Box>
-        )}
+          ) : (
+            <Box sx={{ flex: 1, maxWidth: 200 }}>
+              <SearchableSelect
+                categories={categories}
+                value=""
+                onChange={(value) => handleCategorySelect(value, transaction.id)}
+                placeholder="Select..."
+                label=""
+                size="small"
+                loading={updatingCategory && selectedTransactionId === transaction.id}
+              />
+            </Box>
+          )}
+        </Box>
         
         {transaction.note && (
           <Typography variant="body2" sx={{ mb: 1 }}>
@@ -399,26 +382,17 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                     {transaction.category.name}
                   </Typography>
                 ) : (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleQuickCategoryClick(e, transaction.id)}
-                    sx={{ 
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                      width: 24,
-                      height: 24,
-                      '&:hover': {
-                        bgcolor: 'primary.dark'
-                      }
-                    }}
-                    disabled={updatingCategory && selectedTransactionId === transaction.id}
-                  >
-                    {updatingCategory && selectedTransactionId === transaction.id ? (
-                      <CircularProgress size={12} sx={{ color: 'white' }} />
-                    ) : (
-                      <CategoryIcon fontSize="small" />
-                    )}
-                  </IconButton>
+                  <Box sx={{ minWidth: 140, maxWidth: 160 }}>
+                    <SearchableSelect
+                      categories={categories}
+                      value=""
+                      onChange={(value) => handleCategorySelect(value, transaction.id)}
+                      placeholder="Select..."
+                      label=""
+                      size="small"
+                      loading={updatingCategory && selectedTransactionId === transaction.id}
+                    />
+                  </Box>
                 )}
               </TableCell>
               <TableCell>
@@ -504,30 +478,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
         onError={handleError}
       />
       
-      {/* Category Selection Menu */}
-      <Menu
-        anchorEl={categoryMenuAnchor}
-        open={Boolean(categoryMenuAnchor)}
-        onClose={handleCategoryMenuClose}
-        PaperProps={{
-          style: {
-            maxHeight: 300,
-            width: '20ch',
-          },
-        }}
-      >
-        {categories.map((category) => (
-          <MenuItem
-            key={category.id}
-            onClick={() => handleCategorySelect(category.id)}
-            disabled={updatingCategory}
-          >
-            <Typography variant="body2">
-              {category.name}
-            </Typography>
-          </MenuItem>
-        ))}
-      </Menu>
       
       {/* Success/Error Snackbar */}
       <Snackbar

@@ -6,10 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   Typography,
   Autocomplete,
@@ -19,6 +15,7 @@ import {
 import { Transaction, Category, UpdateTransactionRequest, ApiError } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
+import SearchableSelect from './SearchableSelect';
 
 interface TransactionEditProps {
   open: boolean;
@@ -182,23 +179,15 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
             />
 
             {/* Category */}
-            <FormControl size="small" fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={formData.categoryId}
-                label="Category"
-                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-              >
-                <MenuItem value="">
-                  <em>Uncategorized</em>
-                </MenuItem>
-                {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SearchableSelect
+              categories={[{ id: 0, name: 'Uncategorized', type: 'expense', createdAt: '' }, ...categories]}
+              value={formData.categoryId}
+              onChange={(value) => setFormData(prev => ({ ...prev, categoryId: value as string }))}
+              placeholder="Search categories..."
+              label="Category"
+              size="small"
+              loading={loading}
+            />
 
             {/* Tags */}
             <Autocomplete

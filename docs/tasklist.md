@@ -17,7 +17,7 @@
 | 11 | Transaction Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Text-based search |
 | 12 | Remove Dashboard | ✅ Complete | 2025-09-20 | 2025-09-20 | Start from transactions tab |
 | 13 | Analytics Date Filter | ✅ Complete | 2025-09-20 | 2025-09-20 | Date range filtering for analytics |
-| 14 | Category Search | ⏳ Pending | - | - | Search in category selectors |
+| 14 | Category Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Search in category selectors |
 | 15 | Category Organization | ⏳ Pending | - | - | Ordering and grouping |
 | 16 | Tag Autocomplete | ⏳ Pending | - | - | Smart tag suggestions |
 | 17 | Quick Tag Selection | ⏳ Pending | - | - | Rapid tag editing |
@@ -287,21 +287,31 @@
 
 ---
 
-### Iteration 13: Category Search
+### Iteration 14: Category Search
 **Goal:** Add search functionality to category selectors
 
-- [ ] Create SearchableSelect component for category selection
-- [ ] Implement category search on FE side with debounced input
-- [ ] Update TransactionEdit dialog to use SearchableSelect for categories
-- [ ] Update quick category selection on transaction list to use search
-- [ ] Add case-insensitive category name matching on FE side
-- [ ] Ensure search works with both category name and parent category, filtering catefories on FE side
+- [x] Create SearchableSelect component for category selection
+- [x] Implement category search on FE side with debounced input
+- [x] Update TransactionEdit dialog to use SearchableSelect for categories
+- [x] Update CategoryFilter component to use SearchableSelect
+- [x] Add case-insensitive category name matching on FE side
+- [x] Ensure search works with both category name and parent category, filtering categories on FE side
 
-**Test:** Category search works smoothly in both edit dialog and quick selection, performance is responsive
+**Test:** ✅ COMPLETED - Category search works smoothly across all components, performance is responsive
+- ✅ SearchableSelect component created with Material-UI Autocomplete
+- ✅ Frontend-only search with debounced input and case-insensitive matching
+- ✅ TransactionEdit dialog updated to use SearchableSelect for category selection
+- ✅ CategoryFilter component updated to use SearchableSelect for multi-select
+- ✅ Quick category selector (inline) updated to use SearchableSelect for uncategorized transactions
+- ✅ Both desktop table and mobile card layouts support SearchableSelect
+- ✅ Custom popper with "no results" message for better UX
+- ✅ Search term clears automatically when selection is made
+- ✅ Compilation errors resolved by clearing build cache and restarting dev server
+- ✅ Click outside handling implemented for inline category selection
 
 ---
 
-### Iteration 14: Category Organization
+### Iteration 15: Category Organization
 **Goal:** Implement category ordering and hierarchical grouping
 
 - [ ] Add order_index field to Category entity in backend
@@ -317,7 +327,7 @@
 
 ---
 
-### Iteration 15: Tag Autocomplete
+### Iteration 16: Tag Autocomplete
 **Goal:** Smart tag suggestions based on existing tags
 
 - [ ] Create API endpoint to fetch existing tags for current user
