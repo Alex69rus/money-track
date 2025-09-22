@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Autocomplete,
   TextField,
@@ -21,6 +21,7 @@ interface SearchableSelectProps {
   size?: 'small' | 'medium';
   error?: boolean;
   helperText?: string;
+  transactionAmount?: number; // For filtering categories by transaction type
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -33,20 +34,48 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   label = "Category",
   size = "small",
   error = false,
-  helperText
+  helperText,
+  transactionAmount
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const autocompleteRef = useRef<any>(null);
 
-  // Filter categories based on search term
+  // Filter categories based on search term and transaction amount
   const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return categories;
+    let filtered = categories;
+
+    // Filter by transaction amount if provided
+    if (transactionAmount !== undefined) {
+      const targetType = transactionAmount < 0 ? 'Expense' : 'Income';
+      filtered = filtered.filter(category => category.type === targetType);
     }
 
-    return categories.filter(category =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // Filter by search term
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(category =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort by OrderIndex to maintain proper order
+    filtered = filtered.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+    // Remove parent categories that have children in the filtered set
+    // This prevents duplicates since parent categories will appear as group headers
+    const parentCategoriesWithChildren = new Set(
+      filtered.filter(cat => cat.parentCategoryId).map(cat => cat.parentCategoryId)
     );
-  }, [categories, searchTerm]);
+
+    const finalFiltered = filtered.filter(category => {
+      // Keep all child categories (they have parentCategoryId)
+      if (category.parentCategoryId) return true;
+
+      // Keep parent categories that DON'T have children in our filtered set
+      return !parentCategoriesWithChildren.has(category.id);
+    });
+
+    return finalFiltered;
+  }, [categories, searchTerm, transactionAmount]);
 
   // Convert value to appropriate format for Autocomplete
   const autocompleteValue = useMemo(() => {
@@ -90,6 +119,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   return (
     <Autocomplete
+      ref={autocompleteRef}
       multiple={multiple}
       options={filteredCategories}
       value={autocompleteValue}
@@ -100,6 +130,61 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       loadingText="Loading categories..."
       noOptionsText="No categories found"
       PopperComponent={CustomPopper}
+      groupBy={(option) => {
+        // If this category has a parent, group it under the parent's name
+        if (option.parentCategoryId) {
+          const parentCategory = categories.find(cat => cat.id === option.parentCategoryId);
+          return parentCategory ? parentCategory.name : 'Other';
+        }
+        // Parent categories go to empty group (no header)
+        return '';
+      }}
+      renderGroup={(params) => (
+        <li key={params.key}>
+          {params.group && (
+            <Box
+              component="div"
+              sx={{
+                p: 1,
+                fontWeight: 'bold',
+                color: 'primary.main',
+                borderBottom: '1px solid #e0e0e0',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5'
+                }
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Find the parent category by name and select it
+                const parentCategory = categories.find(cat => cat.name === params.group);
+                if (parentCategory) {
+                  handleChange(e, parentCategory);
+                  // Close the dropdown by blurring the input
+                  setTimeout(() => {
+                    if (autocompleteRef.current) {
+                      const input = autocompleteRef.current.querySelector('input');
+                      if (input) {
+                        input.blur();
+                      }
+                    }
+                  }, 0);
+                }
+              }}
+            >
+              {params.group}
+            </Box>
+          )}
+          <ul style={{
+            listStyle: 'none',
+            padding: params.group ? '0 0 0 8px' : 0,
+            margin: 0
+          }}>
+            {params.children}
+          </ul>
+        </li>
+      )}
       renderInput={(params) => (
         <TextField
           {...params}
@@ -134,7 +219,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       }
       renderOption={(props, option) => (
         <Box component="li" {...props} key={option.id}>
-          <Typography variant="body2">
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 'normal',
+              color: 'text.primary'
+            }}
+          >
             {option.name}
           </Typography>
         </Box>

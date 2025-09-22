@@ -18,7 +18,10 @@ public static class CategoryEndpoints
 
     private static async Task<IResult> GetCategories(MoneyTrackContext context)
     {
-        var categories = await context.Categories.OrderBy(c => c.Name).ToListAsync();
+        var categories = await context.Categories
+            .OrderBy(c => c.OrderIndex ?? int.MaxValue)
+            .ThenBy(c => c.Name)
+            .ToListAsync();
         return Results.Ok(categories);
     }
 }

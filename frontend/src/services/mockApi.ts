@@ -1,10 +1,10 @@
 import { Transaction, Category, TransactionFilters } from '../types';
 
 const mockCategories: Category[] = [
-  { id: 1, name: 'Groceries', type: 'expense', createdAt: '2024-09-13T10:00:00Z' },
-  { id: 2, name: 'Salary', type: 'income', createdAt: '2024-09-13T10:00:00Z' },
-  { id: 3, name: 'Entertainment', type: 'expense', createdAt: '2024-09-13T10:00:00Z' },
-  { id: 4, name: 'Transportation', type: 'expense', createdAt: '2024-09-13T10:00:00Z' },
+  { id: 1, name: 'Groceries', type: 'Expense', createdAt: '2024-09-13T10:00:00Z' },
+  { id: 2, name: 'Salary', type: 'Income', createdAt: '2024-09-13T10:00:00Z' },
+  { id: 3, name: 'Entertainment', type: 'Expense', createdAt: '2024-09-13T10:00:00Z' },
+  { id: 4, name: 'Transportation', type: 'Expense', createdAt: '2024-09-13T10:00:00Z' },
 ];
 
 const mockTransactions: Transaction[] = [

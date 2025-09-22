@@ -113,12 +113,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
       console.error('Backend not available, using mock categories:', error);
       // Use mock categories for testing
       const mockCategories: Category[] = [
-        { id: 1, name: 'Groceries', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 2, name: 'Salary', type: 'income' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 3, name: 'Entertainment', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 4, name: 'Transportation', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 5, name: 'Utilities', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 6, name: 'Healthcare', type: 'expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 1, name: 'Groceries', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 2, name: 'Salary', type: 'Income' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 3, name: 'Entertainment', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 4, name: 'Transportation', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 5, name: 'Utilities', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
+        { id: 6, name: 'Healthcare', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
       ];
       setCategories(mockCategories);
     }
@@ -319,6 +319,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                 label=""
                 size="small"
                 loading={updatingCategory && selectedTransactionId === transaction.id}
+                transactionAmount={transaction.amount}
               />
             </Box>
           )}
@@ -391,6 +392,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                       label=""
                       size="small"
                       loading={updatingCategory && selectedTransactionId === transaction.id}
+                      transactionAmount={transaction.amount}
                     />
                   </Box>
                 )}

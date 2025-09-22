@@ -2,6 +2,6 @@ namespace MoneyTrack.Api.Models;
 
 public enum CategoryType
 {
-    Income,
-    Expense
+    Income = 1,
+    Expense = 2
 }

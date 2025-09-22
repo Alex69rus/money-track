@@ -8,10 +8,11 @@ export interface User {
 export interface Category {
   id: number;
   name: string;
-  type: 'income' | 'expense';
+  type: 'Income' | 'Expense';
   color?: string;
   icon?: string;
   parentCategoryId?: number;
+  orderIndex?: number;
   createdAt: string;
 }
 

@@ -16,14 +16,16 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.Property(c => c.Type)
             .IsRequired()
-            .HasConversion<string>()
-            .HasDefaultValue(CategoryType.Expense);
+            .HasConversion<string>();
 
         builder.Property(c => c.Color)
             .HasMaxLength(7);
 
         builder.Property(c => c.Icon)
             .HasMaxLength(50);
+
+        builder.Property(c => c.OrderIndex)
+            .IsRequired(false);
 
         builder.Property(c => c.CreatedAt)
             .IsRequired();
@@ -36,8 +38,6 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired(false);
 
         // Indexes
-        builder.HasIndex(c => c.Name)
-            .IsUnique();
-        builder.HasIndex(c => c.ParentCategoryId);
+        builder.HasIndex(c => c.Name).IsUnique();
     }
 }

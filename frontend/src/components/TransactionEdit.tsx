@@ -180,13 +180,14 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
 
             {/* Category */}
             <SearchableSelect
-              categories={[{ id: 0, name: 'Uncategorized', type: 'expense', createdAt: '' }, ...categories]}
+              categories={[{ id: 0, name: 'Uncategorized', type: 'Expense', createdAt: '' }, ...categories]}
               value={formData.categoryId}
               onChange={(value) => setFormData(prev => ({ ...prev, categoryId: value as string }))}
               placeholder="Search categories..."
               label="Category"
               size="small"
               loading={loading}
+              transactionAmount={transaction.amount}
             />
 
             {/* Tags */}

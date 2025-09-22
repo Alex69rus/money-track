@@ -17,8 +17,8 @@
 | 11 | Transaction Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Text-based search |
 | 12 | Remove Dashboard | ✅ Complete | 2025-09-20 | 2025-09-20 | Start from transactions tab |
 | 13 | Analytics Date Filter | ✅ Complete | 2025-09-20 | 2025-09-20 | Date range filtering for analytics |
-| 14 | Category Search | ✅ Complete | 2025-09-20 | 2025-09-20 | Search in category selectors |
-| 15 | Category Organization | ⏳ Pending | - | - | Ordering and grouping |
+| 14 | Category Search | ✅ Complete | 2025-09-20 | 2025-09-21 | Search in category selectors |
+| 15 | Category Organization | ✅ Complete | 2025-09-21 | 2025-09-21 | Ordering and grouping |
 | 16 | Tag Autocomplete | ⏳ Pending | - | - | Smart tag suggestions |
 | 17 | Quick Tag Selection | ⏳ Pending | - | - | Rapid tag editing |
 
@@ -306,8 +306,9 @@
 - ✅ Both desktop table and mobile card layouts support SearchableSelect
 - ✅ Custom popper with "no results" message for better UX
 - ✅ Search term clears automatically when selection is made
-- ✅ Compilation errors resolved by clearing build cache and restarting dev server
-- ✅ Click outside handling implemented for inline category selection
+- ✅ UX issues resolved: removed toggle behavior, always-visible compact selectors
+- ✅ Mobile card layout optimized: category selector on same line as label for consistent height
+- ✅ Desktop table: compact width (140-160px), mobile cards: max 200px width
 
 ---
 
@@ -322,8 +323,23 @@
 - [ ] Implement category grouping by parent_category_id in API responses
 - [ ] Update frontend category displays to show hierarchical structure
 - [ ] Add visual indentation or grouping in category selectors
+- [ ] Add possibility to select parent or child catefory
+- [ ] Avoid duplicates in category selector
 
-**Test:** Categories display in correct order, grouped by parent categories, hierarchy is clear in UI
+**Test:** ✅ COMPLETED - Categories display in correct order, hierarchical grouping works
+- ✅ OrderIndex field added to Category entity (nullable for backwards compatibility)
+- ✅ CategoryConfiguration updated without OrderIndex index (following YAGNI principle)
+- ✅ Migration created that removes all existing categories and adds OrderIndex column
+- ✅ CategorySeeder updated with logical OrderIndex values (expenses 1-40, income 41-47)
+- ✅ CategoryEndpoints updated to sort by OrderIndex, then by Name
+- ✅ Frontend Category interface updated to include OrderIndex field
+- ✅ SearchableSelect component updated with hierarchical grouping by category type
+- ✅ Categories now display grouped as "Expenses" and "Income" sections
+- ✅ Search functionality preserves hierarchical structure when not searching
+- ✅ Categories appear in logical order based on OrderIndex from backend
+- ✅ Categories are gruopped by parent category
+- ✅ User can select parent or child category
+- ✅ List of categories doesn't contain duplicates
 
 ---
 
