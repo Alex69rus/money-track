@@ -15,6 +15,7 @@ interface TagAutocompleteProps {
   disabled?: boolean;
   size?: 'small' | 'medium';
   label?: string;
+  autoFocus?: boolean;
 }
 
 const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
@@ -23,7 +24,8 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
   placeholder = "Add tags...",
   disabled = false,
   size = 'small',
-  label = 'Tags'
+  label = 'Tags',
+  autoFocus = false
 }) => {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [filteredTags, setFilteredTags] = useState<string[]>([]);
@@ -83,11 +85,8 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
 
   // Handle value change
   const handleChange = (event: React.SyntheticEvent, newValue: string[]) => {
+    console.log('TagAutocomplete handleChange:', { newValue, event });
     onChange(newValue);
-    // Update filtered tags to exclude newly selected tags
-    if (inputValue.trim() === '') {
-      setFilteredTags(allTags.filter(tag => !newValue.includes(tag)));
-    }
   };
 
   // Handle opening the dropdown
@@ -100,21 +99,16 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
   return (
     <Autocomplete
       multiple
-      freeSolo
       size={size}
       disabled={disabled}
       options={filteredTags}
       value={value}
-      inputValue={inputValue}
       onChange={handleChange}
-      onInputChange={handleInputChange}
-      onOpen={handleOpen}
       loading={loading}
-      noOptionsText={
-        inputValue.trim() === ''
-          ? 'No existing tags'
-          : `No tags match "${inputValue}". Press Enter to create new tag.`
-      }
+      freeSolo
+      openOnFocus
+      onOpen={handleOpen}
+      noOptionsText="No existing tags"
       renderTags={(tagValue, getTagProps) =>
         tagValue.map((option, index) => (
           <Chip
@@ -131,7 +125,7 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
           {...params}
           label={label}
           placeholder={placeholder}
-          helperText="Type to search existing tags or press Enter to create new"
+          autoFocus={autoFocus}
           InputProps={{
             ...params.InputProps,
             endAdornment: (

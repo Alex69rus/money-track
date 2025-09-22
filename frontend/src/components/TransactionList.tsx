@@ -7,7 +7,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Chip,
   Typography,
   Box,
   Skeleton,
@@ -20,7 +19,6 @@ import {
   Stack,
   IconButton,
   Snackbar,
-  CircularProgress,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -35,6 +33,7 @@ import EmptyState from './EmptyState';
 import TransactionEdit from './TransactionEdit';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 import SearchableSelect from './SearchableSelect';
+import QuickTagSelector from './QuickTagSelector';
 
 interface TransactionListProps {
   refreshTrigger?: number;
@@ -48,12 +47,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
   const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [updatingTags, setUpdatingTags] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Force rebuild
 
 
   const fetchTransactions = async () => {
@@ -195,6 +196,46 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
     setSnackbarOpen(true);
   };
 
+  const handleQuickTagUpdate = async (transactionId: number, newTags: string[]) => {
+    setUpdatingTags(true);
+    setSelectedTransactionId(transactionId);
+
+    try {
+      const apiService = ApiService.getInstance();
+      const currentTransaction = transactions.find(t => t.id === transactionId);
+
+      if (!currentTransaction) {
+        throw new Error('Transaction not found');
+      }
+
+      const updateRequest: UpdateTransactionRequest = {
+        transactionDate: currentTransaction.transactionDate,
+        amount: currentTransaction.amount,
+        note: currentTransaction.note,
+        categoryId: currentTransaction.categoryId,
+        tags: newTags,
+        currency: currentTransaction.currency
+      };
+
+      const updatedTransaction = await apiService.updateTransaction(transactionId, updateRequest);
+
+      setTransactions(prev =>
+        prev.map(t => t.id === transactionId ? updatedTransaction : t)
+      );
+
+      setSnackbarMessage('Tags updated successfully');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Failed to update tags:', error);
+      setSnackbarMessage('Failed to update tags');
+      setSnackbarOpen(true);
+      throw error; // Re-throw for QuickTagSelector error handling
+    } finally {
+      setUpdatingTags(false);
+      setSelectedTransactionId(null);
+    }
+  };
+
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -331,18 +372,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
           </Typography>
         )}
         
-        {transaction.tags && transaction.tags.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {transaction.tags.map((tag, index) => (
-              <Chip 
-                key={index} 
-                label={tag} 
-                size="small" 
-                variant="outlined"
-              />
-            ))}
-          </Stack>
-        )}
+        <QuickTagSelector
+          transaction={transaction}
+          onTagsUpdate={handleQuickTagUpdate}
+          disabled={updatingTags && selectedTransactionId === transaction.id}
+        />
       </CardContent>
     </Card>
   );
@@ -412,20 +446,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                 </Typography>
               </TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {transaction.tags && transaction.tags.length > 0 ? (
-                    transaction.tags.map((tag, index) => (
-                      <Chip 
-                        key={index} 
-                        label={tag} 
-                        size="small" 
-                        variant="outlined"
-                      />
-                    ))
-                  ) : (
-                    <Typography variant="body2" color="text.disabled">-</Typography>
-                  )}
-                </Stack>
+                <QuickTagSelector
+                  transaction={transaction}
+                  onTagsUpdate={handleQuickTagUpdate}
+                  disabled={updatingTags && selectedTransactionId === transaction.id}
+                />
               </TableCell>
               <TableCell align="center">
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
