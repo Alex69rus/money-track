@@ -123,6 +123,11 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Tags
+  public async getUserTags(): Promise<string[]> {
+    return await this.makeRequest<string[]>('/api/tags');
+  }
 }
 
 export default ApiService;

@@ -19,7 +19,7 @@
 | 13 | Analytics Date Filter | ✅ Complete | 2025-09-20 | 2025-09-20 | Date range filtering for analytics |
 | 14 | Category Search | ✅ Complete | 2025-09-20 | 2025-09-21 | Search in category selectors |
 | 15 | Category Organization | ✅ Complete | 2025-09-21 | 2025-09-21 | Ordering and grouping |
-| 16 | Tag Autocomplete | ⏳ Pending | - | - | Smart tag suggestions |
+| 16 | Tag Autocomplete | ✅ Complete | 2025-09-22 | 2025-09-22 | Smart tag suggestions |
 | 17 | Quick Tag Selection | ⏳ Pending | - | - | Rapid tag editing |
 
 **Legend:** ⏳ Pending | 🔄 In Progress | ✅ Complete | ❌ Blocked
@@ -315,16 +315,16 @@
 ### Iteration 15: Category Organization
 **Goal:** Implement category ordering and hierarchical grouping
 
-- [ ] Add order_index field to Category entity in backend
-- [ ] Update Category entity configuration for new field
-- [ ] Create database migration for order_index field
-- [ ] Seed existing categories with appropriate order values
-- [ ] Update category API endpoints to sort by order_index
-- [ ] Implement category grouping by parent_category_id in API responses
-- [ ] Update frontend category displays to show hierarchical structure
-- [ ] Add visual indentation or grouping in category selectors
-- [ ] Add possibility to select parent or child catefory
-- [ ] Avoid duplicates in category selector
+- [x] Add order_index field to Category entity in backend
+- [x] Update Category entity configuration for new field
+- [x] Create database migration for order_index field
+- [x] Seed existing categories with appropriate order values
+- [x] Update category API endpoints to sort by order_index
+- [x] Implement category grouping by parent_category_id in API responses
+- [x] Update frontend category displays to show hierarchical structure
+- [x] Add visual indentation or grouping in category selectors
+- [x] Add possibility to select parent or child catefory
+- [x] Avoid duplicates in category selector
 
 **Test:** ✅ COMPLETED - Categories display in correct order, hierarchical grouping works
 - ✅ OrderIndex field added to Category entity (nullable for backwards compatibility)
@@ -346,14 +346,20 @@
 ### Iteration 16: Tag Autocomplete
 **Goal:** Smart tag suggestions based on existing tags
 
-- [ ] Create API endpoint to fetch existing tags for current user
-- [ ] Implement TagAutocomplete component with suggestion dropdown
-- [ ] Add debounced tag search functionality on FE side
-- [ ] Update TransactionEdit dialog to use TagAutocomplete
-- [ ] Implement "create new tag" vs "select existing tag" logic
-- [ ] Add proper keyboard navigation in tag suggestions
+- [x] Create API endpoint to fetch existing tags for current user
+- [x] Implement TagAutocomplete component with suggestion dropdown
+- [x] Add debounced tag search functionality on FE side
+- [x] Update TransactionEdit dialog to use TagAutocomplete
+- [x] Implement "create new tag" vs "select existing tag" logic
+- [x] Add proper keyboard navigation in tag suggestions
 
-**Test:** Tag autocomplete suggests relevant existing tags, allows creation of new tags, smooth UX
+**Test:** ✅ COMPLETED - Tag autocomplete suggests relevant existing tags, allows creation of new tags, smooth UX
+- ✅ API endpoint `/api/tags` returns user's existing tags: `["development","expense","food","Qw","test"]`
+- ✅ TagAutocomplete component with debounced search (300ms) and smart filtering
+- ✅ TransactionEdit dialog integrated with new TagAutocomplete component
+- ✅ Users can select existing tags or create new ones seamlessly
+- ✅ Built-in keyboard navigation via Material-UI Autocomplete
+- ✅ Frontend filtering eliminates backend complexity following YAGNI principle
 
 ---
 

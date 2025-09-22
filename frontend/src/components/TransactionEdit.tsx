@@ -8,14 +8,13 @@ import {
   TextField,
   Box,
   Typography,
-  Autocomplete,
-  Chip,
   InputAdornment,
 } from '@mui/material';
 import { Transaction, Category, UpdateTransactionRequest, ApiError } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
 import SearchableSelect from './SearchableSelect';
+import TagAutocomplete from './TagAutocomplete';
 
 interface TransactionEditProps {
   open: boolean;
@@ -191,32 +190,13 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
             />
 
             {/* Tags */}
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]} // Could be populated with existing tags from API
+            <TagAutocomplete
               value={formData.tags}
-              onChange={(_, newValue) => setFormData(prev => ({ ...prev, tags: newValue }))}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={option}
-                    size="small"
-                    {...getTagProps({ index })}
-                    key={index}
-                  />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Tags"
-                  placeholder="Add tags..."
-                  size="small"
-                  helperText="Press Enter to add a tag"
-                />
-              )}
+              onChange={(newTags) => setFormData(prev => ({ ...prev, tags: newTags }))}
+              placeholder="Add tags..."
+              disabled={loading}
+              size="small"
+              label="Tags"
             />
 
             {/* Note */}

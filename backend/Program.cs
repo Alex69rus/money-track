@@ -59,5 +59,6 @@ app.MapGet("/health", () => "OK");
 // Map endpoint groups
 app.MapTransactionEndpoints();
 app.MapCategoryEndpoints();
+app.MapTagEndpoints();
 
 app.Run();
