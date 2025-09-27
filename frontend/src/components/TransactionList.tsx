@@ -403,7 +403,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                     color: getCurrencyColor(transaction.amount)
                   }}
                 >
-                  {transaction.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
+                  {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
                 </Typography>
               </TableCell>
               <TableCell>

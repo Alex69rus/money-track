@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
+import {
+  Box,
   Autocomplete,
   TextField,
   Chip,
   Typography
 } from '@mui/material';
+import ApiService from '../../services/api';
 
 interface TagsFilterProps {
   selectedTags: string[];
@@ -19,14 +20,21 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
 
-  // Mock available tags - in real app, this would come from API
+  // Fetch available tags from API
   useEffect(() => {
-    const mockTags = [
-      'groceries', 'food', 'weekly', 'monthly', 'salary', 'income',
-      'entertainment', 'cinema', 'weekend', 'transport', 'taxi', 'work',
-      'lunch', 'coffee', 'shopping', 'utilities', 'rent', 'bills'
-    ];
-    setAvailableTags(mockTags);
+    const fetchTags = async () => {
+      try {
+        const apiService = ApiService.getInstance();
+        const tagsData = await apiService.getUserTags();
+        setAvailableTags(tagsData);
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+        // Fallback to empty array if API fails
+        setAvailableTags([]);
+      }
+    };
+
+    fetchTags();
   }, []);
 
   const handleTagsChange = (event: any, newTags: string[]) => {
