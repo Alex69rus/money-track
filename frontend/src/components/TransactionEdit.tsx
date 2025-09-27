@@ -9,6 +9,10 @@ import {
   Box,
   Typography,
   InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Transaction, Category, UpdateTransactionRequest, ApiError } from '../types';
@@ -43,6 +47,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
     note: '',
     categoryId: '',
     tags: [] as string[],
+    currency: '',
   });
 
   // Helper function to convert Date to datetime-local format
@@ -81,10 +86,11 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
     if (transaction) {
       setFormData({
         transactionDate: formatDateTimeLocal(transaction.transactionDate),
-        amount: Math.abs(transaction.amount).toString(),
+        amount: transaction.amount.toString(),
         note: transaction.note || '',
         categoryId: transaction.categoryId?.toString() || '',
         tags: transaction.tags || [],
+        currency: transaction.currency || 'AED',
       });
     }
   }, [transaction]);
@@ -97,11 +103,11 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
 
       const updateRequest: UpdateTransactionRequest = {
         transactionDate: formData.transactionDate ? new Date(formData.transactionDate).toISOString() : transaction.transactionDate,
-        amount: parseFloat(formData.amount) * (transaction.amount < 0 ? -1 : 1), // Preserve sign
+        amount: parseFloat(formData.amount),
         note: formData.note || undefined,
         categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
-        currency: transaction.currency, // Required by backend
+        currency: formData.currency, // Use currency from form
       };
 
       const apiService = ApiService.getInstance();
@@ -151,10 +157,10 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
   };
 
   const isFormValid = () => {
-    return formData.transactionDate && 
-           formData.amount && 
+    return formData.transactionDate &&
+           formData.amount &&
            !isNaN(parseFloat(formData.amount)) &&
-           parseFloat(formData.amount) > 0;
+           parseFloat(formData.amount) !== 0;
   };
 
   if (!transaction) return null;
@@ -164,10 +170,6 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           Edit Transaction
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Original: {transaction.amount >= 0 ? '+' : '-'}
-            {Math.abs(transaction.amount).toFixed(2)} {transaction.currency}
-          </Typography>
         </DialogTitle>
 
         <DialogContent>
@@ -187,27 +189,39 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
               }}
             />
 
-            {/* Amount */}
-            <TextField
-              label="Amount"
-              type="number"
-              value={formData.amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-              fullWidth
-              size="small"
-              error={!formData.amount || isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0}
-              helperText={
-                !formData.amount ? 'Amount is required' :
-                isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0 ? 'Amount must be a positive number' : ''
-              }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {transaction.currency}
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {/* Amount and Currency */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel id="currency-label">Currency</InputLabel>
+                <Select
+                  labelId="currency-label"
+                  id="currency-select"
+                  value={formData.currency}
+                  label="Currency"
+                  onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                  disabled={loading}
+                >
+                  <MenuItem value="AED">AED</MenuItem>
+                  <MenuItem value="USD">USD</MenuItem>
+                  <MenuItem value="EUR">EUR</MenuItem>
+                  <MenuItem value="RUB">RUB</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                label="Amount"
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                size="small"
+                error={!formData.amount || isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) === 0}
+                helperText={
+                  !formData.amount ? 'Amount is required' :
+                  isNaN(parseFloat(formData.amount)) ? 'Amount must be a valid number' :
+                  parseFloat(formData.amount) === 0 ? 'Amount cannot be zero' : ''
+                }
+                sx={{ flex: 1 }}
+              />
+            </Box>
 
             {/* Category */}
             <SearchableSelect
@@ -282,7 +296,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {transaction && (
-              `${transaction.amount >= 0 ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)} ${transaction.currency}`
+              `${transaction.amount >= 0 ? '+' : ''}${transaction.amount.toFixed(2)} ${transaction.currency}`
             )}
           </Typography>
           {transaction?.note && (

@@ -304,42 +304,47 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const renderMobileCard = (transaction: Transaction) => (
     <Card key={transaction.id} sx={{ mb: 2, position: 'relative' }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {formatDateTime(transaction.transactionDate)}
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+            {transaction.category ? (
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'primary.main'
+                }}
+              >
+                {transaction.category.name}
+              </Typography>
+            ) : (
+              <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+                <SearchableSelect
+                  categories={categories}
+                  value=""
+                  onChange={(value) => handleCategorySelect(value, transaction.id)}
+                  placeholder="Select category..."
+                  label=""
+                  size="small"
+                  loading={updatingCategory && selectedTransactionId === transaction.id}
+                  transactionAmount={transaction.amount}
+                />
+              </Box>
+            )}
+          </Box>
           <Typography
             variant="h6"
-            color={getCurrencyColor(transaction.amount)}
-            sx={{ fontWeight: 'bold' }}
+            sx={{
+              fontWeight: 'bold',
+              color: getCurrencyColor(transaction.amount)
+            }}
           >
             {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ minWidth: 'fit-content' }}>
-            <strong>Category:</strong>
-          </Typography>
-          {transaction.category ? (
-            <Typography variant="body2">
-              {transaction.category.name}
-            </Typography>
-          ) : (
-            <Box sx={{ flex: 1, maxWidth: 200 }}>
-              <SearchableSelect
-                categories={categories}
-                value=""
-                onChange={(value) => handleCategorySelect(value, transaction.id)}
-                placeholder="Select..."
-                label=""
-                size="small"
-                loading={updatingCategory && selectedTransactionId === transaction.id}
-                transactionAmount={transaction.amount}
-              />
-            </Box>
-          )}
-        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {formatDateTime(transaction.transactionDate)}
+        </Typography>
 
         {transaction.note && (
           <Typography variant="body2" sx={{ mb: 1 }}>
@@ -391,12 +396,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
                 </Typography>
               </TableCell>
               <TableCell align="right">
-                <Typography 
-                  variant="body2" 
-                  color={getCurrencyColor(transaction.amount)}
-                  sx={{ fontWeight: 'bold' }}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: getCurrencyColor(transaction.amount)
+                  }}
                 >
-                  {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
+                  {transaction.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
                 </Typography>
               </TableCell>
               <TableCell>

@@ -60,8 +60,8 @@ export const formatCurrencyWithSign = (amount: number, currency: string = 'AED')
   return `${sign}${formattedAmount}`;
 };
 
-export const getCurrencyColor = (amount: number): 'success' | 'error' | 'primary' => {
-  if (amount > 0) return 'success'; // Income - green
-  if (amount < 0) return 'error';   // Expense - red
+export const getCurrencyColor = (amount: number): string => {
+  if (amount > 0) return '#2e7d32'; // Income - green
+  if (amount < 0) return 'inherit'; // Expense - black (inherit)
   return 'primary';                 // Zero - default
 };
