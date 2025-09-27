@@ -22,8 +22,7 @@ import {
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { Transaction, ApiError, TransactionFilters, Category, UpdateTransactionRequest } from '../types';
 import ApiService from '../services/api';
@@ -31,7 +30,6 @@ import { MockApiService } from '../services/mockApi';
 import { formatDateTime, formatCurrency, getCurrencyColor } from '../utils/formatters';
 import EmptyState from './EmptyState';
 import TransactionEdit from './TransactionEdit';
-import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 import SearchableSelect from './SearchableSelect';
 import QuickTagSelector from './QuickTagSelector';
 
@@ -45,7 +43,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
-  const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const [updatingTags, setUpdatingTags] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
@@ -92,17 +89,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
     setEditTransaction(transaction);
   };
 
-  const handleDeleteClick = (transaction: Transaction) => {
-    setDeleteTransaction(transaction);
-  };
 
   const handleEditClose = () => {
     setEditTransaction(null);
   };
 
-  const handleDeleteClose = () => {
-    setDeleteTransaction(null);
-  };
 
   // Load categories for quick selector
   const fetchCategories = async () => {
@@ -311,37 +302,21 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   }
 
   const renderMobileCard = (transaction: Transaction) => (
-    <Card key={transaction.id} sx={{ mb: 2 }}>
+    <Card key={transaction.id} sx={{ mb: 2, position: 'relative' }}>
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
             {formatDateTime(transaction.transactionDate)}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography 
-              variant="h6" 
-              color={getCurrencyColor(transaction.amount)}
-              sx={{ fontWeight: 'bold' }}
-            >
-              {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
-            </Typography>
-            <IconButton 
-              size="small" 
-              onClick={() => handleEditClick(transaction)}
-              sx={{ color: 'primary.main' }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={() => handleDeleteClick(transaction)}
-              sx={{ color: 'error.main' }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
+          <Typography
+            variant="h6"
+            color={getCurrencyColor(transaction.amount)}
+            sx={{ fontWeight: 'bold' }}
+          >
+            {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
+          </Typography>
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ minWidth: 'fit-content' }}>
             <strong>Category:</strong>
@@ -365,18 +340,31 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
             </Box>
           )}
         </Box>
-        
+
         {transaction.note && (
           <Typography variant="body2" sx={{ mb: 1 }}>
             <strong>Note:</strong> {transaction.note}
           </Typography>
         )}
-        
-        <QuickTagSelector
-          transaction={transaction}
-          onTagsUpdate={handleQuickTagUpdate}
-          disabled={updatingTags && selectedTransactionId === transaction.id}
-        />
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <QuickTagSelector
+            transaction={transaction}
+            onTagsUpdate={handleQuickTagUpdate}
+            disabled={updatingTags && selectedTransactionId === transaction.id}
+          />
+          <IconButton
+            size="small"
+            onClick={() => handleEditClick(transaction)}
+            sx={{
+              color: 'primary.main',
+              ml: 1,
+              flexShrink: 0
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </CardContent>
     </Card>
   );
@@ -454,19 +442,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
               </TableCell>
               <TableCell align="center">
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleEditClick(transaction)}
                     sx={{ color: 'primary.main' }}
                   >
                     <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleDeleteClick(transaction)}
-                    sx={{ color: 'error.main' }}
-                  >
-                    <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
               </TableCell>
@@ -493,17 +474,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
         transaction={editTransaction}
         onClose={handleEditClose}
         onSave={handleTransactionUpdated}
-        onError={handleError}
-      />
-      
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={!!deleteTransaction}
-        transaction={deleteTransaction}
-        onClose={handleDeleteClose}
         onDelete={handleTransactionDeleted}
         onError={handleError}
       />
+      
       
       
       {/* Success/Error Snackbar */}

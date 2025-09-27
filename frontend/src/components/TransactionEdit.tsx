@@ -10,6 +10,7 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Transaction, Category, UpdateTransactionRequest, ApiError } from '../types';
 import ApiService from '../services/api';
 import { MockApiService } from '../services/mockApi';
@@ -21,6 +22,7 @@ interface TransactionEditProps {
   transaction: Transaction | null;
   onClose: () => void;
   onSave: (updatedTransaction: Transaction) => void;
+  onDelete?: (transactionId: number) => void;
   onError: (error: string) => void;
 }
 
@@ -29,9 +31,11 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
   transaction,
   onClose,
   onSave,
+  onDelete,
   onError,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     transactionDate: '',
@@ -115,8 +119,35 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
 
   const handleClose = () => {
     if (!loading) {
+      setShowDeleteConfirm(false);
       onClose();
     }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!transaction || !onDelete) return;
+
+    try {
+      setLoading(true);
+      const apiService = ApiService.getInstance();
+      await apiService.deleteTransaction(transaction.id);
+      onDelete(transaction.id);
+      onClose();
+    } catch (error) {
+      const apiError = error as ApiError;
+      onError(apiError.message || 'Failed to delete transaction');
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   const isFormValid = () => {
@@ -129,7 +160,8 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
   if (!transaction) return null;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           Edit Transaction
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -213,19 +245,67 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button onClick={handleClose} disabled={loading}>
+        <DialogActions sx={{ p: 3, pt: 2, justifyContent: 'space-between' }}>
+          <Box>
+            {onDelete && (
+              <Button
+                onClick={handleDeleteClick}
+                color="error"
+                startIcon={<DeleteIcon />}
+                disabled={loading}
+              >
+                Delete
+              </Button>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading || !isFormValid()}
+            >
+              {loading ? 'Saving...' : 'Save'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onClose={handleDeleteCancel}>
+        <DialogTitle>Delete Transaction</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this transaction?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {transaction && (
+              `${transaction.amount >= 0 ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)} ${transaction.currency}`
+            )}
+          </Typography>
+          {transaction?.note && (
+            <Typography variant="body2" color="text.secondary">
+              {transaction.note}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={loading}>
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={handleDeleteConfirm}
+            color="error"
             variant="contained"
-            disabled={loading || !isFormValid()}
+            disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
+    </>
   );
 };
 
