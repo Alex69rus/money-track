@@ -81,11 +81,11 @@ const SpendingByTags: React.FC<SpendingByTagsProps> = ({
                   border: '1px solid',
                   borderColor: 'divider',
                   borderRadius: 2,
-                  p: 1.5,
+                  p: 2.5,
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 80
+                  minHeight: 90
                 }}
               >
                 {/* Tag Header */}

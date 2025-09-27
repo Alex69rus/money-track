@@ -8,7 +8,7 @@ import {
   Box,
   Grid
 } from '@mui/material';
-import { DateRange as DateRangeIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { DateRange as DateRangeIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 interface DateFilter {
   startDate: string;
@@ -42,10 +42,18 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
     });
   };
 
-  const handleClear = () => {
+  const handleReset = () => {
+    // Reset to current month
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const startOfMonth = `${year}-${month}-01`;
+    const endOfMonth = new Date(year, now.getMonth() + 1, 0).getDate().toString().padStart(2, '0');
+    const endDate = `${year}-${month}-${endOfMonth}`;
+
     onDateChange({
-      startDate: '',
-      endDate: ''
+      startDate: startOfMonth,
+      endDate: endDate
     });
   };
 
@@ -96,29 +104,15 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
           <Grid item xs={12} sm={4}>
             <Button
               variant="outlined"
-              onClick={handleClear}
-              startIcon={<ClearIcon />}
-              disabled={!startDate && !endDate}
+              onClick={handleReset}
+              startIcon={<RefreshIcon />}
               fullWidth
               sx={{ height: '56px' }}
             >
-              Clear Filter
+              Reset
             </Button>
           </Grid>
         </Grid>
-
-        {(startDate || endDate) && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              {startDate && endDate
-                ? `Showing data from ${startDate} to ${endDate}`
-                : startDate
-                ? `Showing data from ${startDate} onwards`
-                : `Showing data up to ${endDate}`
-              }
-            </Typography>
-          </Box>
-        )}
       </CardContent>
     </Card>
   );

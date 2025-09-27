@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { Receipt, Analytics, Chat } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -10,6 +10,29 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const handleViewportChange = () => {
+      // Detect virtual keyboard by checking viewport height changes
+      const viewportHeight = window.innerHeight;
+      const screenHeight = window.screen.height;
+
+      // If viewport is significantly smaller than screen, keyboard is likely open
+      const heightDifference = screenHeight - viewportHeight;
+      setIsKeyboardOpen(heightDifference > 300); // Increased threshold for better detection
+    };
+
+    // Listen for viewport changes
+    window.addEventListener('resize', handleViewportChange);
+
+    // Initial check
+    handleViewportChange();
+
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+    };
+  }, []);
 
   const getNavigationValue = () => {
     switch (location.pathname) {
@@ -38,17 +61,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Typography>
         </Toolbar>
       </AppBar>
-      
-      <Box component="main" sx={{ flexGrow: 1, pb: 7 }}>
+
+      <Box component="main" sx={{
+        flexGrow: 1,
+        pb: isKeyboardOpen ? 1 : 7 // Reduce bottom padding when keyboard is open
+      }}>
         {children}
       </Box>
-      
-      <Paper sx={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
+
+      <Paper sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
         right: 0,
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        zIndex: 1300, // Higher than MUI modal backdrop (1200) and drawer (1200)
+        // Hide navigation when keyboard is open to prevent overlap
+        display: isKeyboardOpen ? 'none' : 'block',
+        transition: 'opacity 0.2s ease-in-out',
+        opacity: isKeyboardOpen ? 0 : 1
       }} elevation={3}>
         <BottomNavigation
           value={getNavigationValue()}

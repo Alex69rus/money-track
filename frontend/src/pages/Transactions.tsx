@@ -28,7 +28,7 @@ const Transactions: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Transactions
       </Typography>
-      
+
       <Box sx={{ mt: 3 }}>
         <TransactionFilters
           filters={filterState}

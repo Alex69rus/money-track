@@ -105,7 +105,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
         transactionDate: formData.transactionDate ? new Date(formData.transactionDate).toISOString() : transaction.transactionDate,
         amount: parseFloat(formData.amount),
         note: formData.note || undefined,
-        categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
+        categoryId: formData.categoryId && formData.categoryId !== '0' ? parseInt(formData.categoryId) : undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         currency: formData.currency, // Use currency from form
       };
@@ -176,7 +176,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             {/* Date/Time */}
             <TextField
-              label="Transaction Date & Time"
+              label="Date & Time"
               type="datetime-local"
               value={formData.transactionDate}
               onChange={(e) => setFormData(prev => ({ ...prev, transactionDate: e.target.value }))}
@@ -232,7 +232,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
               label="Category"
               size="small"
               loading={loading}
-              transactionAmount={transaction.amount}
+              transactionAmount={parseFloat(formData.amount) || 0}
             />
 
             {/* Tags */}
