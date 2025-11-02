@@ -41,7 +41,7 @@ class ApiService {
     
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const error: ApiError = {
@@ -50,7 +50,12 @@ class ApiService {
         };
         throw error;
       }
-      
+
+      // Handle 204 No Content - don't try to parse JSON from empty response
+      if (response.status === 204) {
+        return undefined as T;
+      }
+
       return await response.json();
     } catch (error) {
       if (error instanceof TypeError) {

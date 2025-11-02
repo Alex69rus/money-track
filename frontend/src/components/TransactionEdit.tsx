@@ -167,12 +167,28 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: '90vh',  // Limit height to 90% of viewport
+            m: 2,  // Add margin on mobile
+          }
+        }}
+      >
         <DialogTitle>
           Edit Transaction
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent
+          sx={{
+            overflowY: 'auto',  // Enable vertical scrolling
+            pb: 2  // Add bottom padding
+          }}
+        >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             {/* Date/Time */}
             <TextField
