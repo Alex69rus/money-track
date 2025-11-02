@@ -8,7 +8,6 @@ import {
   TextField,
   Box,
   Typography,
-  InputAdornment,
   FormControl,
   InputLabel,
   Select,
@@ -174,22 +173,26 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
         fullWidth
         PaperProps={{
           sx: {
-            maxHeight: '90vh',  // Limit height to 90% of viewport
-            m: 2,  // Add margin on mobile
+            maxHeight: { xs: '95vh', sm: '90vh' },  // Higher limit on mobile
+            m: { xs: 1, sm: 2 },  // Less margin on mobile
+            display: 'flex',
+            flexDirection: 'column',
           }
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ flexShrink: 0 }}>
           Edit Transaction
         </DialogTitle>
 
         <DialogContent
           sx={{
             overflowY: 'auto',  // Enable vertical scrolling
-            pb: 2  // Add bottom padding
+            flexGrow: 1,
+            flexShrink: 1,
+            pb: 1
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             {/* Date/Time */}
             <TextField
               label="Date & Time"
@@ -268,34 +271,57 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
               fullWidth
               multiline
-              rows={3}
+              rows={2}
               size="small"
               placeholder="Add a note about this transaction..."
             />
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, pt: 2, justifyContent: 'space-between' }}>
-          <Box>
+        <DialogActions
+          sx={{
+            p: 2,
+            pt: 1.5,
+            flexShrink: 0,
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            gap: 1
+          }}
+        >
+          <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
             {onDelete && (
               <Button
                 onClick={handleDeleteClick}
                 color="error"
                 startIcon={<DeleteIcon />}
                 disabled={loading}
+                fullWidth
+                size="medium"
               >
                 Delete
               </Button>
             )}
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={handleClose} disabled={loading}>
+          <Box sx={{
+            display: 'flex',
+            gap: 1,
+            width: { xs: '100%', sm: 'auto' },
+            flexDirection: { xs: 'column-reverse', sm: 'row' }
+          }}>
+            <Button
+              onClick={handleClose}
+              disabled={loading}
+              fullWidth
+              size="medium"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               variant="contained"
               disabled={loading || !isFormValid()}
+              fullWidth
+              size="medium"
             >
               {loading ? 'Saving...' : 'Save'}
             </Button>
