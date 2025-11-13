@@ -5,7 +5,7 @@
 namespace MoneyTrack.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class FixUniqConstraint : Migration
+    public partial class FixUniqueConstraint : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

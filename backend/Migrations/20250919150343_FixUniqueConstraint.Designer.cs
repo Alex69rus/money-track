@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MoneyTrack.Api.Migrations
 {
     [DbContext(typeof(MoneyTrackContext))]
-    [Migration("20250921182615_RemoveDafaultCategoryType")]
-    partial class RemoveDafaultCategoryType
+    [Migration("20250919150343_FixUniqueConstraint")]
+    partial class FixUniqueConstraint
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,17 +54,15 @@ namespace MoneyTrack.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<int?>("OrderIndex")
-                        .HasColumnType("integer")
-                        .HasColumnName("order_index");
-
                     b.Property<int?>("ParentCategoryId")
                         .HasColumnType("integer")
                         .HasColumnName("parent_category_id");
 
                     b.Property<string>("Type")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("text")
+                        .HasDefaultValue("Expense")
                         .HasColumnName("type");
 
                     b.HasKey("Id")
