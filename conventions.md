@@ -66,7 +66,7 @@
 ## DO
 - simple methods and minimum of abstractions
 - single file - single responsibility
-- clear and neet names for variables and methods
+- clear and neat names for variables and methods
 - base logging of all operations
 - base erors handling
 - Documentation for API functions
