@@ -1,9 +1,7 @@
-name: Deploy to Production
+name: CD - Deploy to Production
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 env:
@@ -14,6 +12,8 @@ env:
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./frontend
@@ -43,6 +43,8 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./backend
@@ -67,7 +69,6 @@ jobs:
   build-and-push:
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     permissions:
       contents: read
@@ -119,7 +120,6 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout repository
