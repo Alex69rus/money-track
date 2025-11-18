@@ -10,6 +10,8 @@ on:
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./frontend
@@ -39,6 +41,8 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./backend
