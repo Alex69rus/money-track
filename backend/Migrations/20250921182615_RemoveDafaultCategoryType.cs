@@ -5,7 +5,7 @@
 namespace MoneyTrack.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveDefaultCategoryType : Migration
+    public partial class RemoveDafaultCategoryType : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
