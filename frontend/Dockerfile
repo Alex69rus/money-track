@@ -10,7 +10,8 @@ ENV REACT_APP_AI_WEBHOOK_URL=$REACT_APP_AI_WEBHOOK_URL
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --frozen-lockfile
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --frozen-lockfile --prefer-offline
 COPY . .
 RUN npm run build
 

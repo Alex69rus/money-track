@@ -8,4 +8,10 @@ Dockerfile
 .dockerignore
 README.md
 .git/
+.github/
 .gitignore
+TestResults/
+*.trx
+*.log
+.idea/
+*.DotSettings.user
