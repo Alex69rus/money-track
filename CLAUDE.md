@@ -166,9 +166,9 @@ Agent: Implements DateRangeFilter component with proper hooks, types, and MUI co
 - Show loading states (Skeleton preferred)
 - Show user-friendly error messages with retry
 - Use theme tokens for all styling
-- Test with Chrome DevTools MCP after changes
-- Check network tab to verify real API calls (not mock fallback)
-- Validate mobile (375px) and desktop (1920px) layouts
+- For React implementations: delegate to react-expert-advisor agent
+- After implementation: use qa-expert agent for comprehensive testing
+- qa-expert will: test with Chrome DevTools MCP, check network tab for real API calls, validate responsive layouts
 - Add ARIA labels for interactive elements
 - Follow TypeScript strict mode (no 'any')
 

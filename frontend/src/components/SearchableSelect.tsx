@@ -4,9 +4,7 @@ import {
   TextField,
   Chip,
   Box,
-  Typography,
-  Popper,
-  Paper
+  Typography
 } from '@mui/material';
 import { Category } from '../types';
 
@@ -100,50 +98,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
-  // Custom popper with smart positioning
-  const CustomPopper = (props: any) => (
-    <Popper
-      {...props}
-      placement="bottom-start"
-      modifiers={[
-        {
-          name: 'flip',
-          enabled: true,
-          options: {
-            fallbackPlacements: ['top-start', 'bottom-start'],
-            padding: 8,
-          },
-        },
-        {
-          name: 'preventOverflow',
-          options: {
-            boundary: 'viewport',
-            padding: 8,
-          },
-        },
-        {
-          name: 'offset',
-          options: {
-            offset: [0, 4],
-          },
-        },
-      ]}
-      style={{ ...props.style, minWidth: 300, maxHeight: 300, zIndex: 1400 }}
-    >
-      <Paper elevation={8} sx={{ maxHeight: 300, overflow: 'auto' }}>
-        {filteredCategories.length === 0 && searchTerm.trim() ? (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No categories found for "{searchTerm}"
-            </Typography>
-          </Box>
-        ) : (
-          props.children
-        )}
-      </Paper>
-    </Popper>
-  );
-
   return (
     <Autocomplete
       ref={autocompleteRef}
@@ -155,8 +109,43 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       isOptionEqualToValue={(option, value) => option.id === value.id}
       loading={loading}
       loadingText="Loading categories..."
-      noOptionsText="No categories found"
-      PopperComponent={CustomPopper}
+      noOptionsText={searchTerm.trim() ? `No categories found for "${searchTerm}"` : "No categories found"}
+      slotProps={{
+        popper: {
+          placement: 'bottom-start',
+          modifiers: [
+            {
+              name: 'flip',
+              enabled: true,
+              options: {
+                fallbackPlacements: ['top-start', 'bottom-start'],
+                padding: 8,
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: 'viewport',
+                padding: 8,
+              },
+            },
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 4],
+              },
+            },
+          ],
+          style: { maxHeight: 300, zIndex: 1400 },
+        },
+        paper: {
+          sx: {
+            minWidth: 300,
+            maxHeight: 300,
+            overflow: 'auto',
+          },
+        },
+      }}
       groupBy={(option) => {
         // If this category has a parent, group it under the parent's name
         if (option.parentCategoryId) {
