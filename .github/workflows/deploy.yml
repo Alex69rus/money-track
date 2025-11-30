@@ -111,7 +111,7 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=min
         build-args: |
           ${{ matrix.service == 'frontend' && format('REACT_APP_API_URL={0}', secrets.REACT_APP_API_URL) || '' }}
           ${{ matrix.service == 'frontend' && format('REACT_APP_AI_WEBHOOK_URL={0}', secrets.REACT_APP_AI_WEBHOOK_URL) || '' }}

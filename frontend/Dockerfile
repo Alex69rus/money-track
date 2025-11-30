@@ -1,4 +1,4 @@
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 # Accept build arguments
 ARG REACT_APP_API_URL
@@ -10,7 +10,7 @@ ENV REACT_APP_AI_WEBHOOK_URL=$REACT_APP_AI_WEBHOOK_URL
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci --frozen-lockfile
 COPY . .
 RUN npm run build
 

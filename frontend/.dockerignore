@@ -5,6 +5,7 @@ yarn-error.log*
 build/
 dist/
 .git/
+.github/
 .gitignore
 Dockerfile
 .dockerignore
@@ -14,3 +15,9 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+.eslintcache
+.turbo
+.next
+out
+.cache
+.parcel-cache
