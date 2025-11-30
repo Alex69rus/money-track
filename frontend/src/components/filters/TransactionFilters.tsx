@@ -21,7 +21,7 @@ import {
   Clear as ClearIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { FilterState, TransactionFilters as TTransactionFilters } from '../../types';
+import { FilterState, TransactionFilters as TTransactionFilters, Category } from '../../types';
 import DateRangePicker from './DateRangePicker';
 import CategoryFilter from './CategoryFilter';
 import AmountFilter from './AmountFilter';
@@ -31,12 +31,14 @@ interface TransactionFiltersProps {
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
   onApplyFilters: (filters: TTransactionFilters) => void;
+  categories: Category[];
 }
 
 const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   filters,
   onFiltersChange,
   onApplyFilters,
+  categories,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [showSearch, setShowSearch] = useState(!!filters.searchText);
@@ -86,7 +88,15 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   };
 
   // Auto-apply filters when they change (debounced)
+  // Skip initial mount to prevent unnecessary API calls
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
   useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
       onApplyFilters(convertToApiFilters());
     }, 500);
@@ -100,19 +110,27 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   return (
     <Card sx={{ mb: 2 }}>
       <Box sx={{ p: 2, pb: expanded ? 1 : 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Row 1: Title + controls */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            minHeight: 40,
+          }}
+        >
+          {/* Left: Icon + Title + Count badge */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
             <Typography variant="h6">Filters</Typography>
             {activeFiltersCount > 0 && (
-              <Chip 
-                label={activeFiltersCount} 
-                size="small" 
-                color="primary" 
-              />
+              <Chip label={activeFiltersCount} size="small" color="primary" />
             )}
           </Box>
+
+          {/* Right: Search + Expand (no Clear All here on mobile) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Search icon/field */}
             {!showSearch ? (
               <IconButton
                 onClick={() => setShowSearch(true)}
@@ -124,12 +142,12 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
             ) : (
               <TextField
                 size="small"
-                placeholder="Search transactions..."
+                placeholder="Search..."
                 value={filters.searchText}
                 onChange={(e) => updateFilters({ searchText: e.target.value })}
                 onBlur={() => !filters.searchText && setShowSearch(false)}
                 autoFocus
-                sx={{ width: isMobile ? 150 : 250 }}
+                sx={{ width: { xs: 120, sm: 250 } }}
                 InputProps={{
                   endAdornment: filters.searchText && (
                     <InputAdornment position="end">
@@ -139,6 +157,7 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                           updateFilters({ searchText: '' });
                           setShowSearch(false);
                         }}
+                        edge="end"
                       >
                         <ClearIcon fontSize="small" />
                       </IconButton>
@@ -147,34 +166,95 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 }}
               />
             )}
-            {activeFiltersCount > 0 && (
-              <Button
-                size="small"
-                startIcon={<ClearIcon />}
-                onClick={handleClearAll}
-                color="secondary"
-              >
-                Clear All
-              </Button>
-            )}
+
+            {/* Clear All - only show on desktop in header row */}
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              {activeFiltersCount > 0 && (
+                <Button
+                  size="small"
+                  startIcon={<ClearIcon />}
+                  onClick={handleClearAll}
+                  color="secondary"
+                >
+                  Clear All
+                </Button>
+              )}
+            </Box>
+
             <IconButton onClick={handleToggle} size="small">
               {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Box>
         </Box>
-      </Box>
 
-      {filters.searchText && !showSearch && (
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Chip
-            label={`Search: "${filters.searchText}"`}
-            onDelete={() => updateFilters({ searchText: '' })}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-        </Box>
-      )}
+        {/* Row 2 (mobile only): Active filter chips + Clear button */}
+        {activeFiltersCount > 0 && (
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'none' },
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 1,
+              mt: 1.5,
+              pt: 1.5,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            {/* Show active filter chips */}
+            {filters.categories.length > 0 && (
+              <Chip
+                label={`${filters.categories.length} ${filters.categories.length === 1 ? 'Category' : 'Categories'}`}
+                size="small"
+                onDelete={() => updateFilters({ categories: [] })}
+                variant="outlined"
+              />
+            )}
+            {filters.tags.length > 0 && (
+              <Chip
+                label={`${filters.tags.length} ${filters.tags.length === 1 ? 'Tag' : 'Tags'}`}
+                size="small"
+                onDelete={() => updateFilters({ tags: [] })}
+                variant="outlined"
+              />
+            )}
+            {(filters.dateRange.startDate || filters.dateRange.endDate) && (
+              <Chip
+                label="Date range"
+                size="small"
+                onDelete={() => updateFilters({ dateRange: { startDate: null, endDate: null } })}
+                variant="outlined"
+              />
+            )}
+            {(filters.amountRange.min !== null || filters.amountRange.max !== null) && (
+              <Chip
+                label="Amount"
+                size="small"
+                onDelete={() => updateFilters({ amountRange: { min: null, max: null } })}
+                variant="outlined"
+              />
+            )}
+            {filters.searchText && (
+              <Chip
+                label={`Search: "${filters.searchText}"`}
+                size="small"
+                onDelete={() => updateFilters({ searchText: '' })}
+                variant="outlined"
+              />
+            )}
+
+            {/* Clear All button on mobile */}
+            <Button
+              size="small"
+              onClick={handleClearAll}
+              color="secondary"
+              sx={{ ml: 'auto' }}
+            >
+              Clear All
+            </Button>
+          </Box>
+        )}
+      </Box>
 
       <Collapse in={expanded}>
         <CardContent sx={{ pt: 0 }}>
@@ -193,6 +273,7 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
               <CategoryFilter
                 selectedCategories={filters.categories}
                 onCategoriesChange={(categories) => updateFilters({ categories })}
+                categories={categories}
               />
               <AmountFilter
                 minAmount={filters.amountRange.min}
@@ -229,6 +310,7 @@ const TransactionFilters: React.FC<TransactionFiltersProps> = ({
               <CategoryFilter
                 selectedCategories={filters.categories}
                 onCategoriesChange={(categories) => updateFilters({ categories })}
+                categories={categories}
               />
               <AmountFilter
                 minAmount={filters.amountRange.min}

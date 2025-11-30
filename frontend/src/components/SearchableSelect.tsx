@@ -100,10 +100,37 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
-  // Custom popper to add "no results" message
+  // Custom popper with smart positioning
   const CustomPopper = (props: any) => (
-    <Popper {...props} style={{ minWidth: 300 }}>
-      <Paper>
+    <Popper
+      {...props}
+      placement="bottom-start"
+      modifiers={[
+        {
+          name: 'flip',
+          enabled: true,
+          options: {
+            fallbackPlacements: ['top-start', 'bottom-start'],
+            padding: 8,
+          },
+        },
+        {
+          name: 'preventOverflow',
+          options: {
+            boundary: 'viewport',
+            padding: 8,
+          },
+        },
+        {
+          name: 'offset',
+          options: {
+            offset: [0, 4],
+          },
+        },
+      ]}
+      style={{ ...props.style, minWidth: 300, maxHeight: 300, zIndex: 1400 }}
+    >
+      <Paper elevation={8} sx={{ maxHeight: 300, overflow: 'auto' }}>
         {filteredCategories.length === 0 && searchTerm.trim() ? (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

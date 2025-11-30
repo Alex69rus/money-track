@@ -109,6 +109,41 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
       openOnFocus
       onOpen={handleOpen}
       noOptionsText="No existing tags"
+      slotProps={{
+        popper: {
+          placement: 'bottom-start',
+          modifiers: [
+            {
+              name: 'flip',
+              enabled: true,
+              options: {
+                fallbackPlacements: ['top-start', 'bottom-start'],
+                padding: 8,
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: 'viewport',
+                padding: 8,
+              },
+            },
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 4],
+              },
+            },
+          ],
+          style: { maxHeight: 250, zIndex: 1400 },
+        },
+        paper: {
+          sx: {
+            maxHeight: 250,
+            overflow: 'auto',
+          },
+        },
+      }}
       renderTags={(tagValue, getTagProps) =>
         tagValue.map((option, index) => (
           <Chip

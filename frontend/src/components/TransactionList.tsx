@@ -36,9 +36,10 @@ import QuickTagSelector from './QuickTagSelector';
 interface TransactionListProps {
   refreshTrigger?: number;
   filters?: TransactionFilters;
+  categories: Category[];
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, filters }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, filters, categories }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const [updatingTags, setUpdatingTags] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [updatingCategory, setUpdatingCategory] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -76,6 +76,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
     }
   };
 
+  // Fetch transactions on mount and when filters change
   useEffect(() => {
     fetchTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,32 +94,6 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
   const handleEditClose = () => {
     setEditTransaction(null);
   };
-
-
-  // Load categories for quick selector
-  const fetchCategories = async () => {
-    try {
-      const apiService = ApiService.getInstance();
-      const data = await apiService.getCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error('Backend not available, using mock categories:', error);
-      // Use mock categories for testing
-      const mockCategories: Category[] = [
-        { id: 1, name: 'Groceries', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 2, name: 'Salary', type: 'Income' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 3, name: 'Entertainment', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 4, name: 'Transportation', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 5, name: 'Utilities', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-        { id: 6, name: 'Healthcare', type: 'Expense' as const, createdAt: '2024-01-01T00:00:00Z' },
-      ];
-      setCategories(mockCategories);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
 
   const handleCategorySelect = async (categoryId: string | number | number[], transactionId: number) => {

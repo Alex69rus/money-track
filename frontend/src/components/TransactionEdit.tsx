@@ -94,6 +94,24 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
     }
   }, [transaction]);
 
+  // Handle keyboard focus to scroll input into view
+  useEffect(() => {
+    if (!open) return;
+
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        // Small delay to let keyboard animation complete
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    };
+
+    document.addEventListener('focusin', handleFocus);
+    return () => document.removeEventListener('focusin', handleFocus);
+  }, [open]);
+
   const handleSubmit = async () => {
     if (!transaction) return;
 
@@ -173,8 +191,12 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
         fullWidth
         PaperProps={{
           sx: {
-            maxHeight: { xs: '95vh', sm: '90vh' },  // Higher limit on mobile
-            m: { xs: 1, sm: 2 },  // Less margin on mobile
+            maxHeight: {
+              xs: 'calc(100dvh - env(safe-area-inset-top, 0px) - 16px)',
+              sm: '90vh'
+            },
+            margin: { xs: 1, sm: 2 },
+            borderRadius: { xs: '16px', sm: '16px' },
             display: 'flex',
             flexDirection: 'column',
           }
@@ -189,7 +211,9 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
             overflowY: 'auto',  // Enable vertical scrolling
             flexGrow: 1,
             flexShrink: 1,
-            pb: 1
+            pb: 1,
+            scrollPaddingBottom: '120px',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>

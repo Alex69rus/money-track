@@ -55,6 +55,41 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
         inputValue={inputValue}
         onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
         freeSolo
+        slotProps={{
+          popper: {
+            placement: 'bottom-start',
+            modifiers: [
+              {
+                name: 'flip',
+                enabled: true,
+                options: {
+                  fallbackPlacements: ['top-start', 'bottom-start'],
+                  padding: 8,
+                },
+              },
+              {
+                name: 'preventOverflow',
+                options: {
+                  boundary: 'viewport',
+                  padding: 8,
+                },
+              },
+              {
+                name: 'offset',
+                options: {
+                  offset: [0, 4],
+                },
+              },
+            ],
+            style: { maxHeight: 200, zIndex: 1400 },
+          },
+          paper: {
+            sx: {
+              maxHeight: 200,
+              overflow: 'auto',
+            },
+          },
+        }}
         renderTags={(tagValue, getTagProps) =>
           tagValue.map((option, index) => (
             <Chip
