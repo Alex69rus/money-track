@@ -12,6 +12,7 @@ import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Transaction } from '../types';
 import { useCategories } from '../hooks/useCategories';
 import { useTransactionForm } from '../hooks/useTransactionForm';
+import { useStableViewport } from '../hooks/useStableViewport';
 import TransactionFormFields from './TransactionFormFields';
 
 interface TransactionEditProps {
@@ -32,6 +33,7 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
   onError,
 }) => {
   const { categories } = useCategories();
+  const { stableHeight } = useStableViewport();
 
   const {
     formData,
@@ -85,8 +87,8 @@ const TransactionEdit: React.FC<TransactionEditProps> = ({
         PaperProps={{
           sx: {
             maxHeight: {
-              xs: 'calc(100dvh - env(safe-area-inset-top, 0px) - 16px)',
-              sm: '90vh'
+              xs: `${stableHeight - 16}px`, // Use stable height on mobile to prevent keyboard shift
+              sm: '90vh' // Keep 90vh for desktop
             },
             margin: { xs: 1, sm: 2 },
             borderRadius: { xs: '16px', sm: '16px' },
