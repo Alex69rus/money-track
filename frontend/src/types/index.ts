@@ -94,10 +94,10 @@ export interface ApiError {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  page: number;
-  pageSize: number;
   totalCount: number;
-  totalPages: number;
+  skip: number;
+  take: number;
+  hasMore: boolean;
 }
 
 export interface ChatMessage {

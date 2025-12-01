@@ -48,12 +48,13 @@ const Analytics: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Try to fetch from API first
       try {
         const apiService = ApiService.getInstance();
-        const data = await apiService.getTransactions();
-        setTransactions(data);
+        // For analytics, fetch all data with a large page size to get complete dataset
+        const response = await apiService.getTransactions(undefined, 0, 10000);
+        setTransactions(response.data);
       } catch (apiError) {
         console.log('Backend not available, using mock data for analytics');
         // Fallback to mock data when API is not available

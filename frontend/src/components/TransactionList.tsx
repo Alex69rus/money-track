@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -17,6 +17,7 @@ import {
   CardContent,
   Stack,
   Snackbar,
+  CircularProgress,
 } from '@mui/material';
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { Transaction, TransactionFilters, Category } from '../types';
@@ -34,7 +35,7 @@ interface TransactionListProps {
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, filters, categories }) => {
-  const { transactions, loading, error, setTransactions, refetch } = useTransactions(filters, refreshTrigger);
+  const { transactions, loading, loadingMore, error, hasMore, setTransactions, refetch, loadMore } = useTransactions(filters, refreshTrigger);
   const { updateCategory, updateTags, updatingCategory, updatingTags, selectedTransactionId } = useQuickUpdate();
 
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
@@ -43,6 +44,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Intersection Observer for infinite scroll
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || loading || loadingMore || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // When sentinel is visible and we have more data, load more
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Trigger 100px before reaching the sentinel
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [loading, loadingMore, hasMore, loadMore]);
 
   const handleRetry = () => {
     refetch();
@@ -212,6 +243,29 @@ const TransactionList: React.FC<TransactionListProps> = ({ refreshTrigger = 0, f
           updatingTags={updatingTags}
           selectedTransactionId={selectedTransactionId}
         />
+      )}
+
+      {/* Intersection Observer Sentinel for Infinite Scroll */}
+      {hasMore && !loading && (
+        <Box
+          ref={sentinelRef}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: theme.spacing(3),
+            minHeight: theme.spacing(8),
+          }}
+          aria-live="polite"
+          aria-busy={loadingMore}
+        >
+          {loadingMore && (
+            <CircularProgress
+              size={32}
+              aria-label="Loading more transactions"
+            />
+          )}
+        </Box>
       )}
 
       {/* Edit Dialog */}

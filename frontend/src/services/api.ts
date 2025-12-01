@@ -1,10 +1,11 @@
-import { 
-  Transaction, 
-  Category, 
-  CreateTransactionRequest, 
+import {
+  Transaction,
+  Category,
+  CreateTransactionRequest,
   UpdateTransactionRequest,
   TransactionFilters,
-  ApiError 
+  PaginatedResponse,
+  ApiError
 } from '../types';
 import TelegramService from './telegram';
 
@@ -80,8 +81,17 @@ class ApiService {
   }
   
   // Transactions
-  public async getTransactions(filters?: TransactionFilters): Promise<Transaction[]> {
+  public async getTransactions(
+    filters?: TransactionFilters,
+    skip = 0,
+    take = 50,
+    signal?: AbortSignal
+  ): Promise<PaginatedResponse<Transaction>> {
     const params = new URLSearchParams();
+
+    // Add pagination parameters
+    params.append('skip', skip.toString());
+    params.append('take', take.toString());
 
     if (filters) {
       if (filters.startDate) params.append('fromDate', filters.startDate);
@@ -100,9 +110,9 @@ class ApiService {
     }
 
     const queryString = params.toString();
-    const endpoint = queryString ? `/api/transactions?${queryString}` : '/api/transactions';
+    const endpoint = `/api/transactions?${queryString}`;
 
-    return await this.makeRequest<Transaction[]>(endpoint);
+    return await this.makeRequest<PaginatedResponse<Transaction>>(endpoint, { signal });
   }
   
   public async getTransaction(id: number): Promise<Transaction> {

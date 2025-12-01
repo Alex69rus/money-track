@@ -84,17 +84,32 @@ public static class TransactionEndpoints
             );
         }
 
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
         IQueryable<Transaction> orderedQuery = query.OrderByDescending(t => t.TransactionDate);
 
-        if (skip.HasValue)
-            orderedQuery = orderedQuery.Skip(skip.Value);
+        // Set defaults and apply pagination
+        var skipValue = skip ?? 0;
+        var takeValue = take ?? 50;
 
-        if (take.HasValue)
-            orderedQuery = orderedQuery.Take(take.Value);
+        orderedQuery = orderedQuery.Skip(skipValue).Take(takeValue);
 
         var transactions = await orderedQuery.ToListAsync();
 
-        return Results.Ok(transactions);
+        // Calculate if there are more records
+        var hasMore = skipValue + takeValue < totalCount;
+
+        var response = new PaginatedResponse<Transaction>
+        {
+            Data = transactions,
+            TotalCount = totalCount,
+            Skip = skipValue,
+            Take = takeValue,
+            HasMore = hasMore
+        };
+
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> CreateTransaction(
