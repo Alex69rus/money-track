@@ -24,7 +24,6 @@ const QuickTagSelector: React.FC<QuickTagSelectorProps> = ({
   const [currentTags, setCurrentTags] = useState(transaction.tags || []);
   const [isUpdating, setIsUpdating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Update currentTags when transaction.tags changes
   useEffect(() => {
@@ -148,6 +147,9 @@ const QuickTagSelector: React.FC<QuickTagSelectorProps> = ({
         flexWrap="wrap"
         useFlexGap
         onClick={handleChipClick}
+        role="button"
+        aria-label="Edit tags"
+        tabIndex={disabled || isUpdating ? -1 : 0}
         sx={{
           cursor: disabled || isUpdating ? 'default' : 'pointer',
           minHeight: 32,

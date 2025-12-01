@@ -39,6 +39,9 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           InputLabelProps={{
             shrink: true,
           }}
+          inputProps={{
+            'aria-label': 'Start date'
+          }}
           sx={{ minWidth: 140 }}
         />
         <Typography variant="body2" color="text.secondary">
@@ -55,6 +58,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           }}
           inputProps={{
             min: startDate || undefined,
+            'aria-label': 'End date'
           }}
           sx={{ minWidth: 140 }}
         />

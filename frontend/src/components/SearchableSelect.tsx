@@ -9,6 +9,8 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { Category } from '../types';
+import { useCategoryFilter } from '../hooks/useCategoryFilter';
+import CategoryGroupHeader from './CategoryGroupHeader';
 
 interface SearchableSelectProps {
   categories: Category[];
@@ -38,48 +40,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   transactionAmount
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   // Mobile detection for proactive dropdown placement
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Filter categories based on search term and transaction amount
-  const filteredCategories = useMemo(() => {
-    let filtered = categories;
-
-    // Filter by transaction amount if provided
-    if (transactionAmount !== undefined) {
-      const targetType = transactionAmount < 0 ? 'Expense' : 'Income';
-      filtered = filtered.filter(category => category.type === targetType);
-    }
-
-    // Filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(category =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Sort by OrderIndex to maintain proper order
-    filtered = filtered.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-
-    // Remove parent categories that have children in the filtered set
-    // This prevents duplicates since parent categories will appear as group headers
-    const parentCategoriesWithChildren = new Set(
-      filtered.filter(cat => cat.parentCategoryId).map(cat => cat.parentCategoryId)
-    );
-
-    const finalFiltered = filtered.filter(category => {
-      // Keep all child categories (they have parentCategoryId)
-      if (category.parentCategoryId) return true;
-
-      // Keep parent categories that DON'T have children in our filtered set
-      return !parentCategoriesWithChildren.has(category.id);
-    });
-
-    return finalFiltered;
-  }, [categories, searchTerm, transactionAmount]);
+  // Filter categories using custom hook
+  const { filteredCategories } = useCategoryFilter(categories, searchTerm, transactionAmount);
 
   // Convert value to appropriate format for Autocomplete
   const autocompleteValue = useMemo(() => {
@@ -104,8 +72,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
-  // Determine placement based on mobile context
-  const dropdownPlacement = isMobile ? 'top-start' : 'bottom-start';
+  const handleCloseDropdown = () => {
+    if (autocompleteRef.current) {
+      const input = autocompleteRef.current.querySelector('input');
+      if (input) {
+        input.blur();
+      }
+    }
+  };
 
   return (
     <Autocomplete
@@ -121,13 +95,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       noOptionsText={searchTerm.trim() ? `No categories found for "${searchTerm}"` : "No categories found"}
       slotProps={{
         popper: {
-          placement: dropdownPlacement,
+          placement: 'bottom-start',
           modifiers: [
             {
               name: 'flip',
-              enabled: !isMobile,
+              enabled: true,
               options: {
-                fallbackPlacements: ['top-start', 'bottom-start'],
+                fallbackPlacements: ['top-start'],
                 padding: 8,
               },
             },
@@ -135,7 +109,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               name: 'preventOverflow',
               options: {
                 boundary: 'viewport',
-                padding: isMobile ? 4 : 8,
+                padding: 8,
               },
             },
             {
@@ -166,41 +140,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       }}
       renderGroup={(params) => (
         <li key={params.key}>
-          {params.group && (
-            <Box
-              component="div"
-              sx={{
-                p: 1,
-                fontWeight: 'bold',
-                color: 'primary.main',
-                borderBottom: '1px solid #e0e0e0',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-                '&:hover': {
-                  backgroundColor: '#f5f5f5'
-                }
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                // Find the parent category by name and select it
-                const parentCategory = categories.find(cat => cat.name === params.group);
-                if (parentCategory) {
-                  handleChange(e, parentCategory);
-                  // Close the dropdown by blurring the input
-                  setTimeout(() => {
-                    if (autocompleteRef.current) {
-                      const input = autocompleteRef.current.querySelector('input');
-                      if (input) {
-                        input.blur();
-                      }
-                    }
-                  }, 0);
-                }
-              }}
-            >
-              {params.group}
-            </Box>
-          )}
+          <CategoryGroupHeader
+            group={params.group}
+            categories={categories}
+            onSelect={(category) => handleChange(null, category)}
+            onClose={handleCloseDropdown}
+          />
           <ul style={{
             listStyle: 'none',
             padding: params.group ? '0 0 0 8px' : 0,
@@ -260,6 +205,21 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       onInputChange={(_, newInputValue, reason) => {
         if (reason === 'input') {
           setSearchTerm(newInputValue);
+        }
+      }}
+      onOpen={() => {
+        // Scroll input into view on mobile to keep dropdown visible
+        if (isMobile && autocompleteRef.current) {
+          setTimeout(() => {
+            const inputElement = autocompleteRef.current?.querySelector('input');
+            if (inputElement) {
+              inputElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+              });
+            }
+          }, 300); // Wait for keyboard animation (iOS ~250-300ms)
         }
       }}
       // Clear search when selection is made

@@ -6,7 +6,7 @@ import {
   CircularProgress,
   Box,
 } from '@mui/material';
-import ApiService from '../services/api';
+import { useUserTags } from '../hooks/useUserTags';
 
 interface TagAutocompleteProps {
   value: string[];
@@ -27,31 +27,14 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
   label = 'Tags',
   autoFocus = false
 }) => {
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const { tags: allTags, loading } = useUserTags();
   const [filteredTags, setFilteredTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  // Fetch all user tags on component mount
+  // Update filtered tags when allTags change
   useEffect(() => {
-    const fetchAllTags = async () => {
-      try {
-        setLoading(true);
-        const apiService = ApiService.getInstance();
-        const tags = await apiService.getUserTags();
-        setAllTags(tags);
-        setFilteredTags(tags);
-      } catch (error) {
-        console.error('Failed to fetch user tags:', error);
-        setAllTags([]);
-        setFilteredTags([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllTags();
-  }, []);
+    setFilteredTags(allTags);
+  }, [allTags]);
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -84,8 +67,7 @@ const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
   };
 
   // Handle value change
-  const handleChange = (event: React.SyntheticEvent, newValue: string[]) => {
-    console.log('TagAutocomplete handleChange:', { newValue, event });
+  const handleChange = (_event: React.SyntheticEvent, newValue: string[]) => {
     onChange(newValue);
   };
 

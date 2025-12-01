@@ -54,7 +54,7 @@ const AmountFilter: React.FC<AmountFilterProps> = ({
           size="small"
           InputProps={{
             startAdornment: <InputAdornment position="start">AED</InputAdornment>,
-            inputProps: { min: 0, step: 0.01 }
+            inputProps: { min: 0, step: 0.01, 'aria-label': 'Minimum amount' }
           }}
           sx={{ minWidth: 120 }}
         />
@@ -71,7 +71,7 @@ const AmountFilter: React.FC<AmountFilterProps> = ({
           helperText={isMaxAmountError ? 'Max must be greater than min' : ''}
           InputProps={{
             startAdornment: <InputAdornment position="start">AED</InputAdornment>,
-            inputProps: { min: minAmount || 0, step: 0.01 }
+            inputProps: { min: minAmount || 0, step: 0.01, 'aria-label': 'Maximum amount' }
           }}
           sx={{ minWidth: 120 }}
         />

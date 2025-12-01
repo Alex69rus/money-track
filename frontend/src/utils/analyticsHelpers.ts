@@ -151,18 +151,25 @@ export const filterTransactionsByDate = (transactions: Transaction[], dateFilter
   }
 
   return transactions.filter(transaction => {
+    // Parse transaction date and extract date-only part in local timezone
     const transactionDate = new Date(transaction.transactionDate);
+    const txYear = transactionDate.getFullYear();
+    const txMonth = transactionDate.getMonth();
+    const txDay = transactionDate.getDate();
+    const txDateOnly = new Date(txYear, txMonth, txDay);
 
     if (dateFilter.startDate) {
-      const startDate = new Date(dateFilter.startDate);
-      startDate.setHours(0, 0, 0, 0); // Start of day
-      if (transactionDate < startDate) return false;
+      // Parse start date in local timezone (YYYY-MM-DD format)
+      const [year, month, day] = dateFilter.startDate.split('-').map(Number);
+      const startDate = new Date(year, month - 1, day); // month is 0-indexed
+      if (txDateOnly < startDate) return false;
     }
 
     if (dateFilter.endDate) {
-      const endDate = new Date(dateFilter.endDate);
-      endDate.setHours(23, 59, 59, 999); // End of day
-      if (transactionDate > endDate) return false;
+      // Parse end date in local timezone (YYYY-MM-DD format)
+      const [year, month, day] = dateFilter.endDate.split('-').map(Number);
+      const endDate = new Date(year, month - 1, day);
+      if (txDateOnly > endDate) return false;
     }
 
     return true;

@@ -14,8 +14,8 @@ public static class TransactionEndpoints
 
         transactions.MapGet("/", GetTransactions)
             .WithName("GetTransactions")
-            .WithSummary("Get user's transactions with optional filters and search")
-            .WithDescription("Retrieves transactions for the authenticated user with optional date range, amount, category, tag filters and text search across amount, note, tags and category name");
+            .WithSummary("Get user's transactions with optional filters, search and pagination")
+            .WithDescription("Retrieves transactions for the authenticated user with optional date range, amount, category, tag filters, text search and pagination (skip/take)");
 
         transactions.MapPost("/", CreateTransaction)
             .WithName("CreateTransaction")
@@ -42,7 +42,9 @@ public static class TransactionEndpoints
         decimal? maxAmount = null,
         int? categoryId = null,
         string? tags = null,
-        string? text = null)
+        string? text = null,
+        int? skip = null,
+        int? take = null)
     {
         var userId = authService.GetUserIdFromInitData();
 
@@ -82,9 +84,15 @@ public static class TransactionEndpoints
             );
         }
 
-        var transactions = await query
-            .OrderByDescending(t => t.TransactionDate)
-            .ToListAsync();
+        IQueryable<Transaction> orderedQuery = query.OrderByDescending(t => t.TransactionDate);
+
+        if (skip.HasValue)
+            orderedQuery = orderedQuery.Skip(skip.Value);
+
+        if (take.HasValue)
+            orderedQuery = orderedQuery.Take(take.Value);
+
+        var transactions = await orderedQuery.ToListAsync();
 
         return Results.Ok(transactions);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Autocomplete,
@@ -6,7 +6,7 @@ import {
   Chip,
   Typography
 } from '@mui/material';
-import ApiService from '../../services/api';
+import { useUserTags } from '../../hooks/useUserTags';
 
 interface TagsFilterProps {
   selectedTags: string[];
@@ -17,27 +17,10 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
   selectedTags,
   onTagsChange,
 }) => {
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const { tags: availableTags } = useUserTags();
   const [inputValue, setInputValue] = useState('');
 
-  // Fetch available tags from API
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const apiService = ApiService.getInstance();
-        const tagsData = await apiService.getUserTags();
-        setAvailableTags(tagsData);
-      } catch (error) {
-        console.error('Failed to fetch tags:', error);
-        // Fallback to empty array if API fails
-        setAvailableTags([]);
-      }
-    };
-
-    fetchTags();
-  }, []);
-
-  const handleTagsChange = (event: any, newTags: string[]) => {
+  const handleTagsChange = (_event: React.SyntheticEvent, newTags: string[]) => {
     onTagsChange(newTags);
   };
 

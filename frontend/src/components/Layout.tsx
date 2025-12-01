@@ -86,9 +86,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           onChange={handleNavigationChange}
           showLabels
         >
-          <BottomNavigationAction label="Transactions" icon={<Receipt />} />
-          <BottomNavigationAction label="Analytics" icon={<Analytics />} />
-          <BottomNavigationAction label="AI Chat" icon={<Chat />} />
+          <BottomNavigationAction label="Transactions" icon={<Receipt />} aria-label="View transactions" />
+          <BottomNavigationAction label="Analytics" icon={<Analytics />} aria-label="View analytics" />
+          <BottomNavigationAction label="AI Chat" icon={<Chat />} aria-label="Open AI chat" />
         </BottomNavigation>
       </Paper>
     </Box>

@@ -30,18 +30,17 @@ export const formatDate = (dateString: string): string => {
   return `${day}/${month}/${year}`;
 };
 
-export const formatTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  
-  if (isNaN(date.getTime())) {
+export const formatTime = (date: Date | string): string => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+
+  if (isNaN(d.getTime())) {
     return 'Invalid Time';
   }
 
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  
-  return `${hours}:${minutes}:${seconds}`;
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+
+  return `${hours}:${minutes}`;
 };
 
 export const formatCurrency = (amount: number, currency: string = 'AED'): string => {
@@ -61,7 +60,7 @@ export const formatCurrencyWithSign = (amount: number, currency: string = 'AED')
 };
 
 export const getCurrencyColor = (amount: number): string => {
-  if (amount > 0) return '#2e7d32'; // Income - green
-  if (amount < 0) return 'inherit'; // Expense - black (inherit)
-  return 'primary';                 // Zero - default
+  if (amount > 0) return 'success.main'; // Income - green
+  if (amount < 0) return 'text.primary'; // Expense - black
+  return 'primary.main';                 // Zero - default
 };
