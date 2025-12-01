@@ -56,13 +56,13 @@ jobs:
         dotnet-version: '8.0.x'
     
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore MoneyTrack.Api.csproj
     
     - name: Build backend
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build MoneyTrack.Api.csproj --no-restore --configuration Release
     
     - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet test MoneyTrack.Api.csproj --no-build --configuration Release --verbosity normal
 
   build-and-push:
     needs: [test-frontend, test-backend]
