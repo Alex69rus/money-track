@@ -4,7 +4,9 @@ import {
   TextField,
   Chip,
   Box,
-  Typography
+  Typography,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { Category } from '../types';
 
@@ -37,6 +39,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const autocompleteRef = useRef<any>(null);
+
+  // Mobile detection for proactive dropdown placement
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Filter categories based on search term and transaction amount
   const filteredCategories = useMemo(() => {
@@ -98,6 +104,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
+  // Determine placement based on mobile context
+  const dropdownPlacement = isMobile ? 'top-start' : 'bottom-start';
+
   return (
     <Autocomplete
       ref={autocompleteRef}
@@ -112,11 +121,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       noOptionsText={searchTerm.trim() ? `No categories found for "${searchTerm}"` : "No categories found"}
       slotProps={{
         popper: {
-          placement: 'bottom-start',
+          placement: dropdownPlacement,
           modifiers: [
             {
               name: 'flip',
-              enabled: true,
+              enabled: !isMobile,
               options: {
                 fallbackPlacements: ['top-start', 'bottom-start'],
                 padding: 8,
@@ -126,7 +135,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               name: 'preventOverflow',
               options: {
                 boundary: 'viewport',
-                padding: 8,
+                padding: isMobile ? 4 : 8,
               },
             },
             {

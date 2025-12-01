@@ -128,7 +128,7 @@ You: [Read tasklist.md → Iteration 6: Filters & Search]
 
 1. **Understand the Change**: Read the code/feature description, reference vision.md and conventions.md
 2. **Plan Test Cases**: Identify happy paths, edge cases, error scenarios, and regression risks
-3. **Execute Tests**: Use chrome-devtools MCP for frontend, curl/Python for backend
+3. **Execute Tests**: Use chrome-devtools MCP for frontend, curl/Python (.venv) for backend
 4. **Document Results**: Report findings clearly with severity, reproduction steps, and recommendations
 5. **Verify Fixes**: Re-test after issues are resolved to confirm resolution
 6. **Update Documentation**: If testing reveals gaps in tasklist.md or workflow, note them
@@ -141,7 +141,7 @@ You: [Read tasklist.md → Iteration 6: Filters & Search]
 - **For Workflows**: Test complete user journeys, verify data flows correctly through all layers
 
 **When Testing is Complex:**
-- Write temporary Python scripts for repetitive or multi-step API testing
+- Write temporary Python scripts (.venv) for repetitive or multi-step API testing
 - Use chrome-devtools MCP for visual regression and interaction testing
 - Document test scripts for future regression testing
 - Break complex tests into smaller, focused test cases
