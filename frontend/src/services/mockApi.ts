@@ -88,6 +88,8 @@ export class MockApiService {
     // Date range filtering
     if (filters?.startDate) {
       const startDate = new Date(filters.startDate);
+      // Normalize to start of day (00:00:00) for consistent comparison
+      startDate.setHours(0, 0, 0, 0);
       filteredTransactions = filteredTransactions.filter(t => {
         const txDate = new Date(t.transactionDate);
         return txDate >= startDate;
@@ -96,7 +98,7 @@ export class MockApiService {
 
     if (filters?.endDate) {
       const endDate = new Date(filters.endDate);
-      // Set to end of day to include transactions on the end date
+      // Set to end of day (23:59:59.999) to include transactions on the end date
       endDate.setHours(23, 59, 59, 999);
       filteredTransactions = filteredTransactions.filter(t => {
         const txDate = new Date(t.transactionDate);
