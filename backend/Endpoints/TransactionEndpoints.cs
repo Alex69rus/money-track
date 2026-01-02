@@ -62,8 +62,8 @@ public static class TransactionEndpoints
 
         if (toDate.HasValue)
         {
-            // Include the entire end date by setting time to end of day (23:59:59.999)
-            // AddDays(1).AddTicks(-1) is equivalent to 23:59:59.9999999
+            // Include the entire end date by setting time to end of day (23:59:59.9999999)
+            // AddDays(1).AddTicks(-1) is the most precise way to get end of day
             // Ensure DateTime.Kind is UTC for PostgreSQL compatibility
             var endOfDay = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
             query = query.Where(t => t.TransactionDate <= endOfDay);
