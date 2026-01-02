@@ -87,31 +87,31 @@ export class MockApiService {
 
     // Date range filtering - parse transaction dates once for performance
     if (filters?.startDate || filters?.endDate) {
-      filteredTransactions = filteredTransactions.map(t => ({
-        ...t,
-        _parsedDate: new Date(t.transactionDate)
-      }));
+      // Create a map of transaction dates for efficient lookup
+      const dateMap = new Map<Transaction, Date>();
+      filteredTransactions.forEach(t => {
+        dateMap.set(t, new Date(t.transactionDate));
+      });
 
       if (filters.startDate) {
         const startDate = new Date(filters.startDate);
         // Normalize to start of day (00:00:00) for consistent comparison
         startDate.setHours(0, 0, 0, 0);
-        filteredTransactions = filteredTransactions.filter(t => 
-          (t as any)._parsedDate >= startDate
-        );
+        filteredTransactions = filteredTransactions.filter(t => {
+          const txDate = dateMap.get(t);
+          return txDate && txDate >= startDate;
+        });
       }
 
       if (filters.endDate) {
         const endDate = new Date(filters.endDate);
         // Set to end of day (23:59:59.999) to include transactions on the end date
         endDate.setHours(23, 59, 59, 999);
-        filteredTransactions = filteredTransactions.filter(t => 
-          (t as any)._parsedDate <= endDate
-        );
+        filteredTransactions = filteredTransactions.filter(t => {
+          const txDate = dateMap.get(t);
+          return txDate && txDate <= endDate;
+        });
       }
-
-      // Remove temporary parsed date property
-      filteredTransactions = filteredTransactions.map(({ _parsedDate, ...t }: any) => t);
     }
 
     // Category filtering
