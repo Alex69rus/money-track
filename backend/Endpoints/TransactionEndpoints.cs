@@ -56,7 +56,11 @@ public static class TransactionEndpoints
             query = query.Where(t => t.TransactionDate >= fromDate.Value);
 
         if (toDate.HasValue)
-            query = query.Where(t => t.TransactionDate <= toDate.Value);
+        {
+            // Include the entire end date by setting time to end of day
+            var endOfDay = toDate.Value.Date.AddDays(1).AddTicks(-1);
+            query = query.Where(t => t.TransactionDate <= endOfDay);
+        }
 
         if (minAmount.HasValue)
             query = query.Where(t => t.Amount >= minAmount.Value);
