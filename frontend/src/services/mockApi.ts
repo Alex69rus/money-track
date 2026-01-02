@@ -85,6 +85,69 @@ export class MockApiService {
 
     let filteredTransactions = [...mockTransactions];
 
+    // Date range filtering - parse transaction dates once for performance
+    if (filters?.startDate || filters?.endDate) {
+      // Create a map of transaction dates for efficient lookup
+      const dateMap = new Map<Transaction, Date>();
+      filteredTransactions.forEach(t => {
+        dateMap.set(t, new Date(t.transactionDate));
+      });
+
+      if (filters.startDate) {
+        const startDate = new Date(filters.startDate);
+        // Normalize to start of day (00:00:00) for consistent comparison
+        startDate.setHours(0, 0, 0, 0);
+        filteredTransactions = filteredTransactions.filter(t => {
+          const txDate = dateMap.get(t);
+          return txDate && txDate >= startDate;
+        });
+      }
+
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate);
+        // Set to end of day (23:59:59.999) to include transactions on the end date
+        endDate.setHours(23, 59, 59, 999);
+        filteredTransactions = filteredTransactions.filter(t => {
+          const txDate = dateMap.get(t);
+          return txDate && txDate <= endDate;
+        });
+      }
+    }
+
+    // Category filtering
+    if (filters?.categoryId) {
+      filteredTransactions = filteredTransactions.filter(t => 
+        t.categoryId === filters.categoryId
+      );
+    }
+
+    if (filters?.categoryIds && filters.categoryIds.length > 0) {
+      filteredTransactions = filteredTransactions.filter(t => 
+        t.categoryId && filters.categoryIds!.includes(t.categoryId)
+      );
+    }
+
+    // Tags filtering
+    if (filters?.tags && filters.tags.length > 0) {
+      filteredTransactions = filteredTransactions.filter(t =>
+        filters.tags!.some(filterTag => t.tags.includes(filterTag))
+      );
+    }
+
+    // Amount range filtering
+    if (filters?.minAmount !== undefined && filters?.minAmount !== null) {
+      filteredTransactions = filteredTransactions.filter(t => 
+        Math.abs(t.amount) >= filters.minAmount!
+      );
+    }
+
+    if (filters?.maxAmount !== undefined && filters?.maxAmount !== null) {
+      filteredTransactions = filteredTransactions.filter(t => 
+        Math.abs(t.amount) <= filters.maxAmount!
+      );
+    }
+
+    // Search text filtering
     if (filters?.searchText) {
       const searchTerm = filters.searchText.toLowerCase();
       filteredTransactions = filteredTransactions.filter(t =>

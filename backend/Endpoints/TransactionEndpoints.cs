@@ -53,10 +53,21 @@ public static class TransactionEndpoints
             .Where(t => t.UserId == userId);
 
         if (fromDate.HasValue)
-            query = query.Where(t => t.TransactionDate >= fromDate.Value);
+        {
+            // Ensure DateTime.Kind is UTC for PostgreSQL compatibility
+            // Use start of day (00:00:00) for the from date
+            var startOfDay = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
+            query = query.Where(t => t.TransactionDate >= startOfDay);
+        }
 
         if (toDate.HasValue)
-            query = query.Where(t => t.TransactionDate <= toDate.Value);
+        {
+            // Include the entire end date by setting time to end of day (23:59:59.9999999)
+            // AddDays(1).AddTicks(-1) is the most precise way to get end of day
+            // Ensure DateTime.Kind is UTC for PostgreSQL compatibility
+            var endOfDay = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            query = query.Where(t => t.TransactionDate <= endOfDay);
+        }
 
         if (minAmount.HasValue)
             query = query.Where(t => t.Amount >= minAmount.Value);
