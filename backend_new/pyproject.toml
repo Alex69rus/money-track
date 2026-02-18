@@ -1,0 +1,44 @@
+[project]
+name = "money-track-backend-new"
+version = "0.1.0"
+description = "Python backend migration target for Money Track"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi>=0.116.0,<1.0.0",
+  "uvicorn[standard]>=0.35.0,<1.0.0",
+  "piccolo>=1.24.0,<2.0.0",
+  "asyncpg>=0.30.0,<1.0.0",
+  "pydantic>=2.11.0,<3.0.0",
+  "pydantic-settings>=2.10.0,<3.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4.0,<9.0.0",
+  "httpx>=0.28.0,<1.0.0",
+  "mypy>=1.17.0,<2.0.0",
+  "ruff>=0.12.0,<1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+exclude = ["piccolo_migrations/"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
