@@ -6,9 +6,9 @@ Migrate backend functionality from `/backend` to `/backend_new` with contract pa
 
 ## 2. Inputs
 
-- PRD: `docs/pdr/backend-migration-prd.md`
-- Scaffold spec: `docs/pdr/backend-migration-scaffold-spec.md`
-- Test strategy: `docs/pdr/backend-migration-test-strategy.md`
+- PRD: `docs/prd/backend-migration-prd.md`
+- Scaffold spec: `docs/prd/backend-migration-scaffold-spec.md`
+- Test strategy: `docs/prd/backend-migration-test-strategy.md`
 
 ## 3. Execution Protocol
 
@@ -24,7 +24,7 @@ Follow iterative loop strictly:
 
 Allowed edits:
 - `/Users/akukharev/src/rnd/money-track/backend_new/**`
-- test assets and migration docs under `/Users/akukharev/src/rnd/money-track/docs/pdr/**`
+- test assets and migration docs under `/Users/akukharev/src/rnd/money-track/docs/prd/**`
 
 Forbidden edits (unless explicitly approved):
 - `/Users/akukharev/src/rnd/money-track/backend/**`

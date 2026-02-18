@@ -98,6 +98,6 @@ A slice is complete only when:
 
 ## Key References
 
-- `/Users/akukharev/src/rnd/money-track/docs/pdr/backend-migration-prd.md`
-- `/Users/akukharev/src/rnd/money-track/docs/pdr/backend-migration-test-strategy.md`
-- `/Users/akukharev/src/rnd/money-track/docs/pdr/backend-migration-agent-runbook.md`
+- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-prd.md`
+- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-test-strategy.md`
+- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-agent-runbook.md`
