@@ -2,8 +2,8 @@
 
 ## 1. Context
 
-Current backend is implemented in .NET Minimal API under `/Users/akukharev/src/rnd/money-track/backend`.
-The target is a new Python backend in `/Users/akukharev/src/rnd/money-track/backend_new` with behavior parity for existing frontend and n8n integrations.
+Current backend is implemented in .NET Minimal API under `./backend`.
+The target is a new Python backend in `./backend_new` with behavior parity for existing frontend and n8n integrations.
 
 ## 2. Goal
 
@@ -33,8 +33,8 @@ Deliver Python backend with API and database behavior equivalent to current C# b
 
 ## 5. Hard Constraints
 
-- Python backend location: `/Users/akukharev/src/rnd/money-track/backend_new`.
-- C# backend location: `/Users/akukharev/src/rnd/money-track/backend` remains unchanged.
+- Python backend location: `./backend_new`.
+- C# backend location: `./backend` remains unchanged.
 - Existing database schema remains backward compatible in phase 1.
 - Integration suite is authored from C# behavior, then used as primary feedback loop for Python backend.
 - Frontend should switch backend by URL only (no payload contract changes).
@@ -98,6 +98,7 @@ Preserve key constraints and behavior:
 - Deterministic test environment with reproducible fixtures.
 - CI-friendly setup for agent-driven iterative execution.
 - All project commands should be runnable through `uv`.
+- Iteration learnings must be captured in `./backend_new/GUARDRAILS.md` (takeaways + explorations + prevention rules).
 
 ## 9. Acceptance Criteria
 

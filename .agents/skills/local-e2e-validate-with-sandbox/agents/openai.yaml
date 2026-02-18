@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sandbox E2E Validator"
+  short_description: "Run local E2E checks under sandbox constraints"
+  default_prompt: "Use $local-e2e-validate-with-sandbox to run and debug local end-to-end validation with sandbox-safe retries."

@@ -4,13 +4,13 @@ This file defines strict rules for AI agents implementing the Python backend mig
 
 ## Mission
 
-Build a Python backend in `/Users/akukharev/src/rnd/money-track/backend_new` with behavior parity to `/Users/akukharev/src/rnd/money-track/backend`.
+Build a Python backend in `./backend_new` with behavior parity to `./backend`.
 
 ## Hard Boundaries
 
-- Edit only files under `/Users/akukharev/src/rnd/money-track/backend_new` unless explicitly requested.
-- Do not modify `/Users/akukharev/src/rnd/money-track/backend` (baseline for comparison).
-- Do not modify `/Users/akukharev/src/rnd/money-track/frontend`.
+- Edit only files under `./backend_new` unless explicitly requested.
+- Do not modify `./backend` (baseline for comparison).
+- Do not modify `./frontend`.
 - Preserve API contract parity (status codes, payloads, validation behavior).
 
 ## Required Stack
@@ -81,6 +81,11 @@ Create dedicated FastAPI routers matching C# endpoint groups:
    - test results
    - parity gaps
    - next slice
+7. After each iteration, update `./backend_new/GUARDRAILS.md` with:
+   - Takeaways (pitfalls, root causes, preferred fixes)
+   - Exploration notes (what was checked, ruled out, and why)
+   - One prevention rule for future runs
+   Keep notes concise and action-oriented.
 
 ## Quality Gates
 
@@ -98,6 +103,7 @@ A slice is complete only when:
 
 ## Key References
 
-- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-prd.md`
-- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-test-strategy.md`
-- `/Users/akukharev/src/rnd/money-track/docs/prd/backend-migration-agent-runbook.md`
+- `./docs/prd/backend-migration-prd.md`
+- `./docs/prd/backend-migration-test-strategy.md`
+- `./docs/prd/backend-migration-agent-runbook.md`
+- `./backend_new/GUARDRAILS.md`

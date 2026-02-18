@@ -9,6 +9,7 @@ Migrate backend functionality from `/backend` to `/backend_new` with contract pa
 - PRD: `docs/prd/backend-migration-prd.md`
 - Scaffold spec: `docs/prd/backend-migration-scaffold-spec.md`
 - Test strategy: `docs/prd/backend-migration-test-strategy.md`
+- Guardrail log: `./backend_new/GUARDRAILS.md`
 
 ## 3. Execution Protocol
 
@@ -19,16 +20,17 @@ Follow iterative loop strictly:
 3. Run integration suite against `backend_new`
 4. Publish report
 5. Continue to next smallest missing slice
+6. Append takeaways/exploration/prevention notes to guardrail log
 
 ## 4. Change Policy
 
 Allowed edits:
-- `/Users/akukharev/src/rnd/money-track/backend_new/**`
-- test assets and migration docs under `/Users/akukharev/src/rnd/money-track/docs/prd/**`
+- `./backend_new/**`
+- test assets and migration docs under `./docs/prd/**`
 
 Forbidden edits (unless explicitly approved):
-- `/Users/akukharev/src/rnd/money-track/backend/**`
-- `/Users/akukharev/src/rnd/money-track/frontend/**`
+- `./backend/**`
+- `./frontend/**`
 - n8n workflows
 
 ## 5. Mandatory Validation per Iteration
@@ -53,6 +55,7 @@ Stop and request human decision when:
 - Known deviations
 - Risks
 - Next step
+- Guardrail updates added to `./backend_new/GUARDRAILS.md`
 
 ## 8. Completion Gate
 

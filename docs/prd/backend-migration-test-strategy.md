@@ -18,8 +18,8 @@ Single-suite rule:
 
 ## 3. Baseline and Candidate
 
-- Baseline: `/Users/akukharev/src/rnd/money-track/backend`
-- Candidate: `/Users/akukharev/src/rnd/money-track/backend_new`
+- Baseline: `./backend`
+- Candidate: `./backend_new`
 
 Both must be validated against same fixtures and expected outcomes.
 
@@ -57,3 +57,4 @@ Per run, produce:
 - Endpoint scenario failures.
 - Payload diff summary.
 - DB invariant failures.
+- Guardrail entry updates in `./backend_new/GUARDRAILS.md` when new pitfalls or reliable patterns are discovered.
