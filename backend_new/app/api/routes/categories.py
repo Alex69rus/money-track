@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
+
+from app.db.queries import fetch_categories
+from app.schemas.responses import CategoryResponse
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_categories() -> dict[str, str]:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented yet")
+async def get_categories() -> list[CategoryResponse]:
+    return await fetch_categories()

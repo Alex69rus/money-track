@@ -64,6 +64,14 @@ Create dedicated FastAPI routers matching C# endpoint groups:
 - Use snake_case naming compatible with current DB tables/columns.
 - Write Piccolo migrations using explicit raw SQL.
 - Prefer additive/compatible changes only in migration phase 1.
+- Use Piccolo `.objects()` for entity fetches (prefer this over `.select()` in runtime CRUD code).
+
+## Typing Rules
+
+- Write strictly typed Python code; avoid anonymous/untyped payload structures.
+- Do not use `Any` for service/query contracts.
+- Define a class for each DB entity and pass/return typed classes or typed schema models.
+- Avoid `dict[str, Any]` in runtime code paths.
 
 ## Development Workflow Per Iteration
 
@@ -100,6 +108,7 @@ A slice is complete only when:
 - behavior matches baseline for covered scenarios;
 - checks are green (`ruff`, `mypy`, `pytest`);
 - no forbidden files were modified.
+- iteration in `./docs/tasklist.md` successfuly and FULLY finished and marked as done
 
 ## Key References
 

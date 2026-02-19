@@ -58,3 +58,53 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: relying on module-pattern overrides only.
   - Why: direct `disable_error_code` in top-level mypy config is deterministic across invocation styles.
 - Prevention rule: after any mypy config change, run `ruff check . && mypy .` from `backend_new/` in one command to validate config-effect and avoid false-green assumptions.
+
+### 2026-02-19 - Auth + Read Slice Implementation
+
+- Takeaway: mirroring C# error contract requires explicit unauthorized/internal handlers instead of FastAPI defaults (`detail` payloads differ).
+  - Root cause: framework default exception serialization drifts from baseline contract.
+  - Preferred fix: register custom exception handlers returning `{error, message}` shape for 401/500 paths.
+- Exploration: checked whether to rely on Piccolo query builder for endpoint parity in this slice.
+  - Ruled out: forcing full query-builder migration before parity semantics are stable.
+  - Why: raw SQL via asyncpg provided faster control for date-range, tag overlap, and text-search parity behavior.
+- Prevention rule: for each migrated endpoint, codify contract-first response fields in one serializer helper and reuse across CRUD routes.
+
+### 2026-02-19 - ORM Compliance Follow-up
+
+- Takeaway: migration slices must keep runtime CRUD/query paths on Piccolo ORM only; raw SQL in app code violates agreed migration constraints.
+  - Root cause: parity implementation optimized quickly with asyncpg SQL before enforcing stack boundary.
+  - Preferred fix: define Piccolo table models early and route all reads/writes through Piccolo query / object APIs.
+- Exploration: evaluated keeping asyncpg for read filters while using Piccolo only for writes.
+  - Ruled out: mixed runtime DB access layers.
+  - Why: requirement explicitly mandates Piccolo for writing and fetching service CRUD logic.
+- Prevention rule: before opening a PR, run a grep gate for DB access imports (`asyncpg`, direct SQL strings) under `backend_new/app` and replace with Piccolo equivalents.
+
+### 2026-02-19 - Typed ORM Contract Tightening
+
+- Takeaway: parity code that compiles can still drift from team standards if query/service boundaries use `Any` or anonymous dict payloads.
+  - Root cause: rapid endpoint migration favored loose shapes over explicit contracts.
+  - Preferred fix: route DB outputs through typed schema models and keep query function signatures class-based.
+- Exploration: evaluated keeping Piccolo `.select()` for partial-field optimization.
+  - Ruled out: mixed fetch styles for entity reads in runtime service paths.
+  - Why: project rule now requires `.objects()` for entity fetch consistency.
+- Prevention rule: before commit, run grep checks for `.select(` and `Any` in `backend_new/app` and resolve hits in runtime code.
+
+### 2026-02-19 - DB-Level Filtering Enforcement
+
+- Takeaway: loading all transactions and then filtering in Python violates scalability and parity expectations for query semantics.
+  - Root cause: fast migration favored correctness-first loops over DB-side predicate composition.
+  - Preferred fix: compose filters directly on Piccolo query objects (`.where(...)`, pagination in query), then map only returned rows.
+- Exploration: verified runtime code paths for transactions now apply date/amount/category/tag/text predicates as query conditions before pagination.
+  - Ruled out: retaining Python-side filtering loops.
+  - Why: requirement is explicit that entity filtering must stay on the database side.
+- Prevention rule: reject any PR where list endpoints call `.run()` before all requested filters and pagination are attached to the query.
+
+### 2026-02-19 - Test Dependency Availability
+
+- Takeaway: integration tests depending on `httpx` should not rely only on optional dev installation paths when the suite is a primary migration gate.
+  - Root cause: environments executing project-only installs can miss HTTP client test prerequisites.
+  - Preferred fix: include `httpx` in core project dependencies to keep test harness imports available in standard setup flows.
+- Exploration: confirmed integration fixture import path requires `httpx` at test collection time.
+  - Ruled out: deferring `httpx` availability to ad-hoc manual installs.
+  - Why: that makes parity test runs inconsistent across environments.
+- Prevention rule: when integration suite adds a new third-party import in `tests/**`, validate dependency placement in `pyproject.toml` before merging.

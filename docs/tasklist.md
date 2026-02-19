@@ -10,8 +10,8 @@
 | Step | Scope | Status | Date | Notes |
 |------|-------|--------|------|-------|
 | C# Parity Tests - Step 1 | Integration parity suite in `backend_new/tests/integration` for C# baseline | ✅ Complete | 2026-02-18 | Added deterministic DB fixtures, CRUD/filter/auth/integrity scenarios, and JSON capture support |
-| Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | 🔄 In Progress | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
-| Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ⏳ Pending | - | Includes development bypass and unauthorized response parity |
+| Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | ✅ Complete | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
+| Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ✅ Complete | 2026-02-19 | Categories/tags parity validated against `backend_new`; full integration suite green (`16 passed, 2 skipped`) |
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ⏳ Pending | - | Includes inclusive `toDate` handling and `hasMore` behavior |
 | Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ⏳ Pending | - | Includes default field behavior and status code parity |
 | Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ⏳ Pending | - | Forward-only migration flow |
@@ -24,30 +24,30 @@
 ### Iteration M1: Scaffold + Runtime Baseline
 **Goal:** Make `backend_new` a reliable runtime foundation before endpoint logic.
 
-- [ ] Validate folder/module structure matches scaffold spec
-- [ ] Implement centralized `pydantic_settings` config with `.env` support
-- [ ] Add DB connection lifecycle management for Piccolo/PostgreSQL
-- [ ] Add global exception handling and info/error logging baseline
-- [ ] Ensure `/health` remains parity-compliant (`200`, body `OK`)
+- [x] Validate folder/module structure matches scaffold spec
+- [x] Implement centralized `pydantic_settings` config with `.env` support
+- [x] Add DB connection lifecycle management for Piccolo/PostgreSQL
+- [x] Add global exception handling and info/error logging baseline
+- [x] Ensure `/health` remains parity-compliant (`200`, body `OK`)
 
 **Exit Criteria:** `uv run ruff format .`, `uv run ruff check .`, `uv run mypy .`, `uv run pytest -q` pass in `backend_new`.
 
 ### Iteration M2: Auth Contract Parity
 **Goal:** Lock auth behavior before business endpoint implementation.
 
-- [ ] Implement Telegram initData validator service
-- [ ] Implement development bypass semantics with fixed test user ID
-- [ ] Return baseline-equivalent unauthorized shape for missing/invalid auth
-- [ ] Apply auth dependency consistently to protected endpoint groups
+- [x] Implement Telegram initData validator service
+- [x] Implement development bypass semantics with fixed test user ID
+- [x] Return baseline-equivalent unauthorized shape for missing/invalid auth
+- [x] Apply auth dependency consistently to protected endpoint groups
 
 **Exit Criteria:** Auth-related integration scenarios pass against `backend_new`; no contract drift in status/error body.
 
 ### Iteration M3: Categories + Tags Read Parity
 **Goal:** Deliver first read-path parity endpoints.
 
-- [ ] Implement `GET /api/categories` with sort order parity (`order_index`, then `name`)
-- [ ] Implement `GET /api/tags` with distinct sorted tags for current user only
-- [ ] Align schema/serialization naming with existing frontend contract
+- [x] Implement `GET /api/categories` with sort order parity (`order_index`, then `name`)
+- [x] Implement `GET /api/tags` with distinct sorted tags for current user only
+- [x] Align schema/serialization naming with existing frontend contract
 
 **Exit Criteria:** Categories/tags parity tests green against `backend_new`.
 
@@ -106,4 +106,3 @@
 - [ ] Keep slices small; do not start next iteration until current gates are green
 - [ ] Modify only allowed paths (`backend_new/**`, `docs/prd/**` when needed)
 - [ ] Stop and request decision if baseline behavior is ambiguous or requires schema redesign
-

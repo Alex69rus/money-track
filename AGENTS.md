@@ -140,6 +140,7 @@ Agent: Implements DateRangeFilter component with proper hooks, types, and MUI co
 - Create repository patterns or excess abstractions
 - Add integration tests for MVP
 - Implement caching solutions
+- Use `/tmp` for temporary files; use files under the current working directory instead
 
 **Frontend:**
 - Use 'any' type in TypeScript

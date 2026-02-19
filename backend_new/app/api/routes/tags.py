@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends
+
+from app.db.queries import fetch_tags
+from app.services.auth import get_current_user_id
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_tags() -> dict[str, str]:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented yet")
+async def get_tags(user_id: int = Depends(get_current_user_id)) -> list[str]:
+    return await fetch_tags(user_id=user_id)
