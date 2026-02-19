@@ -12,7 +12,7 @@
 | C# Parity Tests - Step 1 | Integration parity suite in `backend_new/tests/integration` for C# baseline | ✅ Complete | 2026-02-18 | Added deterministic DB fixtures, CRUD/filter/auth/integrity scenarios, and JSON capture support |
 | Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | ✅ Complete | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
 | Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ✅ Complete | 2026-02-19 | Categories/tags parity validated against `backend_new`; full integration suite green (`16 passed, 2 skipped`) |
-| Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ⏳ Pending | - | Includes inclusive `toDate` handling and `hasMore` behavior |
+| Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ✅ Complete | 2026-02-19 | Verified defaults/filters/inclusive `toDate`/`hasMore` parity; `backend_new` integration suite `17 passed, 2 skipped` |
 | Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ⏳ Pending | - | Includes default field behavior and status code parity |
 | Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ⏳ Pending | - | Forward-only migration flow |
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ⏳ Pending | - | No edits in `backend/**` or `frontend/**` |
@@ -54,10 +54,10 @@
 ### Iteration M4: Transactions List Parity (Core Semantics)
 **Goal:** Match baseline behavior for `GET /api/transactions`.
 
-- [ ] Implement defaults `skip=0`, `take=50`, and `hasMore` calculation
-- [ ] Implement date range semantics including inclusive end-of-day `toDate`
-- [ ] Implement amount/category/tag/text filters with baseline behavior
-- [ ] Ensure response envelope parity (`data`, `totalCount`, `skip`, `take`, `hasMore`)
+- [x] Implement defaults `skip=0`, `take=50`, and `hasMore` calculation
+- [x] Implement date range semantics including inclusive end-of-day `toDate`
+- [x] Implement amount/category/tag/text filters with baseline behavior
+- [x] Ensure response envelope parity (`data`, `totalCount`, `skip`, `take`, `hasMore`)
 
 **Exit Criteria:** All transactions-read parity tests green, including filter and pagination scenarios.
 

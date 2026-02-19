@@ -1,34 +1,26 @@
-# AGENT.MD - backend_new
+# AGENTS.MD - backend_new
 
-This file defines strict rules for AI agents implementing the Python backend migration in this folder.
+Rules for AI agents implementing Python backend migration in this folder.
 
-## Mission
+## Non-Negotiables
 
-Build a Python backend in `./backend_new` with behavior parity to `./backend`.
-
-## Hard Boundaries
-
-- Edit only files under `./backend_new` unless explicitly requested.
-- Do not modify `./backend` (baseline for comparison).
-- Do not modify `./frontend`.
+- Mission: build `./backend_new` with behavior parity to `./backend`.
+- Edit only `./backend_new` unless explicitly requested.
+- Do not modify `./backend` or `./frontend`.
 - Preserve API contract parity (status codes, payloads, validation behavior).
+- A slice is done only when parity for covered scenarios is confirmed, checks are green, no forbidden files changed, and iteration is fully marked done in `./docs/tasklist.md`.
 
-## Required Stack
+## Stack and Standards
 
-- Python `3.13`
-- Local `.venv`
-- `uv` for dependency management and command execution
-- API: `FastAPI` + `uvicorn`
-- ORM: `Piccolo`
-- Migrations: `Piccolo` with raw SQL migrations only
-- Migration mode: forward-only (no need to implement `run_backwards`)
-- Validation: `Pydantic`
-- Config: single `pydantic_settings` config object with `.env` support
-- Type checking: `mypy`
-- Formatting/linting: `ruff`
-- Testing: `pytest`
+- Python `3.13`, local `.venv`, `uv` for commands.
+- API: `FastAPI` + `uvicorn`.
+- ORM: `Piccolo` for runtime CRUD/query logic.
+- Migrations: Piccolo raw SQL, forward-only.
+- Validation: `Pydantic`; config via one `pydantic_settings` object with `.env` support.
+- Quality tools: `ruff`, `mypy`, `pytest`.
+- Typing: no `Any` in service/query contracts, no `dict[str, Any]` in runtime paths; use typed schema/entity models.
 
-## Required Structure
+## Required Layout
 
 ```text
 backend_new/
@@ -50,65 +42,46 @@ backend_new/
   .env.example
 ```
 
-## Routing Rules
+## Routing
 
-Create dedicated FastAPI routers matching C# endpoint groups:
-- `transactions` router for `/api/transactions`
-- `categories` router for `/api/categories`
-- `tags` router for `/api/tags`
-- health route for `/health`
+- `/api/transactions` -> `transactions` router
+- `/api/categories` -> `categories` router
+- `/api/tags` -> `tags` router
+- `/health` -> health route
 
-## Database and Migration Rules
+## Operational Guardrails
 
-- Keep schema compatibility with existing PostgreSQL schema.
-- Use snake_case naming compatible with current DB tables/columns.
-- Write Piccolo migrations using explicit raw SQL.
-- Prefer additive/compatible changes only in migration phase 1.
-- Use Piccolo `.objects()` for entity fetches (prefer this over `.select()` in runtime CRUD code).
+- Before integration tests, wait for readiness by polling `GET /health` with timeout; never use fixed sleep.
+- Triage failures before edits: `connectivity | sandbox | auth | contract`.
+- Use explicit env contract in run commands: `BASE_URL`, `TEST_DATABASE_URL`, optional `PRODUCTION_BASE_URL`.
+- Runtime app code in `backend_new/app/**` must use Piccolo ORM only:
+  - no `asyncpg` imports
+  - no direct SQL strings
+  - prefer `.objects()` entity fetches
+- Attach filters and pagination to DB query before execution; never load-all then filter in Python.
+- Preserve baseline error contract; implement explicit 401/500 handlers with `{error, message}` payload shape.
+- When tests add third-party imports, update `pyproject.toml` dependencies in the same change.
+- Use one canonical engine factory shared by runtime and `piccolo_conf.py`.
 
-## Typing Rules
+## Iteration Workflow
 
-- Write strictly typed Python code; avoid anonymous/untyped payload structures.
-- Do not use `Any` for service/query contracts.
-- Define a class for each DB entity and pass/return typed classes or typed schema models.
-- Avoid `dict[str, Any]` in runtime code paths.
-
-## Development Workflow Per Iteration
-
-1. Plan smallest parity slice.
+1. Plan the smallest parity slice.
 2. Implement only that slice.
 3. Run checks:
    - `uv run ruff format .`
    - `uv run ruff check .`
    - `uv run mypy .`
    - `uv run pytest -q`
-4. Run integration suite against `backend_new` as the primary feedback loop.
-5. Run the suite against C# only when authoring or extending test coverage.
-6. Report:
-   - files changed
-   - test results
-   - parity gaps
-   - next slice
-7. After each iteration, update `./backend_new/GUARDRAILS.md` with:
-   - Takeaways (pitfalls, root causes, preferred fixes)
-   - Exploration notes (what was checked, ruled out, and why)
-   - One prevention rule for future runs
-   Keep notes concise and action-oriented.
+4. Run integration suite against `backend_new` as primary feedback.
+5. Run suite against C# only when authoring/extending tests.
+6. Report: changed files, test results, parity gaps, next slice.
+7. Append concise takeaways/exploration/prevention rule to `./backend_new/GUARDRAILS.md`.
 
 ## Quality Gates
 
-Do not proceed to next slice if any gate fails:
-- lint/type/test failures
-- test failures for implemented endpoints
-- unauthorized changes outside allowed folders
-
-## Done Criteria
-
-A slice is complete only when:
-- behavior matches baseline for covered scenarios;
-- checks are green (`ruff`, `mypy`, `pytest`);
-- no forbidden files were modified.
-- iteration in `./docs/tasklist.md` successfuly and FULLY finished and marked as done
+- Stop if lint/type/test fails.
+- Stop if implemented endpoint tests fail.
+- Stop if files outside allowed scope changed.
 
 ## Key References
 

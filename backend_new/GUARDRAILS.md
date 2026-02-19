@@ -108,3 +108,13 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: deferring `httpx` availability to ad-hoc manual installs.
   - Why: that makes parity test runs inconsistent across environments.
 - Prevention rule: when integration suite adds a new third-party import in `tests/**`, validate dependency placement in `pyproject.toml` before merging.
+
+### 2026-02-19 - Transactions Read Parity Gate Execution
+
+- Takeaway: local parity suite failures can be pure connectivity when the API process is not running, even if query logic is already correct.
+  - Root cause: `pytest` integration requests target `BASE_URL` and fail fast with `ConnectError` when no server is listening.
+  - Preferred fix: run an orchestrated command that starts `uvicorn`, polls `/health`, then executes the suite and always cleans up the process.
+- Exploration: initial run classified as `sandbox/permission` when `uv` cache access was denied in sandbox mode.
+  - Ruled out: changing runtime code to fix connection failures.
+  - Why: escalation resolved environment startup and tests passed unchanged (`17 passed, 2 skipped`).
+- Prevention rule: for integration gates, always classify failures first (`connectivity | sandbox | auth | contract`) and rerun with readiness polling before editing app code.
