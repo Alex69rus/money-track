@@ -15,11 +15,15 @@ def _unique_value(namespace: str, suffix: str) -> str:
 
 
 def _transaction_payload(
-    *, message_id: str, note: str, category_id: int | None = None
+    *,
+    message_id: str,
+    note: str,
+    category_id: int | None = None,
+    amount: float = 42.5,
 ) -> dict[str, object]:
     return {
         "transactionDate": "2025-09-21T09:15:00",
-        "amount": 42.5,
+        "amount": amount,
         "note": note,
         "categoryId": category_id,
         "tags": ["it-tag", "parity"],
@@ -270,7 +274,28 @@ def test_transactions_filter_by_tags_any_match(
     assert _unique_value(db_helper.namespace, "tag-miss") not in notes
 
 
+@pytest.mark.parametrize(
+    ("min_amount", "max_amount", "expected_notes", "unexpected_notes"),
+    [
+        (
+            20,
+            50,
+            ("amount-in-range",),
+            ("amount-below", "amount-above"),
+        ),
+        (
+            -20,
+            20,
+            ("amount-negative-in-range", "amount-positive-in-range"),
+            ("amount-negative-below", "amount-positive-above"),
+        ),
+    ],
+)
 def test_transactions_filter_by_min_max_amount(
+    min_amount: int,
+    max_amount: int,
+    expected_notes: tuple[str, ...],
+    unexpected_notes: tuple[str, ...],
     http_client: httpx.Client,
     base_url: str,
     db_helper: DbHelper,
@@ -278,64 +303,78 @@ def test_transactions_filter_by_min_max_amount(
     perform_request,
 ) -> None:
     amount_tag = _unique_value(db_helper.namespace, "amount-range")
-    in_range_note = _unique_value(db_helper.namespace, "amount-in-range")
-    below_note = _unique_value(db_helper.namespace, "amount-below")
-    above_note = _unique_value(db_helper.namespace, "amount-above")
+    amount_rows: list[tuple[Decimal, str, str]]
+    if min_amount >= 0:
+        amount_rows = [
+            (
+                Decimal("9.99"),
+                _unique_value(db_helper.namespace, "amount-below"),
+                _unique_value(db_helper.namespace, "msg-amount-below"),
+            ),
+            (
+                Decimal("30.00"),
+                _unique_value(db_helper.namespace, "amount-in-range"),
+                _unique_value(db_helper.namespace, "msg-amount-in-range"),
+            ),
+            (
+                Decimal("75.00"),
+                _unique_value(db_helper.namespace, "amount-above"),
+                _unique_value(db_helper.namespace, "msg-amount-above"),
+            ),
+        ]
+    else:
+        amount_rows = [
+            (
+                Decimal("-50.00"),
+                _unique_value(db_helper.namespace, "amount-negative-below"),
+                _unique_value(db_helper.namespace, "msg-amount-negative-below"),
+            ),
+            (
+                Decimal("-10.00"),
+                _unique_value(db_helper.namespace, "amount-negative-in-range"),
+                _unique_value(db_helper.namespace, "msg-amount-negative-in-range"),
+            ),
+            (
+                Decimal("10.00"),
+                _unique_value(db_helper.namespace, "amount-positive-in-range"),
+                _unique_value(db_helper.namespace, "msg-amount-positive-in-range"),
+            ),
+            (
+                Decimal("30.00"),
+                _unique_value(db_helper.namespace, "amount-positive-above"),
+                _unique_value(db_helper.namespace, "msg-amount-positive-above"),
+            ),
+        ]
 
-    asyncio.run(
-        db_helper.insert_transaction(
-            SeedTransaction(
-                user_id=test_user_id,
-                transaction_date=datetime(2025, 9, 21, 11, 0, tzinfo=UTC),
-                amount=Decimal("9.99"),
-                note=below_note,
-                category_id=None,
-                tags=[amount_tag],
-                currency="AED",
-                sms_text=below_note,
-                message_id=_unique_value(db_helper.namespace, "msg-amount-below"),
+    for index, (amount_value, note, message_id) in enumerate(amount_rows):
+        asyncio.run(
+            db_helper.insert_transaction(
+                SeedTransaction(
+                    user_id=test_user_id,
+                    transaction_date=datetime(2025, 9, 21, 11, index, tzinfo=UTC),
+                    amount=amount_value,
+                    note=note,
+                    category_id=None,
+                    tags=[amount_tag],
+                    currency="AED",
+                    sms_text=note,
+                    message_id=message_id,
+                )
             )
         )
-    )
-    asyncio.run(
-        db_helper.insert_transaction(
-            SeedTransaction(
-                user_id=test_user_id,
-                transaction_date=datetime(2025, 9, 21, 11, 1, tzinfo=UTC),
-                amount=Decimal("30.00"),
-                note=in_range_note,
-                category_id=None,
-                tags=[amount_tag],
-                currency="AED",
-                sms_text=in_range_note,
-                message_id=_unique_value(db_helper.namespace, "msg-amount-in-range"),
-            )
-        )
-    )
-    asyncio.run(
-        db_helper.insert_transaction(
-            SeedTransaction(
-                user_id=test_user_id,
-                transaction_date=datetime(2025, 9, 21, 11, 2, tzinfo=UTC),
-                amount=Decimal("75.00"),
-                note=above_note,
-                category_id=None,
-                tags=[amount_tag],
-                currency="AED",
-                sms_text=above_note,
-                message_id=_unique_value(db_helper.namespace, "msg-amount-above"),
-            )
-        )
-    )
 
-    path = f"/api/transactions/?tags={amount_tag}&minAmount=20&maxAmount=50&take=100"
+    path = (
+        f"/api/transactions/?tags={amount_tag}&minAmount={min_amount}"
+        f"&maxAmount={max_amount}&take=100"
+    )
     response, body = perform_request(http_client, "GET", base_url, path)
 
     assert response.status_code == 200
     notes = {item.get("note") for item in body["data"]}
-    assert in_range_note in notes
-    assert below_note not in notes
-    assert above_note not in notes
+    for suffix in expected_notes:
+        assert _unique_value(db_helper.namespace, suffix) in notes
+    for suffix in unexpected_notes:
+        assert _unique_value(db_helper.namespace, suffix) not in notes
 
 
 def test_transactions_filter_by_category_id(
@@ -493,44 +532,97 @@ def test_create_transaction_persists_expected_defaults_and_fields(
     )
 
     assert response.status_code == 201
+    assert response.headers["location"] == f"/api/transactions/{body['id']}"
     assert body["messageId"] == message_id
     assert body["note"] == note
     assert body["currency"] == "AED"
     assert body["userId"] > 0
+    assert body["category"] is None
+    assert body["tags"] == payload["tags"]
 
     tx = asyncio.run(db_helper.get_transaction_by_id(int(body["id"])))
     assert tx is not None
     assert tx["message_id"] == message_id
     assert tx["note"] == note
     assert tx["currency"] == "AED"
+    assert tx["tags"] == payload["tags"]
+    assert tx["transaction_date"].astimezone(UTC).isoformat().startswith("2025-09-21T09:15:00")
 
 
+def test_create_transaction_with_category_returns_null_embedded_category(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    perform_request,
+) -> None:
+    category_id = asyncio.run(db_helper.get_any_category_id())
+    message_id = _unique_value(db_helper.namespace, "msg-create-category")
+    note = _unique_value(db_helper.namespace, "create-category-note")
+    payload = _transaction_payload(message_id=message_id, note=note, category_id=category_id)
+
+    response, body = perform_request(
+        http_client, "POST", base_url, "/api/transactions/", json=payload
+    )
+
+    assert response.status_code == 201
+    assert body["categoryId"] == category_id
+    assert body["category"] is None
+
+
+@pytest.mark.parametrize("amount", [-42.5, 42.5])
+def test_create_transaction_accepts_negative_and_positive_amounts(
+    amount: float,
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    perform_request,
+) -> None:
+    amount_label = str(amount).replace("-", "neg")
+    message_id = _unique_value(db_helper.namespace, f"msg-create-sign-{amount_label}")
+    note = _unique_value(db_helper.namespace, f"create-sign-{amount_label}")
+    payload = _transaction_payload(message_id=message_id, note=note, amount=amount)
+
+    response, body = perform_request(
+        http_client, "POST", base_url, "/api/transactions/", json=payload
+    )
+
+    assert response.status_code == 201
+    assert body["amount"] == amount
+
+    tx = asyncio.run(db_helper.get_transaction_by_id(int(body["id"])))
+    assert tx is not None
+    assert float(tx["amount"]) == amount
+
+
+@pytest.mark.parametrize("updated_amount", [-88.88, 88.88])
 def test_update_transaction_owned_success(
+    updated_amount: float,
     http_client: httpx.Client,
     base_url: str,
     db_helper: DbHelper,
     test_user_id: int,
     perform_request,
 ) -> None:
+    amount_label = str(updated_amount).replace("-", "neg")
     tx_id = asyncio.run(
         db_helper.insert_transaction(
             SeedTransaction(
                 user_id=test_user_id,
                 transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
                 amount=Decimal("50.00"),
-                note=_unique_value(db_helper.namespace, "update-before"),
+                note=_unique_value(db_helper.namespace, f"update-before-{amount_label}"),
                 category_id=None,
                 tags=[_unique_value(db_helper.namespace, "before")],
                 currency="AED",
-                sms_text=_unique_value(db_helper.namespace, "update-before"),
-                message_id=_unique_value(db_helper.namespace, "msg-update-owned"),
+                sms_text=_unique_value(db_helper.namespace, f"update-before-{amount_label}"),
+                message_id=_unique_value(db_helper.namespace, f"msg-update-owned-{amount_label}"),
             )
         )
     )
 
     payload = {
         "transactionDate": "2025-09-22T12:30:00",
-        "amount": 88.88,
+        "amount": updated_amount,
         "note": _unique_value(db_helper.namespace, "update-after"),
         "categoryId": None,
         "tags": [_unique_value(db_helper.namespace, "after")],
@@ -544,7 +636,7 @@ def test_update_transaction_owned_success(
     assert response.status_code == 200
     assert body["id"] == tx_id
     assert body["note"] == _unique_value(db_helper.namespace, "update-after")
-    assert body["amount"] == 88.88
+    assert body["amount"] == updated_amount
 
 
 def test_update_transaction_not_owned_returns_not_found(

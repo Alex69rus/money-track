@@ -175,13 +175,8 @@ async def create_transaction(
     )
     await transaction.save()
 
-    category = None
-    if transaction.category_id is not None:
-        category = (
-            await Category.objects().where(Category.id == transaction.category_id).first().run()
-        )
-
-    return _map_transaction(transaction, category)
+    # C# create endpoint returns the saved row without eager-loading category.
+    return _map_transaction(transaction, None)
 
 
 async def update_transaction(

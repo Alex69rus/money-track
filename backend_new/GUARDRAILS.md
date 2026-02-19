@@ -118,3 +118,13 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: changing runtime code to fix connection failures.
   - Why: escalation resolved environment startup and tests passed unchanged (`17 passed, 2 skipped`).
 - Prevention rule: for integration gates, always classify failures first (`connectivity | sandbox | auth | contract`) and rerun with readiness polling before editing app code.
+
+### 2026-02-19 - Create Route Contract Parity
+
+- Takeaway: create-response payload parity can differ from read/update payloads when baseline doesn't eager-load related entities.
+  - Root cause: reusing shared mapper with category lookup in create path returned a populated `category` object, while C# create returns null for that field.
+  - Preferred fix: map the created row directly without category hydration for `POST /api/transactions`.
+- Exploration: validated parity by asserting `Location` header, UTC-normalized `transaction_date`, and persisted `tags` array side effects in integration tests.
+  - Ruled out: adding a post-save category fetch in create flow.
+  - Why: that introduces avoidable contract drift versus baseline response shape.
+- Prevention rule: for each write endpoint, capture route-specific response-shape assertions (including headers) in integration tests instead of assuming shared mapper behavior.

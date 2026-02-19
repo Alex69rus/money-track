@@ -13,7 +13,7 @@
 | Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | ✅ Complete | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
 | Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ✅ Complete | 2026-02-19 | Categories/tags parity validated against `backend_new`; full integration suite green (`16 passed, 2 skipped`) |
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ✅ Complete | 2026-02-19 | Verified defaults/filters/inclusive `toDate`/`hasMore` parity; `backend_new` integration suite `17 passed, 2 skipped` |
-| Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ⏳ Pending | - | Includes default field behavior and status code parity |
+| Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | 🔄 In Progress | 2026-02-19 | Iteration M5 started: create parity hardening + integration gate run |
 | Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ⏳ Pending | - | Forward-only migration flow |
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ⏳ Pending | - | No edits in `backend/**` or `frontend/**` |
 
@@ -64,10 +64,10 @@
 ### Iteration M5: Create Transaction Parity
 **Goal:** Implement `POST /api/transactions` behavior and persistence semantics.
 
-- [ ] Add request validation with Pydantic schemas matching C# contract
-- [ ] Implement create flow with UTC/date handling parity
-- [ ] Persist `tags` using PostgreSQL `text[]` semantics
-- [ ] Confirm response status/payload and DB side effects match baseline
+- [x] Add request validation with Pydantic schemas matching C# contract
+- [x] Implement create flow with UTC/date handling parity
+- [x] Persist `tags` using PostgreSQL `text[]` semantics
+- [x] Confirm response status/payload and DB side effects match baseline
 
 **Exit Criteria:** POST/create parity and DB assertion tests pass.
 
