@@ -10,7 +10,7 @@
 | Step | Scope | Status | Date | Notes |
 |------|-------|--------|------|-------|
 | C# Parity Tests - Step 1 | Integration parity suite in `backend_new/tests/integration` for C# baseline | ✅ Complete | 2026-02-18 | Added deterministic DB fixtures, CRUD/filter/auth/integrity scenarios, and JSON capture support |
-| Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | ⏳ Pending | - | Must keep edits inside `backend_new/**` only |
+| Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | 🔄 In Progress | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
 | Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ⏳ Pending | - | Includes development bypass and unauthorized response parity |
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ⏳ Pending | - | Includes inclusive `toDate` handling and `hasMore` behavior |
 | Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ⏳ Pending | - | Includes default field behavior and status code parity |
