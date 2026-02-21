@@ -138,3 +138,13 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: relying on ownership tests alone.
   - Why: baseline parity also requires consistent `404` semantics for non-existent IDs.
 - Prevention rule: for mutating endpoints, require test coverage for both `cross-user` and `missing-id` 404 cases before marking write parity complete.
+
+### 2026-02-21 - Integrity Constraint Migration Hardening
+
+- Takeaway: behavioral tests alone can hide schema drift when the target DB was pre-created by another stack.
+  - Root cause: unique/FK behavior appeared correct due to existing EF migrations, not guaranteed by `backend_new` migration assets.
+  - Preferred fix: add idempotent Piccolo raw-SQL migration plus catalog-level integration assertions.
+- Exploration: validated constraint presence via PostgreSQL system catalogs (`pg_index`, `pg_constraint`) rather than endpoint side effects only.
+  - Ruled out: relying exclusively on duplicate-insert and delete-side-effect scenarios.
+  - Why: metadata assertions detect missing/misconfigured constraints earlier and more directly.
+- Prevention rule: for each DB invariant parity requirement, pair one behavior test with one schema-catalog assertion and keep migration SQL idempotent.

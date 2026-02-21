@@ -134,3 +134,36 @@ class DbHelper:
         if row is None:
             raise RuntimeError("No category available in database")
         return int(row["id"])
+
+    async def has_transaction_user_message_unique_index(self) -> bool:
+        conn = await asyncpg.connect(self._database_url)
+        try:
+            row = await conn.fetchrow(
+                """
+                SELECT i.indisunique
+                FROM pg_class idx
+                JOIN pg_index i ON i.indexrelid = idx.oid
+                JOIN pg_class tbl ON i.indrelid = tbl.oid
+                WHERE tbl.relname = 'transaction'
+                  AND idx.relname = 'ix_transaction_user_id_message_id'
+                """
+            )
+        finally:
+            await conn.close()
+        return bool(row and row["indisunique"])
+
+    async def transaction_category_fk_uses_set_null(self) -> bool:
+        conn = await asyncpg.connect(self._database_url)
+        try:
+            row = await conn.fetchrow(
+                """
+                SELECT confdeltype = 'n' AS uses_set_null
+                FROM pg_constraint
+                WHERE conname = 'fk_transaction_category_category_id'
+                  AND conrelid = 'transaction'::regclass
+                LIMIT 1
+                """
+            )
+        finally:
+            await conn.close()
+        return bool(row and row["uses_set_null"])

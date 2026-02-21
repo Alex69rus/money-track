@@ -860,3 +860,17 @@ def test_category_fk_set_null_on_category_delete(
     tx = asyncio.run(db_helper.get_transaction_by_id(tx_id))
     assert tx is not None
     assert tx["category_id"] is None
+
+
+def test_schema_has_unique_index_on_user_id_message_id(
+    db_helper: DbHelper,
+) -> None:
+    has_index = asyncio.run(db_helper.has_transaction_user_message_unique_index())
+    assert has_index is True
+
+
+def test_schema_has_transaction_category_fk_with_set_null(
+    db_helper: DbHelper,
+) -> None:
+    uses_set_null = asyncio.run(db_helper.transaction_category_fk_uses_set_null())
+    assert uses_set_null is True

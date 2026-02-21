@@ -14,7 +14,7 @@
 | Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ✅ Complete | 2026-02-19 | Categories/tags parity validated against `backend_new`; full integration suite green (`16 passed, 2 skipped`) |
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ✅ Complete | 2026-02-19 | Verified defaults/filters/inclusive `toDate`/`hasMore` parity; `backend_new` integration suite `17 passed, 2 skipped` |
 | Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ✅ Complete | 2026-02-20 | M5+M6 complete: create/update/delete parity with ownership + not-found coverage |
-| Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ⏳ Pending | - | Forward-only migration flow |
+| Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ✅ Complete | 2026-02-21 | Added idempotent raw migration for unique index + FK `SET NULL`; schema metadata assertions added to integration suite |
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ⏳ Pending | - | No edits in `backend/**` or `frontend/**` |
 
 ---
@@ -83,10 +83,10 @@
 ### Iteration M7: Integrity Constraints + Piccolo Migrations
 **Goal:** Lock data invariants and migration guarantees.
 
-- [ ] Ensure unique index parity on `(user_id, message_id)`
-- [ ] Ensure FK behavior parity (`category_id -> SET NULL`)
-- [ ] Add/adjust Piccolo raw-SQL migrations (forward-only)
-- [ ] Validate schema compatibility with existing PostgreSQL instance
+- [x] Ensure unique index parity on `(user_id, message_id)`
+- [x] Ensure FK behavior parity (`category_id -> SET NULL`)
+- [x] Add/adjust Piccolo raw-SQL migrations (forward-only)
+- [x] Validate schema compatibility with existing PostgreSQL instance
 
 **Exit Criteria:** Integrity scenarios pass and migrations are reproducible from clean checkout.
 
@@ -102,7 +102,7 @@
 
 ### Iteration Execution Rules (Apply to M1-M8)
 
-- [ ] Execute loop: **Plan → Implement → Test → Report → Guardrail Update → Next**
+- [x] Execute loop: **Plan → Implement → Test → Report → Guardrail Update → Next**
 - [ ] Keep slices small; do not start next iteration until current gates are green
 - [ ] Modify only allowed paths (`backend_new/**`, `docs/prd/**` when needed)
 - [ ] Stop and request decision if baseline behavior is ambiguous or requires schema redesign
