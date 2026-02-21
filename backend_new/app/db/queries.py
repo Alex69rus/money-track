@@ -182,8 +182,13 @@ async def create_transaction(
 async def update_transaction(
     *, user_id: int, transaction_id: int, payload: UpdateTransactionRequest
 ) -> TransactionResponse | None:
-    transaction = await Transaction.objects().where(Transaction.id == transaction_id).first().run()
-    if transaction is None or int(transaction.user_id) != user_id:
+    transaction = (
+        await Transaction.objects()
+        .where((Transaction.id == transaction_id) & (Transaction.user_id == user_id))
+        .first()
+        .run()
+    )
+    if transaction is None:
         return None
 
     transaction.transaction_date = _to_utc(payload.transaction_date)
@@ -204,8 +209,13 @@ async def update_transaction(
 
 
 async def delete_transaction(*, user_id: int, transaction_id: int) -> bool:
-    transaction = await Transaction.objects().where(Transaction.id == transaction_id).first().run()
-    if transaction is None or int(transaction.user_id) != user_id:
+    transaction = (
+        await Transaction.objects()
+        .where((Transaction.id == transaction_id) & (Transaction.user_id == user_id))
+        .first()
+        .run()
+    )
+    if transaction is None:
         return False
     await transaction.remove()
     return True

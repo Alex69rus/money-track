@@ -128,3 +128,13 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: adding a post-save category fetch in create flow.
   - Why: that introduces avoidable contract drift versus baseline response shape.
 - Prevention rule: for each write endpoint, capture route-specific response-shape assertions (including headers) in integration tests instead of assuming shared mapper behavior.
+
+### 2026-02-20 - Update/Delete Ownership Query Hardening
+
+- Takeaway: ownership checks for write endpoints should be encoded in DB predicates, not post-fetch Python comparisons.
+  - Root cause: fetching by `id` then checking `user_id` in Python still reads cross-user rows before rejection.
+  - Preferred fix: query with `(id AND user_id)` in one Piccolo `.where(...)` and return not-found on miss.
+- Exploration: expanded integration parity coverage with missing-id update/delete scenarios in addition to cross-user scenarios.
+  - Ruled out: relying on ownership tests alone.
+  - Why: baseline parity also requires consistent `404` semantics for non-existent IDs.
+- Prevention rule: for mutating endpoints, require test coverage for both `cross-user` and `missing-id` 404 cases before marking write parity complete.

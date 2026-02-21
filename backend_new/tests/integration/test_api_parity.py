@@ -677,6 +677,27 @@ def test_update_transaction_not_owned_returns_not_found(
     assert response.status_code == 404
 
 
+def test_update_transaction_missing_returns_not_found(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    perform_request,
+) -> None:
+    payload = {
+        "transactionDate": "2025-09-21T07:00:00",
+        "amount": 18.0,
+        "note": _unique_value(db_helper.namespace, "update-missing"),
+        "categoryId": None,
+        "tags": [_unique_value(db_helper.namespace, "update-missing")],
+        "currency": "AED",
+    }
+
+    response, _ = perform_request(
+        http_client, "PUT", base_url, "/api/transactions/99999999", json=payload
+    )
+    assert response.status_code == 404
+
+
 def test_delete_transaction_owned_success(
     http_client: httpx.Client,
     base_url: str,
@@ -735,6 +756,15 @@ def test_delete_transaction_not_owned_returns_not_found(
 
     tx = asyncio.run(db_helper.get_transaction_by_id(tx_id))
     assert tx is not None
+
+
+def test_delete_transaction_missing_returns_not_found(
+    http_client: httpx.Client,
+    base_url: str,
+    perform_request,
+) -> None:
+    response, _ = perform_request(http_client, "DELETE", base_url, "/api/transactions/99999999")
+    assert response.status_code == 404
 
 
 def test_unauthorized_missing_auth_header_in_production(

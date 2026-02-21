@@ -13,7 +13,7 @@
 | Python Scaffold Hardening - Step 2 | Wire production-ready app skeleton in `backend_new` (config, DB lifecycle, error handling, logging) | ✅ Complete | 2026-02-18 | Added lifecycle/exception/logging baseline and unblocked lint/type gates (`ruff`, `mypy`) |
 | Auth + Read Parity - Step 3 | Implement Telegram auth semantics + categories/tags parity | ✅ Complete | 2026-02-19 | Categories/tags parity validated against `backend_new`; full integration suite green (`16 passed, 2 skipped`) |
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ✅ Complete | 2026-02-19 | Verified defaults/filters/inclusive `toDate`/`hasMore` parity; `backend_new` integration suite `17 passed, 2 skipped` |
-| Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | 🔄 In Progress | 2026-02-19 | Iteration M5 started: create parity hardening + integration gate run |
+| Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ✅ Complete | 2026-02-20 | M5+M6 complete: create/update/delete parity with ownership + not-found coverage |
 | Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ⏳ Pending | - | Forward-only migration flow |
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ⏳ Pending | - | No edits in `backend/**` or `frontend/**` |
 
@@ -74,9 +74,9 @@
 ### Iteration M6: Update/Delete Parity + Ownership
 **Goal:** Complete write API parity for existing records.
 
-- [ ] Implement `PUT /api/transactions/{id}` with ownership enforcement
-- [ ] Implement `DELETE /api/transactions/{id}` with ownership enforcement
-- [ ] Match not-found/forbidden behavior from baseline semantics
+- [x] Implement `PUT /api/transactions/{id}` with ownership enforcement
+- [x] Implement `DELETE /api/transactions/{id}` with ownership enforcement
+- [x] Match not-found/forbidden behavior from baseline semantics
 
 **Exit Criteria:** PUT/DELETE parity tests green, including cross-user boundary scenarios.
 
