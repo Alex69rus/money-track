@@ -148,3 +148,13 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: relying exclusively on duplicate-insert and delete-side-effect scenarios.
   - Why: metadata assertions detect missing/misconfigured constraints earlier and more directly.
 - Prevention rule: for each DB invariant parity requirement, pair one behavior test with one schema-catalog assertion and keep migration SQL idempotent.
+
+### 2026-02-22 - Final Parity Gate Execution
+
+- Takeaway: running `uv run pytest -q` as a global gate can fail with non-actionable integration errors when no API server is listening.
+  - Root cause: integration tests target `BASE_URL` and fail with connection-refused before contract assertions run.
+  - Preferred fix: run static/type gates first, then execute integration suite with explicit API startup and health polling.
+- Exploration: initial integration run failed from sandboxed `uv` cache access, then passed unchanged after escalated run (`26 passed, 2 skipped`).
+  - Ruled out: making runtime code edits in response to readiness/sandbox failures.
+  - Why: failure class was environment (`connectivity` + `sandbox/permission`), not contract regression.
+- Prevention rule: for final parity gate, use a single orchestrated command that starts `uvicorn`, polls `/health`, runs `tests/integration`, and always cleans up the process.

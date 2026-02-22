@@ -15,7 +15,7 @@
 | Transactions Read Parity - Step 4 | Implement `GET /api/transactions` with full filter/pagination semantics | ✅ Complete | 2026-02-19 | Verified defaults/filters/inclusive `toDate`/`hasMore` parity; `backend_new` integration suite `17 passed, 2 skipped` |
 | Transactions Write Parity - Step 5 | Implement `POST`, `PUT`, `DELETE` transaction parity and ownership rules | ✅ Complete | 2026-02-20 | M5+M6 complete: create/update/delete parity with ownership + not-found coverage |
 | Data Integrity + Migration SQL - Step 6 | Enforce DB constraints/index/FK behavior and Piccolo raw-SQL migrations | ✅ Complete | 2026-02-21 | Added idempotent raw migration for unique index + FK `SET NULL`; schema metadata assertions added to integration suite |
-| Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ⏳ Pending | - | No edits in `backend/**` or `frontend/**` |
+| Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ✅ Complete | 2026-02-22 | `ruff`/`mypy` green; integration suite against `backend_new` `26 passed, 2 skipped`; no forbidden diffs; cutover checklist added |
 
 ---
 
@@ -93,10 +93,10 @@
 ### Iteration M8: Full Gate + Cutover Readiness
 **Goal:** Produce migration-ready state for configuration-only switch.
 
-- [ ] Run full quality gates: `ruff`, `mypy`, `pytest`, integration suite against `backend_new`
-- [ ] Confirm no forbidden diffs in `backend/**` and `frontend/**`
-- [ ] Update `backend_new/GUARDRAILS.md` with final takeaways/prevention rules
-- [ ] Add concise run/cutover checklist to migration docs
+- [x] Run full quality gates: `ruff`, `mypy`, `pytest`, integration suite against `backend_new`
+- [x] Confirm no forbidden diffs in `backend/**` and `frontend/**`
+- [x] Update `backend_new/GUARDRAILS.md` with final takeaways/prevention rules
+- [x] Add concise run/cutover checklist to migration docs
 
 **Exit Criteria:** In-scope parity scenarios are green and frontend can switch by API URL only.
 

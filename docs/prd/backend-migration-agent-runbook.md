@@ -60,3 +60,22 @@ Stop and request human decision when:
 ## 8. Completion Gate
 
 Migration can move to cutover planning only when all in-scope parity scenarios are green and no forbidden paths were changed.
+
+## 9. Cutover Checklist (URL-Only Switch)
+
+Run from `./backend_new`:
+
+1. `uv run ruff format .`
+2. `uv run ruff check .`
+3. `uv run mypy .`
+4. Start API and poll readiness: `GET /health` until `200 OK`.
+5. Run integration suite against `backend_new` with explicit base URL:
+   - `BASE_URL=http://127.0.0.1:5000 uv run --no-project pytest tests/integration -q`
+6. Confirm there are no edits in forbidden paths:
+   - `git diff --name-only -- backend frontend`
+7. Switch frontend/runtime configuration to point to Python backend URL only (no payload or schema changes).
+8. Run smoke checks for:
+   - categories list
+   - tags list
+   - transactions list/create/update/delete
+9. Keep C# backend available for rollback until first production validation window is complete.
