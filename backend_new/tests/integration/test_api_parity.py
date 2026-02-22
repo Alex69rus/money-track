@@ -569,6 +569,40 @@ def test_create_transaction_with_category_returns_null_embedded_category(
     assert body["category"] is None
 
 
+def test_create_transaction_omits_null_optional_fields_in_response(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    perform_request,
+) -> None:
+    payload = {
+        "transactionDate": "2025-09-21T09:15:00",
+        "amount": 19.5,
+        "note": None,
+        "categoryId": None,
+        "tags": [_unique_value(db_helper.namespace, "null-contract-tag")],
+        "currency": "AED",
+        "smsText": None,
+        "messageId": None,
+    }
+
+    response, body = perform_request(
+        http_client, "POST", base_url, "/api/transactions/", json=payload
+    )
+
+    assert response.status_code == 201
+    assert body["amount"] == payload["amount"]
+    assert body["currency"] == "AED"
+    assert body["tags"] == payload["tags"]
+
+    # C# baseline omits null-valued optional fields globally.
+    assert "note" not in body
+    assert "categoryId" not in body
+    assert "smsText" not in body
+    assert "messageId" not in body
+    assert "category" not in body
+
+
 @pytest.mark.parametrize("amount", [-42.5, 42.5])
 def test_create_transaction_accepts_negative_and_positive_amounts(
     amount: float,
@@ -874,3 +908,106 @@ def test_schema_has_transaction_category_fk_with_set_null(
 ) -> None:
     uses_set_null = asyncio.run(db_helper.transaction_category_fk_uses_set_null())
     assert uses_set_null is True
+
+
+def test_transactions_text_search_matches_tag_substring_case_insensitive(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    target_note = _unique_value(db_helper.namespace, "text-tag-substring-target")
+    miss_note = _unique_value(db_helper.namespace, "text-tag-substring-miss")
+    target_tag = _unique_value(db_helper.namespace, "AlphaBetaGamma")
+
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 13, 0, tzinfo=UTC),
+                amount=Decimal("10.00"),
+                note=target_note,
+                category_id=None,
+                tags=[target_tag],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "no-hit-note"),
+                message_id=_unique_value(db_helper.namespace, "msg-text-tag-sub-target"),
+            )
+        )
+    )
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 13, 1, tzinfo=UTC),
+                amount=Decimal("11.00"),
+                note=miss_note,
+                category_id=None,
+                tags=[_unique_value(db_helper.namespace, "unrelated-tag")],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "no-hit-note"),
+                message_id=_unique_value(db_helper.namespace, "msg-text-tag-sub-miss"),
+            )
+        )
+    )
+
+    response, body = perform_request(
+        http_client, "GET", base_url, "/api/transactions/?text=betag&take=100"
+    )
+
+    assert response.status_code == 200
+    notes = {item.get("note") for item in body["data"]}
+    assert target_note in notes
+    assert miss_note not in notes
+
+
+def test_transactions_text_search_matches_amount_substring_not_only_exact(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    target_note = _unique_value(db_helper.namespace, "text-amount-substring-target")
+    miss_note = _unique_value(db_helper.namespace, "text-amount-substring-miss")
+
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 14, 0, tzinfo=UTC),
+                amount=Decimal("345.67"),
+                note=target_note,
+                category_id=None,
+                tags=[_unique_value(db_helper.namespace, "amount-sub-tag-a")],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "amount-sub-sms-a"),
+                message_id=_unique_value(db_helper.namespace, "msg-text-amount-sub-target"),
+            )
+        )
+    )
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 14, 1, tzinfo=UTC),
+                amount=Decimal("777.77"),
+                note=miss_note,
+                category_id=None,
+                tags=[_unique_value(db_helper.namespace, "amount-sub-tag-b")],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "amount-sub-sms-b"),
+                message_id=_unique_value(db_helper.namespace, "msg-text-amount-sub-miss"),
+            )
+        )
+    )
+
+    response, body = perform_request(
+        http_client, "GET", base_url, "/api/transactions/?text=45.6&take=100"
+    )
+
+    assert response.status_code == 200
+    notes = {item.get("note") for item in body["data"]}
+    assert target_note in notes
+    assert miss_note not in notes

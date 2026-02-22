@@ -158,3 +158,11 @@ Keep entries short, actionable, and repository-specific.
   - Ruled out: making runtime code edits in response to readiness/sandbox failures.
   - Why: failure class was environment (`connectivity` + `sandbox/permission`), not contract regression.
 - Prevention rule: for final parity gate, use a single orchestrated command that starts `uvicorn`, polls `/health`, runs `tests/integration`, and always cleans up the process.
+
+### 2026-02-22 - Transaction Count Query Efficiency
+
+- Takeaway: deriving `totalCount` via `len(await query.run())` materializes full filtered transaction sets and creates avoidable memory and latency overhead.
+  - Root cause: count logic reused the entity-fetch query path instead of a dedicated aggregate query.
+  - Preferred fix: mirror the same predicates onto `Transaction.count().where(...)` and execute pagination fetch separately.
+- Exploration: verified parity baseline uses database-side count (`CountAsync`) before `Skip`/`Take`; ruled out changing response semantics (`hasMore`, `skip`, `take`) because this is a pure query-plan optimization.
+- Prevention rule: for paginated endpoints, reject implementations that call `.run()` only to compute `len(...)`; require DB aggregate count queries with identical filters.

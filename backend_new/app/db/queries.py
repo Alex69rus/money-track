@@ -91,25 +91,31 @@ async def fetch_transactions(
     take: int,
 ) -> PaginatedTransactionsResponse:
     query = Transaction.objects().where(Transaction.user_id == user_id)
+    count_query = Transaction.count().where(Transaction.user_id == user_id)
 
     if from_date is not None:
         from_start = datetime.combine(from_date, time.min, tzinfo=UTC)
         query = query.where(Transaction.transaction_date >= from_start)
+        count_query = count_query.where(Transaction.transaction_date >= from_start)
 
     if to_date is not None:
         to_end = datetime.combine(to_date, time.min, tzinfo=UTC) + timedelta(
             days=1, microseconds=-1
         )
         query = query.where(Transaction.transaction_date <= to_end)
+        count_query = count_query.where(Transaction.transaction_date <= to_end)
 
     if min_amount is not None:
         query = query.where(Transaction.amount >= min_amount)
+        count_query = count_query.where(Transaction.amount >= min_amount)
 
     if max_amount is not None:
         query = query.where(Transaction.amount <= max_amount)
+        count_query = count_query.where(Transaction.amount <= max_amount)
 
     if category_id is not None:
         query = query.where(Transaction.category_id == category_id)
+        count_query = count_query.where(Transaction.category_id == category_id)
 
     parsed_tags = [value for value in (tags or "").split(",") if value]
     if parsed_tags:
@@ -117,6 +123,7 @@ async def fetch_transactions(
         for tag in parsed_tags[1:]:
             tag_condition = tag_condition | Transaction.tags.any(tag)  # type: ignore[assignment]
         query = query.where(tag_condition)
+        count_query = count_query.where(tag_condition)
 
     if text:
         category_ids = [
@@ -130,8 +137,9 @@ async def fetch_transactions(
         if parsed_amount is not None:
             text_condition = text_condition | (Transaction.amount == parsed_amount)
         query = query.where(text_condition)
+        count_query = count_query.where(text_condition)
 
-    total_count = len(await query.run())
+    total_count = int(await count_query.run())
     paged = (
         await query.order_by(Transaction.transaction_date, ascending=False)
         .offset(skip)
