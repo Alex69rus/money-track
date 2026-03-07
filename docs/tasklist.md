@@ -18,7 +18,7 @@
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ✅ Complete | 2026-02-22 | `ruff`/`mypy` green; integration suite against `backend_new` `26 passed, 2 skipped`; no forbidden diffs; cutover checklist added |
 | High-Risk Parity Tests - Step 8 | Add integration tests for null-field serialization + transaction text-search semantics parity | ✅ Complete | 2026-02-22 | Added targeted integration scenarios for null key omission and substring text search over tags/amount |
 | Read-Path Query Efficiency - Step 9 | Replace Python-side transaction counting with SQL `COUNT(*)` parity behavior | ✅ Complete | 2026-02-22 | Switched `totalCount` in `backend_new` to `Transaction.count()` with shared predicates; validated by `ruff` + `mypy` |
-| Production Auth Gate Activation - Step 10 | Run integration suite against local dev+prod backend instances so auth-negative production checks are no longer skipped | ✅ Complete | 2026-02-22 | Added `backend_new/scripts/run_integration_dual_mode.py`; dual-mode run enables production auth checks in the same parity gate |
+| Production Auth Gate Activation - Step 10 | Run integration suite against local dev+prod backend instances so auth-negative production checks are no longer skipped | ✅ Complete | 2026-02-22 | Added `.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py`; dual-mode run enables production auth checks in the same parity gate |
 
 ---
 

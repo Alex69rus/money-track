@@ -1,4 +1,0 @@
-interface:
-  display_name: "Sandbox E2E Validator"
-  short_description: "Run local E2E checks under sandbox constraints"
-  default_prompt: "Use $local-e2e-validate-with-sandbox to run and debug local end-to-end validation with sandbox-safe retries. If no parameters are provided, default to Python backend validation in backend_new via `uv run python scripts/run_integration_capture.py` (BASE_URL=http://127.0.0.1:8000, RESULTS_FILE=artifacts/integration/latest-results.json)."

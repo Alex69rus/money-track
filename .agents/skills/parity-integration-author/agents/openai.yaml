@@ -1,4 +1,0 @@
-interface:
-  display_name: "Parity Test Author"
-  short_description: "Build deterministic API parity integration suites"
-  default_prompt: "Use $parity-integration-author to author or extend parity integration tests from baseline behavior."

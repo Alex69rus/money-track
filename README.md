@@ -20,8 +20,8 @@ docker-compose up --build
 
 3. Access the application:
    - **Frontend**: http://localhost:3000
-   - **Backend API**: http://localhost:5000
-   - **API Documentation**: http://localhost:5000/swagger
+   - **Backend API**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/swagger
 
 ## Development
 
@@ -31,7 +31,7 @@ docker-compose up --build
 - Node.js 18+ (for local development)
 
 ### Health Check
-- Backend health: http://localhost:5000/health
+- Backend health: http://localhost:8000/health
 - Should return "OK"
 
 ## Project Structure

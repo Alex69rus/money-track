@@ -1138,3 +1138,57 @@ def test_transactions_text_search_matches_amount_substring_not_only_exact(
     notes = {item.get("note") for item in body["data"]}
     assert target_note in notes
     assert miss_note not in notes
+
+
+def test_transactions_text_search_does_not_match_sms_text_only(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    sms_only_term = _unique_value(db_helper.namespace, "sms-only-term")
+    sms_only_note = _unique_value(db_helper.namespace, "sms-only-note")
+    control_note = _unique_value(db_helper.namespace, "sms-only-control")
+
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 15, 0, tzinfo=UTC),
+                amount=Decimal("50.00"),
+                note=sms_only_note,
+                category_id=None,
+                tags=[_unique_value(db_helper.namespace, "sms-only-tag-a")],
+                currency="AED",
+                sms_text=sms_only_term,
+                message_id=_unique_value(db_helper.namespace, "msg-text-sms-only-target"),
+            )
+        )
+    )
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 15, 1, tzinfo=UTC),
+                amount=Decimal("51.00"),
+                note=control_note,
+                category_id=None,
+                tags=[_unique_value(db_helper.namespace, "sms-only-tag-b")],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "sms-only-other"),
+                message_id=_unique_value(db_helper.namespace, "msg-text-sms-only-control"),
+            )
+        )
+    )
+
+    response, body = perform_request(
+        http_client,
+        "GET",
+        base_url,
+        f"/api/transactions/?text={sms_only_term}&take=100",
+    )
+
+    assert response.status_code == 200
+    notes = {item.get("note") for item in body["data"]}
+    assert sms_only_note not in notes

@@ -133,7 +133,6 @@ async def fetch_transactions(
         ]
         text_condition = (
             Transaction.note.ilike(text_pattern)
-            | Transaction.sms_text.ilike(text_pattern)
             | WhereRaw("{} ILIKE {}", Cast(Transaction.tags, Varchar()), text_pattern)
             | WhereRaw("{} ILIKE {}", Cast(Transaction.amount, Varchar()), text_pattern)
         )

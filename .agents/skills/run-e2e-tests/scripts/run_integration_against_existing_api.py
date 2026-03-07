@@ -14,7 +14,7 @@ DEFAULT_RESULTS_FILE = os.getenv(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run single integration test suite and capture results."
+        description="Run integration tests against already-running API endpoint(s)."
     )
     parser.add_argument(
         "--base-url",

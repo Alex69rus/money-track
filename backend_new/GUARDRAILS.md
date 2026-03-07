@@ -175,7 +175,7 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: evaluated replacing skip logic in tests.
   - Ruled out: making production checks mandatory without provisioning a production-mode target URL.
   - Why: that would make default local runs fail in environments with only one app instance.
-- Prevention rule: for auth parity gates, run `python3 scripts/run_integration_dual_mode.py` so production unauthorized checks execute instead of being skipped.
+- Prevention rule: for auth parity gates, run `python3 ../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py` so production unauthorized checks execute instead of being skipped.
 
 ### 2026-03-07 - Date Filter + Environment Alignment
 
@@ -193,8 +193,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: avoid ad-hoc parity commands with implicit defaults when validating final state.
   - Symptom: false failure bursts (`ConnectError`) despite healthy app due `localhost` vs `127.0.0.1` and missing service orchestration.
   - Root cause: direct `pytest` run did not start API and used fragile default URL resolution.
-  - Preferred fix: use orchestrated runner (`scripts/run_integration_dual_mode.py`) for final e2e parity verdict.
+  - Preferred fix: use orchestrated runner (`../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py`) for final e2e parity verdict.
 - Exploration: compared direct `pytest` run vs dual-mode runner in same environment.
   - Ruled out: contract regression for failing cases in ad-hoc run.
   - Why: dual-mode command passed all collected integration tests with explicit service startup/readiness.
-- Prevention rule: declare parity status only from `uv run python scripts/run_integration_dual_mode.py`, not from standalone `pytest tests/integration` unless URLs and service lifecycle are explicitly controlled.
+- Prevention rule: declare parity status only from `uv run python ../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py`, not from standalone `pytest tests/integration` unless URLs and service lifecycle are explicitly controlled.
