@@ -107,8 +107,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run integration suite against local development and production API instances."
     )
-    parser.add_argument("--dev-port", type=int, default=5000)
-    parser.add_argument("--prod-port", type=int, default=5001)
+    parser.add_argument("--dev-port", type=int, default=8000)
+    parser.add_argument("--prod-port", type=int, default=8001)
     parser.add_argument(
         "--database-url", default=os.getenv("TEST_DATABASE_URL", DEFAULT_DATABASE_URL)
     )

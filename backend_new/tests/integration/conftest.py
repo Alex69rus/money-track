@@ -77,7 +77,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    return os.getenv("BASE_URL", "http://localhost:5000")
+    return os.getenv("BASE_URL", "http://localhost:8000")
 
 
 @pytest.fixture(scope="session")

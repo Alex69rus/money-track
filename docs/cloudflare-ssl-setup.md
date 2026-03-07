@@ -104,7 +104,7 @@ After setup, you should have these secrets configured:
 - ✅ `TELEGRAM_BOT_TOKEN` - Bot token
 - ✅ `DOMAIN` - Your domain name
 - ✅ `EMAIL` - Your email address
-- ✅ `REACT_APP_API_URL` - API URL (https://your-domain.com/api)
+- ✅ `REACT_APP_API_URL` - API root URL (https://your-domain.com)
 - ✅ `REACT_APP_AI_WEBHOOK_URL` - AI webhook URL
 
 ## Benefits of Cloudflare Origin Certificates

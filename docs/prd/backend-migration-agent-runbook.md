@@ -70,7 +70,7 @@ Run from `./backend_new`:
 3. `uv run mypy .`
 4. Start API and poll readiness: `GET /health` until `200 OK`.
 5. Run integration suite against `backend_new` with explicit base URL:
-   - `BASE_URL=http://127.0.0.1:5000 uv run --no-project pytest tests/integration -q`
+   - `BASE_URL=http://127.0.0.1:8000 uv run --no-project pytest tests/integration -q`
 6. Confirm there are no edits in forbidden paths:
    - `git diff --name-only -- backend frontend`
 7. Switch frontend/runtime configuration to point to Python backend URL only (no payload or schema changes).

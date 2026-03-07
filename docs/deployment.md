@@ -67,6 +67,8 @@ git clone https://github.com/Alex69rus/money-track.git .
 
 The deployment is fully automated via GitHub Actions. You only need to configure secrets and certificates.
 
+Note: CI/CD intentionally skips automated backend test execution because the parity suite requires a real PostgreSQL database.
+
 ### 3. SSL Certificate Setup (Cloudflare)
 
 We use Cloudflare Origin Certificates for SSL, which are:
@@ -96,9 +98,11 @@ POSTGRES_PASSWORD=your-secure-database-password
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 DOMAIN=your-domain.com
 EMAIL=your-email@domain.com
-REACT_APP_API_URL=https://your-domain.com/api
+REACT_APP_API_URL=https://your-domain.com
 REACT_APP_AI_WEBHOOK_URL=https://your-n8n-webhook-url.com/webhook/chat
 ```
+
+`REACT_APP_API_URL` should be the root origin (for example `https://your-domain.com`), not `/api`.
 
 **How to get certificates:** See [Cloudflare SSL Setup Guide](./cloudflare-ssl-setup.md)
 
@@ -125,8 +129,8 @@ docker-compose -f docker-compose.prod.yml ps
 docker-compose -f docker-compose.prod.yml logs -f
 
 # Test endpoints
-curl -f http://localhost/api/health
-curl -f https://your-domain.com/api/health
+curl -f http://localhost/health
+curl -f https://your-domain.com/health
 
 # Monitor resource usage
 docker stats
