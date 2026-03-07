@@ -16,13 +16,15 @@ services:
       retries: 3
 
   backend:
-    build: ./backend
+    build: ./backend_new
     ports:
-      - "5000:8080"
+      - "8000:8000"
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=moneytrack;Username=postgres;Password=password
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Telegram__BotToken=test-bot-token-placeholder
+      - ENVIRONMENT=Development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/moneytrack
+      - TELEGRAM_BOT_TOKEN=test-bot-token-placeholder
     depends_on:
       postgres:
         condition: service_healthy

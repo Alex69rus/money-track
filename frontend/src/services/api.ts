@@ -14,7 +14,8 @@ class ApiService {
   private baseURL: string;
   
   private constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const configuredBaseUrl = process.env.REACT_APP_API_URL?.trim();
+    this.baseURL = configuredBaseUrl ? configuredBaseUrl.replace(/\/+$/, '') : '';
   }
   
   public static getInstance(): ApiService {

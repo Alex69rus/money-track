@@ -1,0 +1,4 @@
+interface:
+  display_name: "Iteration Retrospective"
+  short_description: "Capture concise takeaways after each iteration"
+  default_prompt: "Use $iteration-retrospective-capture to add concise, reusable takeaways and exploration notes after this iteration."
