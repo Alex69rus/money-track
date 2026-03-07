@@ -7,6 +7,18 @@ description: Run and troubleshoot local end-to-end API/integration validation un
 
 Run local integration checks reliably when sandbox/network restrictions may block localhost access.
 
+## Default Invocation (No Parameters)
+
+When the skill is invoked without explicit parameters, treat it as a Python backend validation run.
+
+- Target backend: `backend_new` (FastAPI/Python).
+- Default base URL: `http://127.0.0.1:8000`.
+- Default capture artifact: `artifacts/integration/latest-results.json` (relative to `backend_new`).
+- Default run command (from `backend_new`):
+  - `uv run python scripts/run_integration_capture.py`
+
+Only override these defaults when the user explicitly provides a different command, URL, or artifact path.
+
 ## Execute Workflow
 
 1. Run the target test/check command in sandbox first.
@@ -29,6 +41,7 @@ Run local integration checks reliably when sandbox/network restrictions may bloc
 - Always clean up background processes started for validation.
 - For integration capture runs, prefer:
   - `backend_new/scripts/run_integration_capture.py`
+  - No-arg mode is supported and defaults to Python backend values.
   - This standardizes env wiring and JSON artifact output.
 
 ## Reporting Format

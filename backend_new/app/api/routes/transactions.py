@@ -2,8 +2,6 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 
 from app.db.queries import (
     create_transaction,
@@ -18,7 +16,8 @@ from app.services.auth import get_current_user_id
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
+@router.get("/", include_in_schema=False)
 async def get_transactions(
     fromDate: date | None = None,
     toDate: date | None = None,
@@ -45,20 +44,29 @@ async def get_transactions(
     )
 
 
-@router.post("/")
+@router.post(
+    "",
+    response_model=TransactionResponse,
+    response_model_exclude_none=True,
+)
+@router.post(
+    "/",
+    include_in_schema=False,
+    response_model=TransactionResponse,
+    response_model_exclude_none=True,
+)
 async def create_transaction_route(
     payload: CreateTransactionRequest,
+    response: Response,
     user_id: int = Depends(get_current_user_id),
-) -> JSONResponse:
+) -> TransactionResponse:
     created = await create_transaction(
         user_id=user_id,
         payload=payload,
     )
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=jsonable_encoder(created.model_dump()),
-        headers={"Location": f"/api/transactions/{created.id}"},
-    )
+    response.status_code = status.HTTP_201_CREATED
+    response.headers["Location"] = f"/api/transactions/{created.id}"
+    return created
 
 
 @router.put("/{transaction_id}")

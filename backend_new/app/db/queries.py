@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
+from piccolo.columns.column_types import Varchar
+from piccolo.columns.combination import WhereRaw
+from piccolo.query.functions.type_conversion import Cast
+
+from app.core.config import get_settings
 from app.models import Category, Transaction
 from app.schemas.responses import (
     CategoryResponse,
@@ -16,13 +21,6 @@ def _to_utc(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=UTC)
     return dt.astimezone(UTC)
-
-
-def _parse_decimal(value: str) -> Decimal | None:
-    try:
-        return Decimal(value)
-    except InvalidOperation:
-        return None
 
 
 def _map_category(category: Category) -> CategoryResponse:
@@ -90,20 +88,22 @@ async def fetch_transactions(
     skip: int,
     take: int,
 ) -> PaginatedTransactionsResponse:
+    business_tz = get_settings().business_tzinfo
     query = Transaction.objects().where(Transaction.user_id == user_id)
     count_query = Transaction.count().where(Transaction.user_id == user_id)
 
     if from_date is not None:
-        from_start = datetime.combine(from_date, time.min, tzinfo=UTC)
+        from_start = datetime.combine(from_date, time.min, tzinfo=business_tz).astimezone(UTC)
         query = query.where(Transaction.transaction_date >= from_start)
         count_query = count_query.where(Transaction.transaction_date >= from_start)
 
     if to_date is not None:
-        to_end = datetime.combine(to_date, time.min, tzinfo=UTC) + timedelta(
-            days=1, microseconds=-1
+        to_end_exclusive = datetime.combine(
+            to_date + timedelta(days=1), time.min, tzinfo=business_tz
         )
-        query = query.where(Transaction.transaction_date <= to_end)
-        count_query = count_query.where(Transaction.transaction_date <= to_end)
+        to_end_exclusive_utc = to_end_exclusive.astimezone(UTC)
+        query = query.where(Transaction.transaction_date < to_end_exclusive_utc)
+        count_query = count_query.where(Transaction.transaction_date < to_end_exclusive_utc)
 
     if min_amount is not None:
         query = query.where(Transaction.amount >= min_amount)
@@ -126,16 +126,19 @@ async def fetch_transactions(
         count_query = count_query.where(tag_condition)
 
     if text:
+        text_pattern = f"%{text}%"
         category_ids = [
             int(category.id)
-            for category in await Category.objects().where(Category.name.ilike(f"%{text}%")).run()
+            for category in await Category.objects().where(Category.name.ilike(text_pattern)).run()
         ]
-        text_condition = Transaction.note.ilike(f"%{text}%") | Transaction.tags.any(text)
+        text_condition = (
+            Transaction.note.ilike(text_pattern)
+            | Transaction.sms_text.ilike(text_pattern)
+            | WhereRaw("{} ILIKE {}", Cast(Transaction.tags, Varchar()), text_pattern)
+            | WhereRaw("{} ILIKE {}", Cast(Transaction.amount, Varchar()), text_pattern)
+        )
         if category_ids:
             text_condition = text_condition | Transaction.category_id.is_in(category_ids)
-        parsed_amount = _parse_decimal(text)
-        if parsed_amount is not None:
-            text_condition = text_condition | (Transaction.amount == parsed_amount)
         query = query.where(text_condition)
         count_query = count_query.where(text_condition)
 

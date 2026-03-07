@@ -6,6 +6,7 @@ from app.schemas.responses import CategoryResponse
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
+@router.get("/", include_in_schema=False)
 async def get_categories() -> list[CategoryResponse]:
     return await fetch_categories()

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -175,9 +176,12 @@ def test_transactions_date_filter_includes_entire_to_date(
 ) -> None:
     test_tag = _unique_value(db_helper.namespace, "date-range")
     target_day = date(2025, 9, 21)
+    dubai = ZoneInfo("Asia/Dubai")
 
-    included = datetime(2025, 9, 21, 23, 59, 59, tzinfo=UTC)
-    excluded = datetime(2025, 9, 22, 0, 0, 0, tzinfo=UTC)
+    included = datetime(2025, 9, 21, 19, 59, 59, tzinfo=UTC)  # 23:59:59 local
+    excluded = datetime(2025, 9, 21, 20, 0, 0, tzinfo=UTC)  # 00:00:00 next local day
+    assert included.astimezone(dubai).date() == target_day
+    assert excluded.astimezone(dubai).date() == date(2025, 9, 22)
 
     included_msg = _unique_value(db_helper.namespace, "msg-date-included")
     excluded_msg = _unique_value(db_helper.namespace, "msg-date-excluded")
@@ -208,6 +212,129 @@ def test_transactions_date_filter_includes_entire_to_date(
                 tags=[test_tag],
                 currency="AED",
                 sms_text=_unique_value(db_helper.namespace, "date-excluded"),
+                message_id=excluded_msg,
+            )
+        )
+    )
+
+    day = target_day.isoformat()
+    path = f"/api/transactions/?fromDate={day}&toDate={day}&tags={test_tag}&take=100"
+    response, body = perform_request(http_client, "GET", base_url, path)
+
+    assert response.status_code == 200
+    message_ids = {item.get("messageId") for item in body["data"]}
+    assert included_msg in message_ids
+    assert excluded_msg not in message_ids
+
+
+def test_transactions_date_filter_respects_local_day_boundary_dubai(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    # UI date picker works in local time; this test protects against UTC-boundary leakage.
+    dubai = ZoneInfo("Asia/Dubai")
+    test_tag = _unique_value(db_helper.namespace, "date-local-boundary")
+    target_day = date(2025, 11, 28)
+
+    included_utc = datetime(2025, 11, 28, 16, 0, 0, tzinfo=UTC)  # 20:00 local (28 Nov)
+    leaked_utc = datetime(2025, 11, 28, 20, 43, 44, tzinfo=UTC)  # 00:43 local (29 Nov)
+
+    assert included_utc.astimezone(dubai).date() == target_day
+    assert leaked_utc.astimezone(dubai).date() == date(2025, 11, 29)
+
+    included_msg = _unique_value(db_helper.namespace, "msg-local-day-included")
+    leaked_msg = _unique_value(db_helper.namespace, "msg-local-day-leaked")
+
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=included_utc,
+                amount=Decimal("11.11"),
+                note=_unique_value(db_helper.namespace, "local-day-included"),
+                category_id=None,
+                tags=[test_tag],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "local-day-included"),
+                message_id=included_msg,
+            )
+        )
+    )
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=leaked_utc,
+                amount=Decimal("22.22"),
+                note=_unique_value(db_helper.namespace, "local-day-leaked"),
+                category_id=None,
+                tags=[test_tag],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "local-day-leaked"),
+                message_id=leaked_msg,
+            )
+        )
+    )
+
+    day = target_day.isoformat()
+    path = f"/api/transactions/?fromDate={day}&toDate={day}&tags={test_tag}&take=100"
+    response, body = perform_request(http_client, "GET", base_url, path)
+
+    assert response.status_code == 200
+    message_ids = {item.get("messageId") for item in body["data"]}
+    assert included_msg in message_ids
+    assert leaked_msg not in message_ids
+
+
+def test_transactions_date_filter_respects_local_day_start_boundary_dubai(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    dubai = ZoneInfo("Asia/Dubai")
+    test_tag = _unique_value(db_helper.namespace, "date-local-start-boundary")
+    target_day = date(2025, 11, 29)
+
+    included_utc = datetime(2025, 11, 28, 20, 0, 0, tzinfo=UTC)  # 00:00 local (29 Nov)
+    excluded_utc = datetime(2025, 11, 28, 19, 59, 59, tzinfo=UTC)  # 23:59:59 local (28 Nov)
+
+    assert included_utc.astimezone(dubai).date() == target_day
+    assert excluded_utc.astimezone(dubai).date() == date(2025, 11, 28)
+
+    included_msg = _unique_value(db_helper.namespace, "msg-local-start-included")
+    excluded_msg = _unique_value(db_helper.namespace, "msg-local-start-excluded")
+
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=included_utc,
+                amount=Decimal("33.33"),
+                note=_unique_value(db_helper.namespace, "local-start-included"),
+                category_id=None,
+                tags=[test_tag],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "local-start-included"),
+                message_id=included_msg,
+            )
+        )
+    )
+    asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=excluded_utc,
+                amount=Decimal("44.44"),
+                note=_unique_value(db_helper.namespace, "local-start-excluded"),
+                category_id=None,
+                tags=[test_tag],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "local-start-excluded"),
                 message_id=excluded_msg,
             )
         )
@@ -537,7 +664,7 @@ def test_create_transaction_persists_expected_defaults_and_fields(
     assert body["note"] == note
     assert body["currency"] == "AED"
     assert body["userId"] > 0
-    assert body["category"] is None
+    assert "category" not in body
     assert body["tags"] == payload["tags"]
 
     tx = asyncio.run(db_helper.get_transaction_by_id(int(body["id"])))
@@ -566,7 +693,7 @@ def test_create_transaction_with_category_returns_null_embedded_category(
 
     assert response.status_code == 201
     assert body["categoryId"] == category_id
-    assert body["category"] is None
+    assert "category" not in body
 
 
 def test_create_transaction_omits_null_optional_fields_in_response(

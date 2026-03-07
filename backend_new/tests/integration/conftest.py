@@ -7,11 +7,44 @@ import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 import pytest
 
 from tests.fixtures import DbHelper
+
+
+def _read_database_url_from_env_file() -> str | None:
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    if not env_path.exists():
+        return None
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("DATABASE_URL="):
+            return line.split("=", 1)[1].strip()
+    return None
+
+
+def _normalize_localhost_to_ipv4(dsn: str) -> str:
+    parsed = urlsplit(dsn)
+    if parsed.hostname != "localhost":
+        return dsn
+
+    user_info = ""
+    if parsed.username:
+        user_info = parsed.username
+        if parsed.password:
+            user_info = f"{user_info}:{parsed.password}"
+        user_info = f"{user_info}@"
+
+    host = "127.0.0.1"
+    port = f":{parsed.port}" if parsed.port else ""
+    netloc = f"{user_info}{host}{port}"
+    return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
 
 
 @dataclass
@@ -54,9 +87,15 @@ def production_base_url() -> str | None:
 
 @pytest.fixture(scope="session")
 def test_database_url() -> str:
-    return os.getenv(
-        "TEST_DATABASE_URL", "postgresql://postgres:password@localhost:5432/moneytrack"
-    )
+    explicit = os.getenv("TEST_DATABASE_URL")
+    if explicit:
+        return _normalize_localhost_to_ipv4(explicit)
+
+    from_env_file = _read_database_url_from_env_file()
+    if from_env_file:
+        return _normalize_localhost_to_ipv4(from_env_file)
+
+    return "postgresql://postgres:password@127.0.0.1:5432/moneytrack"
 
 
 @pytest.fixture(scope="session")

@@ -6,13 +6,26 @@ import subprocess
 import sys
 from pathlib import Path
 
+DEFAULT_BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
+DEFAULT_RESULTS_FILE = os.getenv(
+    "RESULTS_FILE", "artifacts/integration/latest-results.json"
+)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run single integration test suite and capture results."
     )
-    parser.add_argument("--base-url", required=True, help="Target API base URL")
-    parser.add_argument("--results-file", required=True, help="Output JSON file path")
+    parser.add_argument(
+        "--base-url",
+        default=DEFAULT_BASE_URL,
+        help=f"Target API base URL (default: {DEFAULT_BASE_URL})",
+    )
+    parser.add_argument(
+        "--results-file",
+        default=DEFAULT_RESULTS_FILE,
+        help=f"Output JSON file path (default: {DEFAULT_RESULTS_FILE})",
+    )
     parser.add_argument(
         "--test-database-url", help="Optional PostgreSQL DSN for DB setup/assertions"
     )

@@ -166,3 +166,35 @@ Keep entries short, actionable, and repository-specific.
   - Preferred fix: mirror the same predicates onto `Transaction.count().where(...)` and execute pagination fetch separately.
 - Exploration: verified parity baseline uses database-side count (`CountAsync`) before `Skip`/`Take`; ruled out changing response semantics (`hasMore`, `skip`, `take`) because this is a pure query-plan optimization.
 - Prevention rule: for paginated endpoints, reject implementations that call `.run()` only to compute `len(...)`; require DB aggregate count queries with identical filters.
+
+### 2026-02-22 - Dual-Mode Integration Gate for Production Auth
+
+- Takeaway: production-auth parity coverage can silently regress when `PRODUCTION_BASE_URL` is optional and default runs skip those tests.
+  - Root cause: single-instance local runs usually execute only in `Development`, so production unauthorized checks are skipped.
+  - Preferred fix: run one local gate with two API instances (`Development` + `Production`) and pass both URLs into integration tests.
+- Exploration: evaluated replacing skip logic in tests.
+  - Ruled out: making production checks mandatory without provisioning a production-mode target URL.
+  - Why: that would make default local runs fail in environments with only one app instance.
+- Prevention rule: for auth parity gates, run `python3 scripts/run_integration_dual_mode.py` so production unauthorized checks execute instead of being skipped.
+
+### 2026-03-07 - Date Filter + Environment Alignment
+
+- Takeaway: treat `fromDate` / `toDate` as business-local calendar days, not UTC-midnight days.
+  - Symptom: filtering `2025-11-28` returned records shown as `29/11` in Dubai local time.
+  - Root cause: backend built date boundaries using UTC midnight (`00:00`..`23:59:59.999999` UTC).
+  - Preferred fix: compute day boundaries in configurable `BUSINESS_TIMEZONE` (default `Asia/Dubai`) and convert to UTC for DB predicates.
+- Exploration: added and ran a regression test for Dubai day-boundary leakage; validated failure first, then green after boundary fix.
+  - Ruled out: frontend-only bug.
+  - Why: direct API test reproduced leakage at backend query layer.
+- Prevention rule: for every date-filter change, keep one integration test that asserts local-day boundary exclusion (`late UTC` that is `next local day` must not match `toDate`).
+
+### 2026-03-07 - Parity Run Reliability
+
+- Takeaway: avoid ad-hoc parity commands with implicit defaults when validating final state.
+  - Symptom: false failure bursts (`ConnectError`) despite healthy app due `localhost` vs `127.0.0.1` and missing service orchestration.
+  - Root cause: direct `pytest` run did not start API and used fragile default URL resolution.
+  - Preferred fix: use orchestrated runner (`scripts/run_integration_dual_mode.py`) for final e2e parity verdict.
+- Exploration: compared direct `pytest` run vs dual-mode runner in same environment.
+  - Ruled out: contract regression for failing cases in ad-hoc run.
+  - Why: dual-mode command passed all collected integration tests with explicit service startup/readiness.
+- Prevention rule: declare parity status only from `uv run python scripts/run_integration_dual_mode.py`, not from standalone `pytest tests/integration` unless URLs and service lifecycle are explicitly controlled.

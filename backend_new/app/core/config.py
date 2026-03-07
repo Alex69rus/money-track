@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,8 +14,14 @@ class Settings(BaseSettings):
     )
     api_host: str = Field(default="0.0.0.0", alias="API_HOST")
     api_port: int = Field(default=8000, alias="API_PORT")
+    cors_allow_origins: str = Field(default="http://localhost:3000", alias="CORS_ALLOW_ORIGINS")
+    business_timezone: str = Field(default="Asia/Dubai", alias="BUSINESS_TIMEZONE")
     database_url: str = Field(alias="DATABASE_URL")
     telegram_bot_token: str = Field(alias="TELEGRAM_BOT_TOKEN")
+
+    @property
+    def business_tzinfo(self) -> ZoneInfo:
+        return ZoneInfo(self.business_timezone)
 
 
 @lru_cache(maxsize=1)

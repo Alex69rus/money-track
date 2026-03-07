@@ -18,6 +18,7 @@
 | Final Parity Gate + Cutover Checklist - Step 7 | Full checks, parity run, docs/runbook updates for URL-only cutover | ✅ Complete | 2026-02-22 | `ruff`/`mypy` green; integration suite against `backend_new` `26 passed, 2 skipped`; no forbidden diffs; cutover checklist added |
 | High-Risk Parity Tests - Step 8 | Add integration tests for null-field serialization + transaction text-search semantics parity | ✅ Complete | 2026-02-22 | Added targeted integration scenarios for null key omission and substring text search over tags/amount |
 | Read-Path Query Efficiency - Step 9 | Replace Python-side transaction counting with SQL `COUNT(*)` parity behavior | ✅ Complete | 2026-02-22 | Switched `totalCount` in `backend_new` to `Transaction.count()` with shared predicates; validated by `ruff` + `mypy` |
+| Production Auth Gate Activation - Step 10 | Run integration suite against local dev+prod backend instances so auth-negative production checks are no longer skipped | ✅ Complete | 2026-02-22 | Added `backend_new/scripts/run_integration_dual_mode.py`; dual-mode run enables production auth checks in the same parity gate |
 
 ---
 
@@ -101,6 +102,16 @@
 - [x] Add concise run/cutover checklist to migration docs
 
 **Exit Criteria:** In-scope parity scenarios are green and frontend can switch by API URL only.
+
+### Iteration M9: Production Auth Gate Activation
+**Goal:** Activate production unauthorized parity checks in routine local integration runs.
+
+- [x] Add dual-mode local runner that starts Development and Production API instances in parallel
+- [x] Poll `/health` readiness for both instances before running integration tests
+- [x] Run integration suite with both `BASE_URL` and `PRODUCTION_BASE_URL` to avoid skipped auth-negative tests
+- [x] Ensure runner performs deterministic process cleanup on success/failure
+
+**Exit Criteria:** Production auth-negative tests execute (not skipped) during the dual-mode gate run.
 
 ### Iteration Execution Rules (Apply to M1-M8)
 
