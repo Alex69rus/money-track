@@ -4,37 +4,28 @@
 Accepted
 
 ## Context
-We need a simple configuration approach that supports containerized deployment while keeping complexity minimal for a single production environment.
+We need simple and explicit configuration for containerized runtime.
 
 ## Decision
-Configuration approach:
-- **Single environment (Production)**: No dev/staging complexity
-- **Environment variables only**: All configuration via env vars
-- **No complex configuration management**: Keep it simple
+- Environment variables are the primary configuration mechanism.
+- Backend configuration is centralized in `backend_new/app/core/config.py`.
+- React uses build-time environment variables.
+- Docker Compose `.env` / `.env.prod` drives deployment variables.
 
-Configuration sources:
-- Database connection string (env var)
-- Telegram bot settings (env var)
-- n8n webhook URLs (env var)
-- API keys/secrets (env var)
-
-Files:
-- `appsettings.json` for .NET API defaults
-- `.env` file for Docker Compose
-- React build-time environment variables
+Configuration domains:
+- Database URL and credentials
+- Telegram bot token / auth settings
+- API host/port/environment
+- n8n webhook URLs
+- frontend public API URLs
 
 ## Rationale
-- **Single environment**: Reduces complexity for MVP
-- **Environment variables**: Standard approach for containers
-- **No secrets management**: Environment variables sufficient for MVP
-- **Default values**: Reduce required configuration
+- Environment-variable-driven config fits Docker deployment patterns.
+- Single backend settings module reduces drift and hidden defaults.
 
 ## Consequences
-- Simple configuration management
-- All secrets in environment variables
-- Easy Docker container configuration
-- May need more sophisticated approach as project grows
-- Single production environment reduces testing scenarios
+- Low complexity config management.
+- Requires disciplined secret handling in deployment environments.
 
 ## Date
-2024-08-31
+2026-03-20

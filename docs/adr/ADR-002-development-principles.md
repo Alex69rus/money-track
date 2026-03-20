@@ -4,36 +4,31 @@
 Accepted
 
 ## Context
-We need to establish development principles for the MVP that prioritize speed, simplicity, and rapid iteration while avoiding over-engineering.
+We need delivery principles that preserve speed and simplicity while keeping behavior reliable.
 
 ## Decision
-We will follow these core principles:
-- **KISS (Keep It Simple, Stupid)**: Simplest solution that works
-- **YAGNI (You Aren't Gonna Need It)**: Don't build features until needed
-- **MVP First**: Build minimal viable features, iterate based on feedback
-- **No Premature Optimization**: Optimize only when needed
-- **Convention over Configuration**: Use framework defaults where possible
-- **Fail Fast**: Quick feedback loops, early error detection
+Core principles:
+- KISS
+- YAGNI
+- MVP first
+- No premature optimization
+- Convention over configuration
+- Fail fast
 
 Development practices:
-- **Git Flow**: Simple main branch + feature branches
-- **Testing**: Unit tests only for critical business logic
-- **Code Style**: Follow framework conventions (.NET conventions, Prettier for React)
-- **Documentation**: Inline comments for complex logic only, README for setup
+- Small, reviewable slices
+- Explicit checks before merge (`ruff`, `mypy`, `pytest` where applicable)
+- Follow framework conventions (FastAPI/Piccolo and React/TypeScript)
+- Keep docs aligned with current runtime architecture
 
 ## Rationale
-- KISS and YAGNI prevent feature bloat and over-engineering
-- MVP approach allows for quick validation of core concept
-- Framework conventions reduce decision paralysis
-- Minimal testing strategy focuses on business-critical code
-- Simple git workflow reduces overhead
+- Small slices reduce rollback risk.
+- Convention-based code stays easier to maintain.
+- Typed, tested paths reduce regressions in API behavior.
 
 ## Consequences
-- Faster initial development
-- Less technical debt from unused features
-- Focus on core functionality first
-- May need refactoring as requirements evolve
-- Reduced complexity in codebase
+- Faster iteration with predictable quality gates.
+- Lower overhead than heavyweight process frameworks.
 
 ## Date
-2024-08-31
+2026-03-20

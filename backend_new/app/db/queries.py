@@ -185,7 +185,7 @@ async def create_transaction(
     )
     await transaction.save()
 
-    # C# create endpoint returns the saved row without eager-loading category.
+    # Create endpoint returns the saved row without eager-loading category.
     return _map_transaction(transaction, None)
 
 

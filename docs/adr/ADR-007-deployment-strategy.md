@@ -4,40 +4,29 @@
 Accepted
 
 ## Context
-We need a simple, cost-effective deployment strategy for MVP that supports Docker containers and allows for easy updates while minimizing operational complexity.
+We need a low-complexity production deployment model for the current stack.
 
 ## Decision
 Deployment approach:
-- **Single AWS EC2 instance**: All services on one machine
-- **Docker Compose orchestration**: Container management
-- **GitHub Actions CI/CD**: Simple automated deployment
-- **Nginx reverse proxy**: SSL termination and routing
+- Single AWS EC2 instance
+- Docker Compose orchestration
+- GitHub Actions CI/CD for build and deploy
+- Nginx reverse proxy for routing and TLS termination
 
-Setup details:
-- AWS EC2 instance with Docker installed
-- PostgreSQL, Python FastAPI backend, React app (via Nginx) in containers
-- n8n in existing setup
-- Cloudflare Origin Certificates for SSL (see ADR-009)
-- Basic PostgreSQL backup strategy
-
-Deployment flow:
-1. Push to main branch triggers GitHub Actions
-2. Build and push Docker images
-3. SSH to EC2 and restart Docker Compose services
-4. Health checks verify deployment
+Runtime services:
+- PostgreSQL
+- Python FastAPI backend (`backend_new` image)
+- React frontend image
+- n8n
+- Nginx
 
 ## Rationale
-- **Single server**: Cost-effective for MVP, simple to manage
-- **Docker Compose**: Familiar, reliable container orchestration
-- **GitHub Actions**: Free tier sufficient, simple pipeline
-- **AWS EC2**: Reliable, scalable when needed
+- Keeps operations simple and cost-effective.
+- Matches current system scale and team bandwidth.
 
 ## Consequences
-- Low operational overhead
-- Single point of failure (acceptable for MVP)
-- Easy to scale vertically initially
-- Simple backup and recovery process
-- Cost-effective for testing and validation
+- Single point of failure remains acceptable at current stage.
+- Operational model is straightforward and reproducible.
 
 ## Date
-2024-08-31
+2026-03-20

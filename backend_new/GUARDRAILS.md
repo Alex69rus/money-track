@@ -1,200 +1,64 @@
 # backend_new Guardrails Log
 
-This file stores reusable guardrails from iteration loops to reduce repeated mistakes and token waste.
+This file stores reusable guardrails from implementation/debugging loops to reduce repeated mistakes and token waste.
 
 ## Update Rule
 
 After each implementation/debugging iteration, append concise notes with:
 - Takeaways: pitfalls, root causes, and preferred fixes.
 - Explorations: what was checked, what was ruled out, and why.
-- Prevention rule: one concrete default/command/check to avoid recurrence.
+- Prevention rule: one concrete default command/check to avoid recurrence.
 
 Keep entries short, actionable, and repository-specific.
 
-## Entries
+## Active Guardrails
 
-### 2026-02-18 - Integration Parity Suite Authoring
+### 2026-02-18 - Integration Execution Reliability
+- Takeaway: fixed sleeps before tests are flaky; startup timing must be validated explicitly.
+- Preferred fix: always poll `GET /health` with timeout before integration runs.
+- Prevention rule: classify failures first (`connectivity | sandbox | auth | contract`) before changing code.
 
-- Takeaway: Do not reuse one `asyncpg.Connection` across repeated `asyncio.run(...)` calls in sync pytest tests.
-  - Root cause: cross-event-loop futures (`Future attached to a different loop`).
-  - Preferred fix: use short-lived per-operation DB connections, or convert fixture stack to fully async.
-- Exploration: `uv run pytest` in `backend_new` failed due to editable build metadata (Hatch wheel file-selection issue).
-  - Ruled out: relying on default `uv run pytest` for parity runs.
-  - Why: it attempts project build before running tests.
-- Prevention rule: for local parity runs, prefer `.venv/bin/pytest tests/integration -q` with explicit env vars.
+### 2026-02-18 - Runtime Lifecycle
+- Takeaway: DB connection pooling belongs in FastAPI lifespan, not per-request setup.
+- Preferred fix: manage startup/shutdown pool lifecycle centrally.
+- Prevention rule: keep one canonical engine factory shared by runtime and Piccolo config.
 
-- Takeaway: fixed sleep before tests is flaky when starting local C# API.
-  - Root cause: tests may start before Kestrel binds to `http://localhost:5000`.
-  - Preferred fix: poll `GET /health` with timeout before running suite.
-- Exploration: initial failures classified as connectivity (`connection refused`) versus auth (`401`) based on response/error class.
-  - Ruled out: treating all failures as contract regressions.
-  - Why: environment mode and startup readiness were true root causes.
-- Prevention rule: classify failures first (connectivity/sandbox/auth/contract) before changing tests.
+### 2026-02-19 - API Contract Safety
+- Takeaway: framework defaults can drift from expected API error payloads.
+- Preferred fix: use explicit exception handlers for stable error shapes.
+- Prevention rule: lock response shape expectations with integration tests for each route group.
 
-- Takeaway: integration suite requires clear mode assumptions for auth.
-  - Root cause: running backend outside `ASPNETCORE_ENVIRONMENT=Development` causes expected `401` on protected endpoints.
-  - Preferred fix: run development-mode baseline for parity authoring unless explicitly testing production auth.
-- Exploration: production auth-negative tests were intentionally skipped without `PRODUCTION_BASE_URL`.
-  - Ruled out: forcing production auth assertions in default local run.
-  - Why: they belong to explicit non-development validation path.
-- Prevention rule: always pass explicit env contract (`BASE_URL`, `TEST_DATABASE_URL`, optional `PRODUCTION_BASE_URL`) in run commands.
+### 2026-02-19 - ORM Boundary Discipline
+- Takeaway: mixing DB access patterns creates drift and maintenance risk.
+- Preferred fix: keep runtime CRUD/query paths on Piccolo ORM only.
+- Prevention rule: reject runtime changes that introduce direct SQL strings or non-Piccolo DB calls.
 
-### 2026-02-18 - Scaffold Hardening Baseline
+### 2026-02-19 - Typed Contracts
+- Takeaway: loose runtime shapes increase hidden regressions.
+- Preferred fix: route DB outputs through typed schema models and typed service contracts.
+- Prevention rule: avoid `Any` in runtime service/query paths.
 
-- Takeaway: initialize Piccolo connection pool in FastAPI lifespan, not per request.
-  - Root cause: request-scoped pool setup adds overhead and can leak under failures.
-  - Preferred fix: single startup/shutdown lifecycle with explicit `start_connection_pool` / `close_connection_pool`.
-- Exploration: checked whether to instantiate `PostgresEngine` in `piccolo_conf.py` versus dedicated app module.
-  - Ruled out: duplicated engine setup in multiple files.
-  - Why: centralizing in `app/db/engine.py` avoids drift across runtime and migration config.
-- Prevention rule: keep one canonical engine factory (`get_engine`) and import it from both app runtime and Piccolo config.
+### 2026-02-19 - DB-Side Filtering
+- Takeaway: Python-side filtering after load harms performance and parity.
+- Preferred fix: attach all filters and pagination to DB queries before execution.
+- Prevention rule: reject endpoint implementations that load-all then filter in Python.
 
-### 2026-02-18 - Static Analysis Stabilization
+### 2026-02-21 - Data Integrity Verification
+- Takeaway: behavior tests alone can miss schema drift.
+- Preferred fix: pair behavioral assertions with schema/catalog checks for critical constraints.
+- Prevention rule: for each DB invariant, keep one behavior test and one schema-level assertion.
 
-- Takeaway: strict `mypy` on integration-test-heavy repos can block migration slices when third-party stubs aren't available in CI/local environments.
-  - Root cause: strict defaults (`no-untyped-def`, missing import typing) surface mostly in test harnesses and framework decorators.
-  - Preferred fix: keep strict mode, but explicitly disable noisy error codes for this phase and preserve fast feedback on structural issues.
-- Exploration: attempted per-module overrides for `tests.*`; rule didn't consistently match collected modules in this environment.
-  - Ruled out: relying on module-pattern overrides only.
-  - Why: direct `disable_error_code` in top-level mypy config is deterministic across invocation styles.
-- Prevention rule: after any mypy config change, run `ruff check . && mypy .` from `backend_new/` in one command to validate config-effect and avoid false-green assumptions.
+### 2026-02-22 - Paginated Count Efficiency
+- Takeaway: `len(query.run())` for total counts is inefficient.
+- Preferred fix: use DB aggregate count query with identical predicates.
+- Prevention rule: enforce aggregate-count pattern for paginated endpoints.
 
-### 2026-02-19 - Auth + Read Slice Implementation
+### 2026-03-07 - Local-Day Date Filtering
+- Takeaway: date filters must use business-local calendar boundaries.
+- Preferred fix: compute local-day boundaries in `BUSINESS_TIMEZONE` and convert to UTC for predicates.
+- Prevention rule: keep an integration test for local-day boundary exclusion.
 
-- Takeaway: mirroring C# error contract requires explicit unauthorized/internal handlers instead of FastAPI defaults (`detail` payloads differ).
-  - Root cause: framework default exception serialization drifts from baseline contract.
-  - Preferred fix: register custom exception handlers returning `{error, message}` shape for 401/500 paths.
-- Exploration: checked whether to rely on Piccolo query builder for endpoint parity in this slice.
-  - Ruled out: forcing full query-builder migration before parity semantics are stable.
-  - Why: raw SQL via asyncpg provided faster control for date-range, tag overlap, and text-search parity behavior.
-- Prevention rule: for each migrated endpoint, codify contract-first response fields in one serializer helper and reuse across CRUD routes.
-
-### 2026-02-19 - ORM Compliance Follow-up
-
-- Takeaway: migration slices must keep runtime CRUD/query paths on Piccolo ORM only; raw SQL in app code violates agreed migration constraints.
-  - Root cause: parity implementation optimized quickly with asyncpg SQL before enforcing stack boundary.
-  - Preferred fix: define Piccolo table models early and route all reads/writes through Piccolo query / object APIs.
-- Exploration: evaluated keeping asyncpg for read filters while using Piccolo only for writes.
-  - Ruled out: mixed runtime DB access layers.
-  - Why: requirement explicitly mandates Piccolo for writing and fetching service CRUD logic.
-- Prevention rule: before opening a PR, run a grep gate for DB access imports (`asyncpg`, direct SQL strings) under `backend_new/app` and replace with Piccolo equivalents.
-
-### 2026-02-19 - Typed ORM Contract Tightening
-
-- Takeaway: parity code that compiles can still drift from team standards if query/service boundaries use `Any` or anonymous dict payloads.
-  - Root cause: rapid endpoint migration favored loose shapes over explicit contracts.
-  - Preferred fix: route DB outputs through typed schema models and keep query function signatures class-based.
-- Exploration: evaluated keeping Piccolo `.select()` for partial-field optimization.
-  - Ruled out: mixed fetch styles for entity reads in runtime service paths.
-  - Why: project rule now requires `.objects()` for entity fetch consistency.
-- Prevention rule: before commit, run grep checks for `.select(` and `Any` in `backend_new/app` and resolve hits in runtime code.
-
-### 2026-02-19 - DB-Level Filtering Enforcement
-
-- Takeaway: loading all transactions and then filtering in Python violates scalability and parity expectations for query semantics.
-  - Root cause: fast migration favored correctness-first loops over DB-side predicate composition.
-  - Preferred fix: compose filters directly on Piccolo query objects (`.where(...)`, pagination in query), then map only returned rows.
-- Exploration: verified runtime code paths for transactions now apply date/amount/category/tag/text predicates as query conditions before pagination.
-  - Ruled out: retaining Python-side filtering loops.
-  - Why: requirement is explicit that entity filtering must stay on the database side.
-- Prevention rule: reject any PR where list endpoints call `.run()` before all requested filters and pagination are attached to the query.
-
-### 2026-02-19 - Test Dependency Availability
-
-- Takeaway: integration tests depending on `httpx` should not rely only on optional dev installation paths when the suite is a primary migration gate.
-  - Root cause: environments executing project-only installs can miss HTTP client test prerequisites.
-  - Preferred fix: include `httpx` in core project dependencies to keep test harness imports available in standard setup flows.
-- Exploration: confirmed integration fixture import path requires `httpx` at test collection time.
-  - Ruled out: deferring `httpx` availability to ad-hoc manual installs.
-  - Why: that makes parity test runs inconsistent across environments.
-- Prevention rule: when integration suite adds a new third-party import in `tests/**`, validate dependency placement in `pyproject.toml` before merging.
-
-### 2026-02-19 - Transactions Read Parity Gate Execution
-
-- Takeaway: local parity suite failures can be pure connectivity when the API process is not running, even if query logic is already correct.
-  - Root cause: `pytest` integration requests target `BASE_URL` and fail fast with `ConnectError` when no server is listening.
-  - Preferred fix: run an orchestrated command that starts `uvicorn`, polls `/health`, then executes the suite and always cleans up the process.
-- Exploration: initial run classified as `sandbox/permission` when `uv` cache access was denied in sandbox mode.
-  - Ruled out: changing runtime code to fix connection failures.
-  - Why: escalation resolved environment startup and tests passed unchanged (`17 passed, 2 skipped`).
-- Prevention rule: for integration gates, always classify failures first (`connectivity | sandbox | auth | contract`) and rerun with readiness polling before editing app code.
-
-### 2026-02-19 - Create Route Contract Parity
-
-- Takeaway: create-response payload parity can differ from read/update payloads when baseline doesn't eager-load related entities.
-  - Root cause: reusing shared mapper with category lookup in create path returned a populated `category` object, while C# create returns null for that field.
-  - Preferred fix: map the created row directly without category hydration for `POST /api/transactions`.
-- Exploration: validated parity by asserting `Location` header, UTC-normalized `transaction_date`, and persisted `tags` array side effects in integration tests.
-  - Ruled out: adding a post-save category fetch in create flow.
-  - Why: that introduces avoidable contract drift versus baseline response shape.
-- Prevention rule: for each write endpoint, capture route-specific response-shape assertions (including headers) in integration tests instead of assuming shared mapper behavior.
-
-### 2026-02-20 - Update/Delete Ownership Query Hardening
-
-- Takeaway: ownership checks for write endpoints should be encoded in DB predicates, not post-fetch Python comparisons.
-  - Root cause: fetching by `id` then checking `user_id` in Python still reads cross-user rows before rejection.
-  - Preferred fix: query with `(id AND user_id)` in one Piccolo `.where(...)` and return not-found on miss.
-- Exploration: expanded integration parity coverage with missing-id update/delete scenarios in addition to cross-user scenarios.
-  - Ruled out: relying on ownership tests alone.
-  - Why: baseline parity also requires consistent `404` semantics for non-existent IDs.
-- Prevention rule: for mutating endpoints, require test coverage for both `cross-user` and `missing-id` 404 cases before marking write parity complete.
-
-### 2026-02-21 - Integrity Constraint Migration Hardening
-
-- Takeaway: behavioral tests alone can hide schema drift when the target DB was pre-created by another stack.
-  - Root cause: unique/FK behavior appeared correct due to existing EF migrations, not guaranteed by `backend_new` migration assets.
-  - Preferred fix: add idempotent Piccolo raw-SQL migration plus catalog-level integration assertions.
-- Exploration: validated constraint presence via PostgreSQL system catalogs (`pg_index`, `pg_constraint`) rather than endpoint side effects only.
-  - Ruled out: relying exclusively on duplicate-insert and delete-side-effect scenarios.
-  - Why: metadata assertions detect missing/misconfigured constraints earlier and more directly.
-- Prevention rule: for each DB invariant parity requirement, pair one behavior test with one schema-catalog assertion and keep migration SQL idempotent.
-
-### 2026-02-22 - Final Parity Gate Execution
-
-- Takeaway: running `uv run pytest -q` as a global gate can fail with non-actionable integration errors when no API server is listening.
-  - Root cause: integration tests target `BASE_URL` and fail with connection-refused before contract assertions run.
-  - Preferred fix: run static/type gates first, then execute integration suite with explicit API startup and health polling.
-- Exploration: initial integration run failed from sandboxed `uv` cache access, then passed unchanged after escalated run (`26 passed, 2 skipped`).
-  - Ruled out: making runtime code edits in response to readiness/sandbox failures.
-  - Why: failure class was environment (`connectivity` + `sandbox/permission`), not contract regression.
-- Prevention rule: for final parity gate, use a single orchestrated command that starts `uvicorn`, polls `/health`, runs `tests/integration`, and always cleans up the process.
-
-### 2026-02-22 - Transaction Count Query Efficiency
-
-- Takeaway: deriving `totalCount` via `len(await query.run())` materializes full filtered transaction sets and creates avoidable memory and latency overhead.
-  - Root cause: count logic reused the entity-fetch query path instead of a dedicated aggregate query.
-  - Preferred fix: mirror the same predicates onto `Transaction.count().where(...)` and execute pagination fetch separately.
-- Exploration: verified parity baseline uses database-side count (`CountAsync`) before `Skip`/`Take`; ruled out changing response semantics (`hasMore`, `skip`, `take`) because this is a pure query-plan optimization.
-- Prevention rule: for paginated endpoints, reject implementations that call `.run()` only to compute `len(...)`; require DB aggregate count queries with identical filters.
-
-### 2026-02-22 - Dual-Mode Integration Gate for Production Auth
-
-- Takeaway: production-auth parity coverage can silently regress when `PRODUCTION_BASE_URL` is optional and default runs skip those tests.
-  - Root cause: single-instance local runs usually execute only in `Development`, so production unauthorized checks are skipped.
-  - Preferred fix: run one local gate with two API instances (`Development` + `Production`) and pass both URLs into integration tests.
-- Exploration: evaluated replacing skip logic in tests.
-  - Ruled out: making production checks mandatory without provisioning a production-mode target URL.
-  - Why: that would make default local runs fail in environments with only one app instance.
-- Prevention rule: for auth parity gates, run `python3 ../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py` so production unauthorized checks execute instead of being skipped.
-
-### 2026-03-07 - Date Filter + Environment Alignment
-
-- Takeaway: treat `fromDate` / `toDate` as business-local calendar days, not UTC-midnight days.
-  - Symptom: filtering `2025-11-28` returned records shown as `29/11` in Dubai local time.
-  - Root cause: backend built date boundaries using UTC midnight (`00:00`..`23:59:59.999999` UTC).
-  - Preferred fix: compute day boundaries in configurable `BUSINESS_TIMEZONE` (default `Asia/Dubai`) and convert to UTC for DB predicates.
-- Exploration: added and ran a regression test for Dubai day-boundary leakage; validated failure first, then green after boundary fix.
-  - Ruled out: frontend-only bug.
-  - Why: direct API test reproduced leakage at backend query layer.
-- Prevention rule: for every date-filter change, keep one integration test that asserts local-day boundary exclusion (`late UTC` that is `next local day` must not match `toDate`).
-
-### 2026-03-07 - Parity Run Reliability
-
-- Takeaway: avoid ad-hoc parity commands with implicit defaults when validating final state.
-  - Symptom: false failure bursts (`ConnectError`) despite healthy app due `localhost` vs `127.0.0.1` and missing service orchestration.
-  - Root cause: direct `pytest` run did not start API and used fragile default URL resolution.
-  - Preferred fix: use orchestrated runner (`../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py`) for final e2e parity verdict.
-- Exploration: compared direct `pytest` run vs dual-mode runner in same environment.
-  - Ruled out: contract regression for failing cases in ad-hoc run.
-  - Why: dual-mode command passed all collected integration tests with explicit service startup/readiness.
-- Prevention rule: declare parity status only from `uv run python ../.agents/skills/run-e2e-tests/scripts/run_integration_local_dual_api.py`, not from standalone `pytest tests/integration` unless URLs and service lifecycle are explicitly controlled.
+### 2026-03-07 - Gate Command Reliability
+- Takeaway: ad-hoc integration commands can produce false negatives.
+- Preferred fix: use orchestrated service startup + readiness + test execution commands.
+- Prevention rule: declare parity/status only from controlled test runs with explicit URLs and lifecycle handling.

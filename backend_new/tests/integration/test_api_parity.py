@@ -722,7 +722,7 @@ def test_create_transaction_omits_null_optional_fields_in_response(
     assert body["currency"] == "AED"
     assert body["tags"] == payload["tags"]
 
-    # C# baseline omits null-valued optional fields globally.
+    # API contract omits null-valued optional fields globally.
     assert "note" not in body
     assert "categoryId" not in body
     assert "smsText" not in body

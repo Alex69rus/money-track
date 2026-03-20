@@ -4,14 +4,15 @@ Personal money tracking application with Telegram bot integration.
 
 ## Architecture
 
-- **Backend**: .NET Minimal API with Entity Framework and PostgreSQL
-- **Frontend**: React TypeScript with Material-UI
+- **Backend**: Python FastAPI (`backend_new`) with Piccolo ORM and PostgreSQL
+- **Frontend**: React + TypeScript + Material-UI
 - **Database**: PostgreSQL
+- **Automation / AI**: n8n workflows
 - **Containerization**: Docker Compose
 
 ## Quick Start
 
-1. Clone the repository
+1. Clone the repository.
 2. Start all services:
 
 ```bash
@@ -19,43 +20,50 @@ docker-compose up --build
 ```
 
 3. Access the application:
-   - **Frontend**: http://localhost:3000
-   - **Backend API**: http://localhost:8000
-   - **API Documentation**: http://localhost:8000/swagger
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **n8n**: http://localhost:5678
 
-## Development
+## Local Development
 
 ### Prerequisites
 - Docker and Docker Compose
-- .NET 8 SDK (for local development)
-- Node.js 18+ (for local development)
+- Python 3.13
+- `uv`
+- Node.js 18+
 
-### Health Check
+### Backend
+
+```bash
+cd backend_new
+uv sync --group dev
+ENVIRONMENT=Development DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/moneytrack TELEGRAM_BOT_TOKEN=test-token uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+REACT_APP_API_URL=http://localhost:8000 npm start
+```
+
+## Health Check
+
 - Backend health: http://localhost:8000/health
-- Should return "OK"
+- Expected response: `OK`
 
 ## Project Structure
 
-```
+```text
 money-track/
-├── backend/                 # .NET Minimal API
-│   ├── Models/             # Data models & DTOs
-│   ├── Services/           # Business logic
-│   ├── Data/              # Database context
-│   └── Program.cs         # Main entry point
-├── frontend/               # React TypeScript app
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/        # Main app screens
-│   │   ├── services/     # API calls
-│   │   └── types/       # TypeScript types
-└── docker-compose.yml     # Local development setup
+├── backend_new/              # Python FastAPI backend
+│   ├── app/                  # API routes, services, schemas, core
+│   ├── tests/                # Integration and fixtures
+│   ├── piccolo_migrations/   # Forward migrations
+│   └── pyproject.toml
+├── frontend/                 # React TypeScript app
+├── n8n/                      # n8n workflows
+├── docs/                     # ADRs, deployment, workflow
+└── docker-compose.yml        # Local development setup
 ```
-
-## Next Steps
-
-This is Iteration 1 setup. Next iterations will add:
-- Database models and Entity Framework
-- Transaction CRUD API endpoints
-- Frontend routing and components
-- Analytics and AI chat integration

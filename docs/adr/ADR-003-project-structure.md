@@ -4,43 +4,30 @@
 Accepted
 
 ## Context
-We need to define a simple, clear project structure that supports our monolithic .NET API and React frontend without unnecessary complexity.
+We need a clear repository structure centered on the Python backend and React frontend.
 
 ## Decision
-We will use this structure:
-```
+```text
 money-track/
-├── backend/                    # Single .NET Minimal API project
-│   ├── Models/                # Data models & DTOs
-│   ├── Services/              # Business logic
-│   ├── Data/                  # Database context
-│   └── Program.cs             # Main entry point
-├── frontend/                   # React app
-│   ├── src/
-│   │   ├── components/        # Reusable UI components
-│   │   ├── pages/            # Main app screens
-│   │   ├── services/         # API calls
-│   │   └── types/           # TypeScript types
-├── database/
-│   └── migrations/           # SQL migration scripts
-├── docs/
-│   └── adr/                 # Architecture Decision Records
-└── docker-compose.yml        # Local development setup
+├── backend_new/               # Python FastAPI backend
+│   ├── app/                   # API, services, schemas, DB/core
+│   ├── tests/                 # Integration tests and fixtures
+│   ├── piccolo_migrations/    # DB migrations
+│   └── pyproject.toml
+├── frontend/                  # React app
+├── n8n/                       # Workflow definitions
+├── docs/adr/                  # Architecture records
+└── docker-compose.yml         # Local stack
 ```
 
 ## Rationale
-- **Single .NET assembly**: Monolithic approach reduces complexity for MVP
-- **Simple folder organization**: Models, Services, Data follow .NET conventions
-- **Standard React structure**: Components, pages, services are familiar patterns
-- **Separate database folder**: SQL migrations can be version controlled
-- **No shared types**: Avoids premature abstraction between frontend/backend
+- `backend_new` is the production backend.
+- Backend internals are organized by behavior and responsibility.
+- Frontend and workflow assets remain decoupled but colocated.
 
 ## Consequences
-- Easy to navigate and understand
-- Follows framework conventions
-- Single assembly simplifies deployment
-- May need refactoring if project grows significantly
-- No complex build orchestration needed
+- Easier onboarding and navigation.
+- Fewer ambiguous ownership boundaries.
 
 ## Date
-2024-08-31
+2026-03-20
