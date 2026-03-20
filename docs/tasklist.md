@@ -18,7 +18,6 @@ Legend: Pending | In Progress | Complete | Blocked
 
 ## Working Rules
 
-- Follow `docs/workflow.md` for plan/approval/implementation flow.
 - Keep slices small and verifiable.
 - Prefer behavior-preserving changes unless explicitly requested.
 - Keep `docs/` aligned with the current runtime architecture.

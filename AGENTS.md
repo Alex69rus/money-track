@@ -23,8 +23,6 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 
 ## Development Process
 
-**CRITICAL**: Follow the iterative development workflow defined in `docs/workflow.md`.
-
 **Workflow Steps:**
 1. **Plan -> Approve -> Implement -> Test -> Confirm -> Commit -> Next**
 2. Always propose solution with code snippets before implementing
@@ -144,7 +142,6 @@ When working on React code, delegate implementation to the `react-expert-advisor
 
 **General:**
 - Reference `vision.md` for feature scope
-- Follow workflow described in `docs/workflow.md`
 - Update `docs/tasklist.md` progress table
 - Wait for approval before each implementation phase
 
