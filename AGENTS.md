@@ -1,6 +1,19 @@
-# AGEMTS.md
+# AGENTS.md
 
-This file provides guidance to AI-agents when working with code in this repository.
+This file provides guidance to AI agents when working with code in this repository.
+
+## Agent Guide Routing
+
+Read this root guide first, then load additional scoped guides based on task location:
+
+- `backend_new/AGENTS.MD`:
+  - Read before any backend implementation/refactor under `backend_new/**`.
+  - Read before changing backend runtime behavior, API contracts, DB queries, migrations, or deployment-related backend config.
+- `backend_new/tests/AGENTS.md`:
+  - Read before creating/updating/running backend tests in `backend_new/tests/**`.
+  - Read before running integration/e2e checks that require API startup, readiness polling, `BASE_URL`/`TEST_DATABASE_URL`, or LLM e2e envs (`RUN_LLM_E2E`, `OPENAI_API_KEY`).
+
+If multiple guides apply, follow the most specific scoped guide for that area in addition to this root guide.
 
 ## Project Overview
 
@@ -10,23 +23,21 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 
 **System Components:**
 - **n8n workflows**: SMS parsing and AI chat (existing, external)
-- **.NET Minimal API**: Single assembly backend for transaction CRUD
+- **Python FastAPI backend**: Transaction CRUD and read APIs in `backend_new`
 - **React + TypeScript**: Frontend with Material-UI components
-- **PostgreSQL**: Shared database between n8n and .NET API
+- **PostgreSQL**: Shared database between n8n and backend API
 - **Telegram Web App**: Browser-based interface accessed via Telegram
 
 **Key Architectural Decisions:**
-- Monolithic .NET backend (single assembly, no microservices)
+- Monolithic Python backend (`backend_new`)
 - No caching layer - direct database queries only
-- No repository pattern - direct Entity Framework usage
+- Keep abstractions minimal and explicit
 - Environment variables for all configuration
 
 ## Development Process
 
-**CRITICAL**: Follow the iterative development workflow defined in `docs/workflow.md`.
-
 **Workflow Steps:**
-1. **Plan → Approve → Implement → Test → Confirm → Commit → Next**
+1. **Plan -> Approve -> Implement -> Test -> Confirm -> Commit -> Next**
 2. Always propose solution with code snippets before implementing
 3. Update progress in `docs/tasklist.md` after each iteration
 4. Wait for explicit approval before moving to next iteration
@@ -34,71 +45,76 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 ## Local Testing
 
 **Frontend/Backend Testing:**
-- **Development Mode**: Run backend with `ASPNETCORE_ENVIRONMENT=Development` to bypass Telegram authentication
-- **Command**: `cd backend && ASPNETCORE_ENVIRONMENT=Development dotnet run --urls=http://localhost:5000`
-- **Frontend**: `cd frontend && REACT_APP_API_URL=http://localhost:5000 npm start`
+- **Development Mode**: Run backend with `ENVIRONMENT=Development` to bypass Telegram authentication
+- **Backend Command**: `cd backend_new && ENVIRONMENT=Development DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/moneytrack TELEGRAM_BOT_TOKEN=test-token uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`
+- **Frontend Command**: `cd frontend && REACT_APP_API_URL=http://localhost:8000 npm start`
 - **Access**: Open browser at `http://localhost:3000` - no Telegram context required
 - **Database**: Uses real PostgreSQL data, full API functionality available for testing
 - **Testing**: Use chrome-devtools MCP to test frontend/backend features end-to-end and verify network requests
-- **Verification**: Check network requests to confirm correct front-end to back-end interaction. Always pay attention to network
+- **Verification**: Check network requests to confirm correct front-end to back-end interaction
 
 ## Code Conventions
 
-Follow `conventions.md` strictly:
+Follow `docs/conventions.md` strictly.
 
-**.NET Backend:**
-- Minimal API endpoints (no controllers)
-- Entity Framework with `IEntityTypeConfiguration<T>`
+**Python Backend:**
+- FastAPI routes grouped by domain (`transactions`, `categories`, `tags`, `health`)
+- Piccolo ORM for runtime DB access
 - Async methods by default
-- ILogger for Info/Error only
-- Direct service injection (no abstractions)
+- Logging at info/error level only
+- If you catch an exception, always log it with `exc_info=True` and include the exception object in the message.
+- Strong typing in schemas and query/service boundaries
 
 **React Frontend:**
-- TypeScript required (strict mode, no 'any')
+- TypeScript required (strict mode, no `any`)
 - Material-UI standard components
 - Function components only
 - Direct fetch calls (no axios)
-- Simple state management (useState/useEffect only)
-- Custom hooks for business logic (MUST extract API calls)
+- Simple state management (`useState` / `useEffect` only)
+- Custom hooks for business logic (extract API calls)
 - Max 150 lines per component
 - AbortController for request cancellation
-- Loading and error states ALWAYS
+- Loading and error states always
 - Accessibility with ARIA labels
 
 **Database:**
-- EF Core migrations from .NET backend
+- Piccolo migrations from `backend_new`
 - PostgreSQL arrays for tags field
-- Standard FK relationships in entity configurations
+- Standard FK relationships
 
 ## Key Files Structure
 
-```
-backend/                    # Single .NET Minimal API
-├── Models/                # Entities and DTOs
-├── Services/              # Business logic
-├── Data/                  # EF context and configurations
-└── Program.cs            # Entry point
+```text
+backend_new/
+├── app/
+│   ├── api/routes/
+│   ├── services/
+│   ├── schemas/
+│   ├── db/
+│   └── main.py
+├── tests/
+└── piccolo_migrations/
 
 frontend/src/
-├── components/           # Reusable UI components
-├── pages/               # Main screens
-├── services/            # API calls
-└── types/              # TypeScript definitions
+├── components/
+├── pages/
+├── services/
+└── types/
 ```
 
 ## Data Model
 
 Core entities:
-- **Transactions**: Parsed SMS data with tags array, category FK, UserId as BIGINT (Telegram user ID)
+- **Transactions**: Parsed SMS data with tags array, category FK, `user_id` as BIGINT (Telegram user ID)
 - **Categories**: Predefined global categories
 
-Currency: AED only
-Authentication: Telegram Web App initData validation
-Note: No separate Users table - UserId field stores Telegram user ID directly
+Currency: AED only  
+Authentication: Telegram Web App initData validation  
+Note: No separate Users table - `user_id` stores Telegram user ID directly.
 
 ## React Frontend Development
 
-**IMPORTANT**: When working on React code, **delegate implementation to the react-expert-advisor agent** using the Task tool.
+When working on React code, delegate implementation to the `react-expert-advisor` agent.
 
 **When to delegate to react-expert-advisor:**
 - Creating new React components
@@ -108,71 +124,53 @@ Note: No separate Users table - UserId field stores Telegram user ID directly
 - Fixing React-specific bugs or issues
 - Optimizing React component performance
 
-**The agent will:**
-- Write/edit React code following project standards
-- Apply modern React 18+ patterns and best practices
-- Ensure TypeScript strict mode compliance
-- Implement proper error handling and loading states
-- Use Material-UI theming and responsive design
-- Add accessibility (ARIA labels) by default
-- Extract custom hooks for API calls with AbortController
-
-**Quick Reference (for simple tasks you handle directly):**
+**Quick Reference:**
 - Max 150 lines per component - split if longer
 - Extract API calls to custom hooks with AbortController cleanup
 - Always show loading/error states (prefer Skeleton components)
-- No 'any' types - use TypeScript strict mode
-- Use theme tokens for all styling (no hardcoded values)
+- No `any` types
+- Use theme tokens for all styling
 - Mobile-first responsive design (test at 375px and 1920px)
 - ARIA labels on all interactive elements
-
-**Example delegation:**
-```
-User: "Add a date range filter to the transactions page"
-You: Use Task tool with react-expert-advisor to implement the feature
-Agent: Implements DateRangeFilter component with proper hooks, types, and MUI components
-```
 
 ## Never Do
 
 **Backend:**
 - Add microservices or complex architecture
-- Create repository patterns or excess abstractions
-- Add integration tests for MVP
-- Implement caching solutions
-- Use `/tmp` for temporary files; use files under the current working directory instead
+- Add unnecessary abstractions or repository patterns
+- Implement caching solutions without a proven need
+- Use `/tmp` for temporary files; use files under the current working directory
 
 **Frontend:**
-- Use 'any' type in TypeScript
+- Use `any` type in TypeScript
 - Create components >150 lines
 - Mix business logic with UI rendering
 - Pass setState functions as props
 - Hardcode colors or spacing values
 - Skip loading/error states
-- Forget useEffect cleanup for async operations
+- Forget `useEffect` cleanup for async operations
 - Use Context API or Redux
-- Premature optimization (memoization without profiling)
+- Premature optimization without profiling
 
 ## Always Do
 
 **General:**
-- Reference `vision.md` for feature scope
-- Follow workflow described in [docs/workflow.md](docs/workflow.md) file
+- Reference `docs/vision.md` for feature scope
 - Update `docs/tasklist.md` progress table
 - Wait for approval before each implementation phase
 
 **Frontend:**
 - Extract custom hooks for API calls
-- Implement AbortController cleanup in useEffect
+- Implement AbortController cleanup in `useEffect`
 - Show loading states (Skeleton preferred)
 - Show user-friendly error messages with retry
 - Use theme tokens for all styling
-- For React implementations: delegate to react-expert-advisor agent
-- After implementation: use qa-expert agent for comprehensive testing
-- qa-expert will: test with Chrome DevTools MCP, check network tab for real API calls, validate responsive layouts
+- Delegate React implementation to `react-expert-advisor`
+- After implementation, use `qa-expert` agent for comprehensive testing
 - Add ARIA labels for interactive elements
-- Follow TypeScript strict mode (no 'any')
+- Follow TypeScript strict mode
 
 **Backend:**
 - Use async/await for API operations
 - Implement basic error handling and logging
+- Keep DB access on Piccolo ORM in runtime code

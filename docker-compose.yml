@@ -25,6 +25,10 @@ services:
       - API_PORT=8000
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/moneytrack
       - TELEGRAM_BOT_TOKEN=test-bot-token-placeholder
+      - TELEGRAM_WEBHOOK_URL=
+      - TELEGRAM_WEBHOOK_SECRET=test-webhook-secret-local
+      - OPENAI_API_KEY=
+      - OPENAI_MODEL=gpt-4.1-mini
     depends_on:
       postgres:
         condition: service_healthy

@@ -102,10 +102,17 @@ After setup, you should have these secrets configured:
 - ✅ `SSH_PRIVATE_KEY` - SSH private key for EC2
 - ✅ `POSTGRES_PASSWORD` - Database password
 - ✅ `TELEGRAM_BOT_TOKEN` - Bot token
+- ✅ `TELEGRAM_WEBHOOK_SECRET` - Telegram webhook secret token for backend endpoint
 - ✅ `DOMAIN` - Your domain name
 - ✅ `EMAIL` - Your email address
 - ✅ `REACT_APP_API_URL` - API root URL (https://your-domain.com)
 - ✅ `REACT_APP_AI_WEBHOOK_URL` - AI webhook URL
+
+Optional backend feature settings:
+
+- `TELEGRAM_WEBHOOK_URL` - Full webhook URL for backend Telegram ingestion (`https://.../api/telegram/webhook`), can be set as a repository variable or secret
+- `OPENAI_API_KEY` - OpenAI API key for SMS parsing
+- `OPENAI_MODEL` - OpenAI model override (defaults to `gpt-4.1-mini`)
 
 ## Benefits of Cloudflare Origin Certificates
 

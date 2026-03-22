@@ -4,31 +4,28 @@
 Accepted
 
 ## Context
-We need to select technologies for a money tracking Telegram bot and web app MVP that processes bank SMS messages and provides transaction analytics with AI chat functionality.
+We need a practical stack for a Telegram-based money tracking app with transaction CRUD, analytics, and AI chat integration.
 
 ## Decision
-We will use:
-- **SMS Processing & AI Chat**: Existing n8n workflows
-- **Backend API**: .NET Minimal API (single assembly, monolithic)
-- **Frontend**: Create React App + Material-UI + Telegram Web App SDK
-- **Database**: PostgreSQL (shared between n8n and .NET API)
-- **Containerization**: Docker Compose for development and deployment
-- **Deployment**: Single AWS EC2 instance
+We use:
+- **SMS Processing & AI Chat**: existing n8n workflows
+- **Backend API**: Python FastAPI (`backend_new`) with Piccolo ORM
+- **Frontend**: React + TypeScript + Material-UI + Telegram Web App SDK
+- **Database**: PostgreSQL (shared between n8n and backend API)
+- **Containerization**: Docker Compose
+- **Deployment**: Single AWS EC2 instance with Nginx reverse proxy
 
 ## Rationale
-- **n8n workflows**: Already implemented SMS parsing and AI chat functionality
-- **.NET Minimal API**: Simple, performant, follows KISS principle with single assembly
-- **React + MUI**: Standard, well-documented, good Telegram Web App support
-- **PostgreSQL**: Reliable, already used by n8n workflows
-- **Docker**: Consistent deployment, easy local development
-- **AWS EC2**: Cost-effective for MVP, familiar platform
+- n8n already handles SMS/AI workloads.
+- FastAPI + Piccolo keeps backend simple and typed.
+- React + MUI remains productive and familiar.
+- PostgreSQL is reliable and shared across components.
+- Docker Compose keeps local and production topology consistent.
 
 ## Consequences
-- Clean separation: n8n handles SMS/AI, .NET API serves UI requests
-- Both systems share same PostgreSQL database
-- Single server deployment keeps costs low
-- Standard tech stack reduces learning curve
-- Monolithic .NET API simplifies initial development
+- Clear boundary: n8n handles workflows, backend handles API contract.
+- Single-server deployment minimizes operational overhead.
+- Monolithic backend keeps iteration speed high.
 
 ## Date
-2024-08-31
+2026-03-20

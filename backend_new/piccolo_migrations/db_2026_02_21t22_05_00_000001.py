@@ -3,7 +3,7 @@ from piccolo.engine import engine_finder
 
 ID = "2026-02-21T22:05:00:000001"
 VERSION = "1.32.0"
-DESCRIPTION = "Bootstrap schema parity with C# backend"
+DESCRIPTION = "Bootstrap production backend schema"
 
 
 async def _create_schema_parity() -> None:
@@ -56,7 +56,7 @@ async def _create_schema_parity() -> None:
         ),
         'CREATE INDEX IF NOT EXISTS ix_transaction_category_id ON "transaction" (category_id)',
         (
-            'CREATE INDEX IF NOT EXISTS ix_transaction_transaction_date '
+            "CREATE INDEX IF NOT EXISTS ix_transaction_transaction_date "
             'ON "transaction" (transaction_date)'
         ),
         'CREATE INDEX IF NOT EXISTS ix_transaction_user_id ON "transaction" (user_id)',

@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     business_timezone: str = Field(default="Asia/Dubai", alias="BUSINESS_TIMEZONE")
     database_url: str = Field(alias="DATABASE_URL")
     telegram_bot_token: str = Field(alias="TELEGRAM_BOT_TOKEN")
+    telegram_webhook_url: str = Field(default="", alias="TELEGRAM_WEBHOOK_URL")
+    telegram_webhook_secret: str = Field(default="", alias="TELEGRAM_WEBHOOK_SECRET")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
 
     @property
     def business_tzinfo(self) -> ZoneInfo:

@@ -9,15 +9,20 @@ from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.db.engine import get_engine
+from app.services.telegram_runtime import TelegramBotRuntime
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     engine = get_engine()
+    telegram_runtime = TelegramBotRuntime()
     await engine.start_connection_pool()
     try:
+        await telegram_runtime.start()
+        application.state.telegram_runtime = telegram_runtime
         yield
     finally:
+        await telegram_runtime.stop()
         await engine.close_connection_pool()
 
 

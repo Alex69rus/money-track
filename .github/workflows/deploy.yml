@@ -34,8 +34,8 @@ jobs:
     - name: Build frontend
       run: npm run build
       env:
-        REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'https://localhost' }}
-        REACT_APP_AI_WEBHOOK_URL: ${{ secrets.REACT_APP_AI_WEBHOOK_URL || 'https://localhost/webhook' }}
+        REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL || 'https://localhost' }}
+        REACT_APP_AI_WEBHOOK_URL: ${{ vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL || 'https://localhost/webhook' }}
         DISABLE_ESLINT_PLUGIN: true
 
   validate-backend:
@@ -113,8 +113,8 @@ jobs:
         cache-from: type=gha,scope=${{ matrix.service }}-arm64
         cache-to: type=gha,mode=min,scope=${{ matrix.service }}-arm64
         build-args: |
-          ${{ matrix.service == 'frontend' && format('REACT_APP_API_URL={0}', secrets.REACT_APP_API_URL) || '' }}
-          ${{ matrix.service == 'frontend' && format('REACT_APP_AI_WEBHOOK_URL={0}', secrets.REACT_APP_AI_WEBHOOK_URL) || '' }}
+          ${{ matrix.service == 'frontend' && format('REACT_APP_API_URL={0}', vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL || '') || '' }}
+          ${{ matrix.service == 'frontend' && format('REACT_APP_AI_WEBHOOK_URL={0}', vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL || '') || '' }}
 
   deploy:
     needs: build-and-push
@@ -167,17 +167,40 @@ jobs:
           POSTGRES_USER=postgres
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_WEBHOOK_URL=${{ vars.TELEGRAM_WEBHOOK_URL || secrets.TELEGRAM_WEBHOOK_URL || 'https://money-track.org/api/telegram/webhook' }}
+          TELEGRAM_WEBHOOK_SECRET=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
+          OPENAI_MODEL=${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL || 'gpt-4.1-mini' }}
           ENVIRONMENT=Production
           API_HOST=0.0.0.0
           API_PORT=8000
           BACKEND_IMAGE=ghcr.io/alex69rus/money-track/backend:latest
           FRONTEND_IMAGE=ghcr.io/alex69rus/money-track/frontend:latest
-          DOMAIN=${{ secrets.DOMAIN || 'localhost' }}
-          EMAIL=${{ secrets.EMAIL || 'admin@localhost.com' }}
-          REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
-          REACT_APP_AI_WEBHOOK_URL=${{ secrets.REACT_APP_AI_WEBHOOK_URL }}
+          DOMAIN=${{ vars.DOMAIN || secrets.DOMAIN || 'localhost' }}
+          EMAIL=${{ vars.EMAIL || secrets.EMAIL || 'admin@localhost.com' }}
+          REACT_APP_API_URL=${{ vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL }}
+          REACT_APP_AI_WEBHOOK_URL=${{ vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL }}
           N8N_ENCRYPTION_KEY=${{ secrets.N8N_ENCRYPTION_KEY || 'default-encryption-key-change-me' }}
           EOF
+
+          # Validate Telegram webhook configuration for backend ingestion
+          telegram_webhook_url="$(grep '^TELEGRAM_WEBHOOK_URL=' .env.prod | cut -d= -f2-)"
+          telegram_webhook_secret="$(grep '^TELEGRAM_WEBHOOK_SECRET=' .env.prod | cut -d= -f2-)"
+          if [ -z "${telegram_webhook_url}" ]; then
+            echo "ERROR: TELEGRAM_WEBHOOK_URL must be set for backend Telegram ingestion"
+            exit 1
+          fi
+          if [ -z "${telegram_webhook_secret}" ]; then
+            echo "ERROR: TELEGRAM_WEBHOOK_SECRET must be set when TELEGRAM_WEBHOOK_URL is set"
+            exit 1
+          fi
+          case "${telegram_webhook_url}" in
+            https://*/api/telegram/webhook) ;;
+            *)
+              echo "ERROR: TELEGRAM_WEBHOOK_URL must target backend endpoint /api/telegram/webhook (got ${telegram_webhook_url})"
+              exit 1
+              ;;
+          esac
           
           # Login to container registry
           echo "Logging in to container registry..."
@@ -210,6 +233,23 @@ jobs:
           # Wait for services to be ready
           echo "Waiting for services to initialize..."
           sleep 30
+
+          # Force Telegram webhook to backend endpoint after all services are up.
+          # This prevents n8n Telegram Trigger workflows from winning registration races.
+          echo "Setting Telegram webhook to backend endpoint..."
+          telegram_bot_token="$(grep '^TELEGRAM_BOT_TOKEN=' .env.prod | cut -d= -f2-)"
+          set_webhook_result="$(curl -sS -X POST "https://api.telegram.org/bot${telegram_bot_token}/setWebhook" \
+            -H "Content-Type: application/json" \
+            -d "{\"url\":\"${telegram_webhook_url}\",\"secret_token\":\"${telegram_webhook_secret}\",\"allowed_updates\":[\"message\",\"edited_message\"]}")"
+          echo "Telegram setWebhook result: ${set_webhook_result}"
+          echo "${set_webhook_result}" | grep -q '"ok":true' || { echo "ERROR: Telegram setWebhook failed"; exit 1; }
+
+          webhook_info_result="$(curl -sS "https://api.telegram.org/bot${telegram_bot_token}/getWebhookInfo")"
+          echo "Telegram getWebhookInfo result: ${webhook_info_result}"
+          echo "${webhook_info_result}" | grep -q "\"url\":\"${telegram_webhook_url}\"" || {
+            echo "ERROR: Telegram webhook URL mismatch after deployment"
+            exit 1
+          }
           
           # Verify services are running
           echo "Verifying services are running..."

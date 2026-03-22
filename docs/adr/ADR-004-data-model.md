@@ -4,42 +4,31 @@
 Accepted
 
 ## Context
-We need to define a simple data model that supports transaction tracking, categorization, and user management while keeping the MVP focused and extensible.
+We need a practical schema for transaction tracking with Telegram user isolation.
 
 ## Decision
 Core tables:
-```sql
--- Users (from Telegram)
-Users: id, telegram_id, username, created_at
+- `transactions`: transaction facts from SMS and user edits
+- `categories`: predefined shared categories
 
--- Transactions (parsed from SMS)
-Transactions: id, user_id, date, amount, note, category_id (FK), 
-              tags (string array), currency, sms_text, message_id, created_at
-
--- Categories (predefined global set)
-Categories: id, name, type (income/expense), created_at
-```
+Key constraints:
+- `user_id` stored as BIGINT (Telegram user ID)
+- `tags` stored as PostgreSQL array (`text[]`)
+- `category_id` optional FK
+- Unique transaction identity constraint on `(user_id, message_id)` where applicable
 
 MVP constraints:
-- Single bank account per user
-- Predefined global categories (extensible later)
 - Single currency: AED
 - User-specific data isolation
-- String array for tags (PostgreSQL native support)
+- Predefined global categories
 
 ## Rationale
-- **Single account**: Simplifies MVP, most users have one primary account
-- **Global categories**: Reduces initial complexity, can be user-specific later
-- **AED currency**: Target market constraint, avoids currency conversion
-- **Tags as array**: PostgreSQL native support, flexible categorization
-- **SMS fields**: Preserves original data for debugging/reprocessing
+- Keeps model expressive but simple.
+- Preserves compatibility with n8n + API workflows.
 
 ## Consequences
-- Simple queries and relationships
-- Easy to implement CRUD operations
-- Limited to single account initially
-- Categories shared across users (may need user preferences later)
-- Full SMS text preserved for future improvements
+- Straightforward CRUD/query behavior.
+- Good extensibility for future reporting/filtering needs.
 
 ## Date
-2024-08-31
+2026-03-20
