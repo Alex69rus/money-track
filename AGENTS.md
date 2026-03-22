@@ -2,6 +2,19 @@
 
 This file provides guidance to AI agents when working with code in this repository.
 
+## Agent Guide Routing
+
+Read this root guide first, then load additional scoped guides based on task location:
+
+- `backend_new/AGENTS.MD`:
+  - Read before any backend implementation/refactor under `backend_new/**`.
+  - Read before changing backend runtime behavior, API contracts, DB queries, migrations, or deployment-related backend config.
+- `backend_new/tests/AGENTS.md`:
+  - Read before creating/updating/running backend tests in `backend_new/tests/**`.
+  - Read before running integration/e2e checks that require API startup, readiness polling, `BASE_URL`/`TEST_DATABASE_URL`, or LLM e2e envs (`RUN_LLM_E2E`, `OPENAI_API_KEY`).
+
+If multiple guides apply, follow the most specific scoped guide for that area in addition to this root guide.
+
 ## Project Overview
 
 Money Track is a Telegram bot and web app for personal money tracking. The system processes bank SMS messages through n8n workflows and provides a React web interface for transaction management and analytics.
@@ -42,13 +55,14 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 
 ## Code Conventions
 
-Follow `conventions.md` strictly.
+Follow `docs/conventions.md` strictly.
 
 **Python Backend:**
 - FastAPI routes grouped by domain (`transactions`, `categories`, `tags`, `health`)
 - Piccolo ORM for runtime DB access
 - Async methods by default
 - Logging at info/error level only
+- If you catch an exception, always log it with `exc_info=True` and include the exception object in the message.
 - Strong typing in schemas and query/service boundaries
 
 **React Frontend:**
@@ -141,7 +155,7 @@ When working on React code, delegate implementation to the `react-expert-advisor
 ## Always Do
 
 **General:**
-- Reference `vision.md` for feature scope
+- Reference `docs/vision.md` for feature scope
 - Update `docs/tasklist.md` progress table
 - Wait for approval before each implementation phase
 

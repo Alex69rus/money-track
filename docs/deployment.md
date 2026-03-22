@@ -96,11 +96,21 @@ CLOUDFLARE_KEY=your-cloudflare-private-key
 # Application secrets
 POSTGRES_PASSWORD=your-secure-database-password
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_WEBHOOK_SECRET=your-random-webhook-secret
 DOMAIN=your-domain.com
 EMAIL=your-email@domain.com
 REACT_APP_API_URL=https://your-domain.com
 REACT_APP_AI_WEBHOOK_URL=https://your-n8n-webhook-url.com/webhook/chat
 ```
+
+**Optional backend feature settings:**
+```
+TELEGRAM_WEBHOOK_URL=https://money-track.org/api/telegram/webhook
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+`TELEGRAM_WEBHOOK_URL` can be stored as a GitHub Actions variable (`vars`) or secret; if omitted, deployment defaults it to `https://money-track.org/api/telegram/webhook`.
 
 `REACT_APP_API_URL` should be the root origin (for example `https://your-domain.com`), not `/api`.
 

@@ -14,11 +14,13 @@ This file is the operating guide for AI agents working with backend tests in `ba
 - DB URL fixture: `TEST_DATABASE_URL`, else `.env:DATABASE_URL`, else `postgresql://postgres:password@127.0.0.1:5432/moneytrack`.
 - Optional production checks: `PRODUCTION_BASE_URL` (tests are skipped if unset).
 - Auth bypass in dev mode: when `ENVIRONMENT=Development`, API auth dependency returns user `123456789`.
+- Real LLM parser e2e tests are gated by `RUN_LLM_E2E=1` and `OPENAI_API_KEY` (`tests/integration/test_sms_parser_llm_e2e.py`).
+- If local `.env` has `TELEGRAM_WEBHOOK_URL` enabled, backend startup with a dummy token fails; clear `TELEGRAM_WEBHOOK_URL` and `TELEGRAM_WEBHOOK_SECRET` for local test API runs.
 
 ## Preferred Execution Workflow
 
 1. Start backend locally:
-   - `cd backend_new && uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`
+   - `cd backend_new && ENVIRONMENT=Development TELEGRAM_BOT_TOKEN=test-token TELEGRAM_WEBHOOK_URL= TELEGRAM_WEBHOOK_SECRET= uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`
 2. Poll readiness (no fixed sleeps):
    - `for i in {1..30}; do curl -sf http://127.0.0.1:8000/health >/dev/null && echo READY && break; sleep 1; done`
 3. Run tests against explicit URL:
@@ -27,6 +29,9 @@ This file is the operating guide for AI agents working with backend tests in `ba
 
 If only integration tests are needed:
 - `cd backend_new && BASE_URL='http://127.0.0.1:8000' uv run --no-project pytest tests/integration -q`
+
+If only LLM parser e2e tests are needed:
+- `cd backend_new && RUN_LLM_E2E=1 OPENAI_API_KEY='<key>' uv run --no-project pytest tests/integration/test_sms_parser_llm_e2e.py -q`
 
 If machine-readable output is needed:
 - `cd backend_new && BASE_URL='http://127.0.0.1:8000' RESULTS_FILE='artifacts/integration/latest-results.json' uv run python ../.agents/skills/run-e2e-tests/scripts/run_integration_against_existing_api.py`

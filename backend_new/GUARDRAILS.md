@@ -62,3 +62,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: ad-hoc integration commands can produce false negatives.
 - Preferred fix: use orchestrated service startup + readiness + test execution commands.
 - Prevention rule: declare parity/status only from controlled test runs with explicit URLs and lifecycle handling.
+
+### 2026-03-22 - Telegram Runtime Test Boot Guard
+- Takeaway: local test boot fails when `.env` enables `TELEGRAM_WEBHOOK_URL` and startup uses a dummy bot token.
+- Exploration: ruled out API regressions after reproducing `InvalidToken` during lifespan startup and confirming tests pass when webhook env is cleared.
+- Prevention rule: for local integration/full test orchestration, always set `TELEGRAM_WEBHOOK_URL=` and `TELEGRAM_WEBHOOK_SECRET=` with explicit `ENVIRONMENT=Development`.
+
+### 2026-03-22 - Sandbox-Safe E2E Execution
+- Takeaway: sandboxed `uv` runs can panic or fail with cache/system permission errors, causing false infrastructure failures.
+- Exploration: ruled out app defects by rerunning the same orchestration with `UV_CACHE_DIR=./.uv-cache` and escalated execution; tests then passed.
+- Prevention rule: default to orchestrated runs with `UV_CACHE_DIR=./.uv-cache`; escalate only when failure class is `sandbox/permission`.

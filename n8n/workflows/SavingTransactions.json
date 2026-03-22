@@ -1,5 +1,5 @@
 {
-  "name": "SavingTransactions",
+  "name": "MoneyTrack",
   "nodes": [
     {
       "parameters": {
@@ -15,13 +15,13 @@
         -2016,
         592
       ],
-      "id": "d0e34a52-06cb-474e-984c-836a65b62c67",
+      "id": "cce7bad1-7fd6-4598-8e80-b64526e8ad75",
       "name": "Telegram Trigger",
-      "webhookId": "2c29eb6e-968f-4f4a-8bce-29d388ef4a4b",
+      "webhookId": "98f46d32-b104-44ea-88e6-3156468139f8",
       "credentials": {
         "telegramApi": {
-          "id": "ZhZPeNSdsjwYnYUY",
-          "name": "MyJarvisK"
+          "id": "LvUEe7F73lfTSHNP",
+          "name": "MoneyTrack"
         }
       }
     },
@@ -40,7 +40,7 @@
         -1280,
         576
       ],
-      "id": "d4eb37f5-7d50-4eca-9657-313d465d3dad",
+      "id": "2083933a-3a13-47cf-ac31-4ccf866dfe05",
       "name": "AI Agent",
       "onError": "continueErrorOutput"
     },
@@ -60,7 +60,7 @@
         -1328,
         800
       ],
-      "id": "7d8ddc22-b780-4b0a-a2a2-99d39cdc8a6d",
+      "id": "b5dd58f4-ce92-47e8-be13-0fc1f4598e5c",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -79,63 +79,8 @@
         -1088,
         832
       ],
-      "id": "2cf0144c-79b9-40f0-b427-2a26efa7e58d",
+      "id": "d0d663a8-dca8-4731-9227-23018d57e217",
       "name": "Structured Output Parser"
-    },
-    {
-      "parameters": {
-        "resource": "databasePage",
-        "databaseId": {
-          "__rl": true,
-          "value": "1ff8c108-1e1e-8019-ac80-fced1a6c0396",
-          "mode": "list",
-          "cachedResultName": "Budget Tracker",
-          "cachedResultUrl": "https://www.notion.so/1ff8c1081e1e8019ac80fced1a6c0396"
-        },
-        "title": "={{ $('AI Agent').item.json.output.note ?? '' }}",
-        "propertiesUi": {
-          "propertyValues": [
-            {
-              "key": "Date|date",
-              "date": "={{ new Date($('Edit Fields').item.json.message_date * 1000) }}"
-            },
-            {
-              "key": "Currency|select",
-              "selectValue": "={{ $('AI Agent').item.json.output.currency }}"
-            },
-            {
-              "key": "Amount|number",
-              "numberValue": "={{ parseFloat($('AI Agent').item.json.output.amount) }}"
-            },
-            {
-              "key": "SmsText|rich_text",
-              "textContent": "={{ $('Edit Fields').item.json.message_text }}"
-            },
-            {
-              "key": "MessageId|number",
-              "numberValue": "={{ $('Edit Fields').item.json.message_id }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [
-        16,
-        416
-      ],
-      "id": "1f3171dd-e0e2-4ca5-84b2-ab9133d5d5bc",
-      "name": "Save transaction Notion",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "notionApi": {
-          "id": "XtEZDBM2CPIelvjb",
-          "name": "MyJarvisK"
-        }
-      },
-      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -195,10 +140,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -896,
-        528
+        -880,
+        464
       ],
-      "id": "a7abfa46-d6bb-4b20-83ae-8842e862d7fd",
+      "id": "47f847aa-265e-457e-9fdb-2138cb74f034",
       "name": "Check if SMS was parsed"
     },
     {
@@ -216,13 +161,13 @@
         560,
         1200
       ],
-      "id": "856ce79a-de5e-44cf-b4a6-58999254fade",
+      "id": "429f13d1-46d3-4399-8d06-149ff965b117",
       "name": "Unparsed SMS message",
-      "webhookId": "ebc3c0ba-c70b-473e-b580-0540c82cebed",
+      "webhookId": "9f980cf5-1349-4261-917d-38c30fe3d98d",
       "credentials": {
         "telegramApi": {
-          "id": "ZhZPeNSdsjwYnYUY",
-          "name": "MyJarvisK"
+          "id": "LvUEe7F73lfTSHNP",
+          "name": "MoneyTrack"
         }
       }
     },
@@ -256,141 +201,13 @@
         -1552,
         592
       ],
-      "id": "41dbc10a-5420-4e40-9ebb-ce880e853780",
+      "id": "b1260a98-6afe-4f7a-9643-d2f85aa4d9e2",
       "name": "Allowed users filter"
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "fa32f72e-61d8-4cf8-9fab-183a7abb74a6",
-              "leftValue": "={{ $('Edit Fields').item.json.message_id_for_update }}",
-              "rightValue": "",
-              "operator": {
-                "type": "number",
-                "operation": "exists",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "36a2b8ea-c64c-42d6-8139-dfe4f36bb82d",
-              "leftValue": "={{ $('Edit Fields').item.json.message_id_for_update }}",
-              "rightValue": "2",
-              "operator": {
-                "type": "number",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -688,
-        352
-      ],
-      "id": "532f1631-5299-46ae-b968-b2998c947b53",
-      "name": "Is it reply message"
-    },
-    {
-      "parameters": {
-        "resource": "databasePage",
-        "operation": "update",
-        "pageId": {
-          "__rl": true,
-          "value": "={{ $json.id }}",
-          "mode": "id"
-        },
-        "propertiesUi": {
-          "propertyValues": [
-            {
-              "key": "Amount|number",
-              "numberValue": "={{ $('AI Agent').item.json.output.amount }}"
-            },
-            {
-              "key": "Note|title",
-              "title": "={{ $('AI Agent').item.json.output.note.trim() ? $('AI Agent').item.json.output.note : $json.property_note }}"
-            },
-            {
-              "key": "Currency|select",
-              "selectValue": "={{ $('AI Agent').item.json.output.currency }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [
-        0,
-        0
-      ],
-      "id": "43d1d9f6-db74-4a53-a318-9f8c78e85178",
-      "name": "Update Record",
-      "executeOnce": true,
-      "credentials": {
-        "notionApi": {
-          "id": "XtEZDBM2CPIelvjb",
-          "name": "MyJarvisK"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "resource": "databasePage",
-        "operation": "getAll",
-        "databaseId": {
-          "__rl": true,
-          "value": "1ff8c108-1e1e-8019-ac80-fced1a6c0396",
-          "mode": "list",
-          "cachedResultName": "Budget Tracker",
-          "cachedResultUrl": "https://www.notion.so/1ff8c1081e1e8019ac80fced1a6c0396"
-        },
-        "limit": 5,
-        "filterType": "manual",
-        "filters": {
-          "conditions": [
-            {
-              "key": "MessageId|number",
-              "condition": "equals",
-              "numberValue": "={{ $('Edit Fields').item.json.message_id_for_update }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [
-        -448,
-        144
-      ],
-      "id": "c34bc653-af6d-426f-9716-3b1f11a5759a",
-      "name": "Find record",
-      "alwaysOutputData": true,
-      "credentials": {
-        "notionApi": {
-          "id": "XtEZDBM2CPIelvjb",
-          "name": "MyJarvisK"
-        }
-      }
-    },
-    {
-      "parameters": {
         "chatId": "={{ $('Edit Fields').item.json.from_id }}",
-        "text": "=Transaction was successfully updated.\nAmount: {{ $json.property_amount }}\nCurrency: {{ $json.property_currency }}\nNote: {{ $json.property_note }}",
+        "text": "=Transaction was saved.\ndate: {{ $json.transaction_date }}\namount: {{ $json.amount }}\ncurrency: {{ $json.currency }}\nnote: {{ $json.note }}",
         "additionalFields": {
           "appendAttribution": false,
           "reply_to_message_id": "={{ $('Edit Fields').item.json.message_id }}"
@@ -399,43 +216,18 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        272,
-        0
+        64,
+        432
       ],
-      "id": "6909682d-f888-4867-88f2-82aec87bfe53",
-      "name": "Reply about update",
-      "webhookId": "c195b8f9-618c-4e2c-9fc2-6d92dc5601de",
-      "credentials": {
-        "telegramApi": {
-          "id": "ZhZPeNSdsjwYnYUY",
-          "name": "MyJarvisK"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('Edit Fields').item.json.from_id }}",
-        "text": "=Transaction was logged.\ndate: {{ $json.property_date.start }}\namount: {{ $json.property_amount }}\ncurrency: {{ $json.property_currency }}\nnote: {{ $json.property_note }}",
-        "additionalFields": {
-          "appendAttribution": false,
-          "reply_to_message_id": "={{ $('Edit Fields').item.json.message_id }}"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        560,
-        512
-      ],
-      "id": "10d26c6c-5a15-4bfe-8db2-e5e47cf803e0",
+      "id": "11d54598-4517-42e9-952c-bea593e927f1",
       "name": "Reply about create",
-      "webhookId": "ebc3c0ba-c70b-473e-b580-0540c82cebed",
+      "webhookId": "65d0bfe6-7255-4f5c-9570-db509bf30eb9",
       "retryOnFail": true,
       "maxTries": 2,
       "credentials": {
         "telegramApi": {
-          "id": "ZhZPeNSdsjwYnYUY",
-          "name": "MyJarvisK"
+          "id": "LvUEe7F73lfTSHNP",
+          "name": "MoneyTrack"
         }
       }
     },
@@ -483,46 +275,64 @@
         -1792,
         592
       ],
-      "id": "4498a629-93bd-44a5-b619-1c75ead794a0",
+      "id": "d78532e6-42ef-43b3-a416-403359fca12c",
       "name": "Edit Fields",
       "alwaysOutputData": true
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "83263f69-f424-45ff-b0ed-e85dc148e341",
-              "leftValue": "={{ $json.id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "exists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"transaction\" (\n    user_id,\n    message_id, \n    transaction_date,\n    amount,\n    note,\n    currency,\n    sms_text,\n    tags,\n    created_at\n)\nVALUES (\n    $1,\n    $2,\n    $3::timestamp,\n    $4,\n    $5,\n    $6,\n    $7,\n    ARRAY[]::text[],\n    NOW()\n)\nON CONFLICT (user_id, message_id) \nDO UPDATE SET\n    transaction_date = EXCLUDED.transaction_date,\n    amount = EXCLUDED.amount,\n    note = EXCLUDED.note,\n    currency = EXCLUDED.currency,\n    sms_text = EXCLUDED.sms_text\nRETURNING id, transaction_date, amount, note, currency, message_id, created_at;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Edit Fields').item.json.from_id,\n  $('Edit Fields').item.json.message_id,\n  new Date($('Edit Fields').item.json.message_date * 1000).toISOString(),\n  parseFloat($('AI Agent').item.json.output.amount),\n  $('AI Agent').item.json.output.note ?? '',\n  $('AI Agent').item.json.output.currency,\n  $('Edit Fields').item.json.message_text\n] }}"
+        }
       },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
-        -240,
-        48
+        -368,
+        448
       ],
-      "id": "1ad3b3b3-2fdf-4f41-bde5-a36f6fe7bbf2",
-      "name": "If record found"
+      "id": "a8ad0333-70bc-454b-9e79-d8d193df1775",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "Au9olJq6kAFSG402",
+          "name": "MoneyTrack"
+        }
+      },
+      "onError": "continueErrorOutput"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "update_id": 490332656,
+          "message": {
+            "message_id": 42,
+            "from": {
+              "id": 459885395,
+              "is_bot": false,
+              "first_name": "Aleksei",
+              "last_name": "Kukharev",
+              "username": "Alexey_Alexeevich",
+              "language_code": "en"
+            },
+            "chat": {
+              "id": 459885395,
+              "first_name": "Aleksei",
+              "last_name": "Kukharev",
+              "username": "Alexey_Alexeevich",
+              "type": "private"
+            },
+            "date": 1758451761,
+            "text": "Payment of AED 67.59 was done at Amazon using your Wio Personal card 9759 with Credit money"
+          }
+        }
+      }
+    ]
+  },
   "connections": {
     "Telegram Trigger": {
       "main": [
@@ -575,29 +385,11 @@
         ]
       ]
     },
-    "Save transaction Notion": {
-      "main": [
-        [
-          {
-            "node": "Reply about create",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Unparsed SMS message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Check if SMS was parsed": {
       "main": [
         [
           {
-            "node": "Is it reply message",
+            "node": "Execute a SQL query",
             "type": "main",
             "index": 0
           }
@@ -622,29 +414,22 @@
         ]
       ]
     },
-    "Is it reply message": {
+    "Edit Fields": {
       "main": [
         [
           {
-            "node": "Find record",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Save transaction Notion",
+            "node": "Allowed users filter",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update Record": {
+    "Execute a SQL query": {
       "main": [
         [
           {
-            "node": "Reply about update",
+            "node": "Reply about create",
             "type": "main",
             "index": 0
           }
@@ -657,57 +442,17 @@
           }
         ]
       ]
-    },
-    "Find record": {
-      "main": [
-        [
-          {
-            "node": "If record found",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Allowed users filter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If record found": {
-      "main": [
-        [
-          {
-            "node": "Update Record",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Save transaction Notion",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "0d188bfc-02d8-4d67-8ba0-59358570b81c",
+  "versionId": "b0a877b7-8271-44d6-b25c-cb21434b77c8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "3f7b36e6277c889b0b0a3be38e976ee96685d5ed057a8471a61bf778ed8f94a5"
   },
-  "id": "e9sKj4kbP9bvv1fx",
+  "id": "YbLtUa5dHI23fKs2",
   "tags": []
 }

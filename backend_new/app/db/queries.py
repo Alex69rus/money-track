@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
+from typing import cast
 
+from piccolo.columns.base import Column
 from piccolo.columns.column_types import Varchar
 from piccolo.columns.combination import WhereRaw
 from piccolo.query.functions.type_conversion import Cast
@@ -15,6 +18,8 @@ from app.schemas.responses import (
     TransactionResponse,
 )
 from app.schemas.transactions import CreateTransactionRequest, UpdateTransactionRequest
+
+logger = logging.getLogger(__name__)
 
 
 def _to_utc(dt: datetime) -> datetime:
@@ -50,6 +55,23 @@ def _map_transaction(transaction: Transaction, category: Category | None) -> Tra
         messageId=transaction.message_id,
         createdAt=transaction.created_at,
         category=_map_category(category) if category is not None else None,
+    )
+
+
+def _map_transaction_row(row: dict[str, object]) -> TransactionResponse:
+    return TransactionResponse(
+        id=int(cast(int | str, row["id"])),
+        userId=int(cast(int | str, row["user_id"])),
+        transactionDate=cast(datetime, row["transaction_date"]),
+        amount=float(cast(Decimal, row["amount"])),
+        note=cast(str | None, row["note"]),
+        categoryId=cast(int | None, row["category_id"]),
+        tags=cast(list[str], row["tags"] or []),
+        currency=cast(str, row["currency"]),
+        smsText=cast(str | None, row["sms_text"]),
+        messageId=cast(str | None, row["message_id"]),
+        createdAt=cast(datetime, row["created_at"]),
+        category=None,
     )
 
 
@@ -229,3 +251,78 @@ async def delete_transaction(*, user_id: int, transaction_id: int) -> bool:
         return False
     await transaction.remove()
     return True
+
+
+async def upsert_transaction_by_message_id(
+    *,
+    user_id: int,
+    message_id: str,
+    transaction_date: datetime,
+    amount: Decimal,
+    currency: str,
+    note: str | None,
+    sms_text: str,
+) -> TransactionResponse:
+    note_to_save = note.strip() if note and note.strip() else None
+    created_at = datetime.now(UTC)
+    conflict_values: list[Column] = [
+        Transaction.transaction_date,
+        Transaction.amount,
+        Transaction.currency,
+        Transaction.sms_text,
+    ]
+    # Preserve existing note on conflict when parser produced empty / blank note.
+    if note_to_save is not None:
+        conflict_values.append(Transaction.note)
+
+    try:
+        rows = (
+            await Transaction.insert(
+                Transaction(
+                    user_id=user_id,
+                    transaction_date=_to_utc(transaction_date),
+                    amount=amount,
+                    note=note_to_save,
+                    category_id=None,
+                    tags=[],
+                    currency=currency,
+                    sms_text=sms_text,
+                    message_id=message_id,
+                    created_at=created_at,
+                )
+            )
+            .on_conflict(
+                target=(Transaction.user_id, Transaction.message_id),
+                action="DO UPDATE",
+                values=conflict_values,
+            )
+            .returning(
+                Transaction.id,
+                Transaction.user_id,
+                Transaction.transaction_date,
+                Transaction.amount,
+                Transaction.note,
+                Transaction.category_id,
+                Transaction.tags,
+                Transaction.currency,
+                Transaction.sms_text,
+                Transaction.message_id,
+                Transaction.created_at,
+            )
+            .run()
+        )
+    except Exception as exc:
+        logger.error(
+            "Failed to upsert transaction by message_id: user_id=%s message_id=%s error=%s",
+            user_id,
+            message_id,
+            exc,
+            exc_info=True,
+        )
+        raise
+
+    if not rows:
+        raise RuntimeError("Upsert returned no rows")
+
+    row = rows[0]
+    return _map_transaction_row(row)

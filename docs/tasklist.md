@@ -15,6 +15,7 @@ Legend: Pending | In Progress | Complete | Blocked
 | Release Readiness | Final quality gates and cutover verification | Complete | 2026-02-22 | Lint/type/test gates and deployment-readiness checks passed |
 | Query Efficiency | SQL-based count optimization for transaction listings | Complete | 2026-02-22 | `totalCount` moved to DB aggregate query |
 | Auth Gate Activation | Local dual-mode integration run for production auth checks | Complete | 2026-02-22 | Dev+prod auth scenarios validated in one flow |
+| Telegram Flow Migration | `SavingTransactions` flow moved from n8n to FastAPI + PTB webhook ingestion | Complete | 2026-03-20 | Added `/api/telegram/webhook`, PTB runtime, OpenAI parsing, and Telegram ingestion tests |
 
 ## Working Rules
 

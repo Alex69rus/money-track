@@ -48,6 +48,15 @@ cd frontend
 REACT_APP_API_URL=http://localhost:8000 npm start
 ```
 
+### ngrok for Webhook Testing
+
+To test Instagram webhooks locally:
+
+```bash
+ngrok http 8000 --url delicate-halibut-tolerant.ngrok-free.app
+```
+
+
 ## Health Check
 
 - Backend health: http://localhost:8000/health

@@ -1,12 +1,12 @@
 # Development Conventions
 
-These conventions implement the principles defined in `vision.md`. Follow these rules when generating code for Money Track.
+These conventions implement the principles defined in `docs/vision.md`. Follow these rules when generating code for Money Track.
 
 ## Core Rules
 
 1. **KISS & YAGNI**: Write the simplest code that works.
 2. **Framework Conventions**: Use FastAPI/Piccolo defaults for backend and React defaults for frontend unless there is a clear reason not to.
-3. **MVP Focus**: Build only what is defined in `vision.md` usage scenarios.
+3. **MVP Focus**: Build only what is defined in `docs/vision.md` usage scenarios.
 
 ## Python Backend Conventions
 

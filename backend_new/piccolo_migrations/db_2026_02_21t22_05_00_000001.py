@@ -56,7 +56,7 @@ async def _create_schema_parity() -> None:
         ),
         'CREATE INDEX IF NOT EXISTS ix_transaction_category_id ON "transaction" (category_id)',
         (
-            'CREATE INDEX IF NOT EXISTS ix_transaction_transaction_date '
+            "CREATE INDEX IF NOT EXISTS ix_transaction_transaction_date "
             'ON "transaction" (transaction_date)'
         ),
         'CREATE INDEX IF NOT EXISTS ix_transaction_user_id ON "transaction" (user_id)',
