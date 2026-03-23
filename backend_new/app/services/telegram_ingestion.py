@@ -95,10 +95,11 @@ async def _send_create_reply(
     transaction: TransactionResponse,
 ) -> None:
     note = transaction.note or ""
+    formatted_amount = f"{transaction.amount:.2f}"
     text = (
         "Transaction was saved.\n"
         f"Date: {transaction.transactionDate.isoformat()}\n"
-        f"Amount: {transaction.amount}\n"
+        f"Amount: {formatted_amount}\n"
         f"Currency: {transaction.currency}\n"
         f"Note: {note}"
     )

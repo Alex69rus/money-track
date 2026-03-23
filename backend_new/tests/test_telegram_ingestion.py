@@ -37,9 +37,7 @@ class _FakeContext:
     bot: _FakeBot
 
 
-def _build_update(
-    *, from_id: int, reply_to_message_id: int | None = None, edited: bool = False
-) -> Update:
+def _build_update(*, from_id: int, reply_to_message_id: int | None = None, edited: bool = False) -> Update:
     message_payload: dict[str, object] = {
         "message_id": 15,
         "date": 1758301908,
@@ -133,7 +131,9 @@ def test_telegram_ingestion_creates_transaction(monkeypatch) -> None:
     asyncio.run(handle_telegram_update(update, context))
 
     assert len(context.bot.sent_messages) == 1
-    assert "Transaction was saved." in str(context.bot.sent_messages[0]["text"])
+    sent_text = str(context.bot.sent_messages[0]["text"])
+    assert "Transaction was saved." in sent_text
+    assert "Amount: 107.68" in sent_text
 
 
 def test_telegram_ingestion_edited_message_uses_same_upsert_path(monkeypatch) -> None:
@@ -154,6 +154,8 @@ def test_telegram_ingestion_edited_message_uses_same_upsert_path(monkeypatch) ->
     asyncio.run(handle_telegram_update(update, context))
 
     assert len(context.bot.sent_messages) == 1
-    assert "Transaction was saved." in str(context.bot.sent_messages[0]["text"])
+    sent_text = str(context.bot.sent_messages[0]["text"])
+    assert "Transaction was saved." in sent_text
+    assert "Amount: 107.68" in sent_text
     assert len(upsert_calls) == 1
     assert upsert_calls[0]["message_id"] == "15"
