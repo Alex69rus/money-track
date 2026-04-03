@@ -16,7 +16,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 1. Preserve existing SMS parsing and transaction save behavior as step 1.
 2. Add step 2 category recommendation based on:
-   - Parsed transaction fields (`note`, `amount`, `transaction_date`).
+   - Parsed transaction fields (`note`, `amount`, `currency`).
    - Similar historical transactions (same user) with existing categories.
    - Full available category list.
 3. Auto-apply top recommended category to the just-saved transaction.
@@ -52,6 +52,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
   - Non-null `category_id`.
   - Distinct categories (max one example per category).
 - Include in context: `note`, `amount`, `transaction_date`, `category_id` + category name.
+  - `transaction_date` can be used for internal ranking/recency, but is not sent to LLM for category selection.
 
 ### FR-3: Category candidate context
 - Fetch all available categories from DB.
@@ -59,7 +60,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 ### FR-4: LLM category proposal
 - Input context includes:
-  - Current transaction: note, amount, date-time, currency, sms_text (optional short form).
+  - Current transaction: note, amount, currency.
   - Similar categorized examples (up to 3 distinct-category rows).
   - Available categories.
 - LLM outputs ranked candidates (1..N), with top-1 required.
@@ -80,16 +81,19 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
   3. Top-3 suggested category
   4. **"Remove category"**
 - On category button click:
+  - Button sends `callback_data`; Telegram delivers `callback_query` to bot webhook.
+  - Webhook handler validates payload/user ownership and invokes backend category-update service.
   - Bot updates transaction `category_id` to selected category.
-  - Bot edits the original bot message to reflect the new selected category, if Telegram edit is allowed.
-  - If edit is not possible, bot sends a new confirmation message.
+  - Bot sends a new confirmation message (no bot message edit flow).
 - On **"Remove category"** click:
+  - Button sends `callback_data` with remove action; webhook handler validates and processes it.
   - Bot sets `category_id = null`.
-  - Bot edits original message if possible; otherwise sends a new confirmation message.
+  - Bot sends a new confirmation message (no bot message edit flow).
 
 ### FR-7: Idempotency and edits
 - Re-processing same message (`user_id`, `message_id` upsert path) should be deterministic:
-  - Re-run suggestion and update category unless user manually removed it from Telegram action in same update cycle policy (see open questions).
+  - On edited Telegram messages, re-run suggestion only when transaction `category_id` is currently null.
+  - If `category_id` is already selected, skip suggestion on edit.
 
 ## 7) UX Requirements (Telegram)
 
@@ -105,10 +109,11 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 ### Callback behavior
 - Secure callback payload should include transaction identifier (compact + signed if possible).
+- Buttons must use Telegram `callback_data`; no direct client-to-API call from Telegram app.
+- Server-side flow: `callback_query` webhook -> validate callback payload + `user_id` ownership -> apply category change.
 - On category selection success: `Category updated to: <CategoryName>`.
 - On removal success: `Category removed. You can set it manually in app.`
-- For each callback, attempt `editMessageText` / `editMessageReplyMarkup` first.
-- If Telegram edit fails (e.g., message too old/not editable), send a new confirmation message as fallback.
+- For each callback, always send a new confirmation message.
 - On already-selected/already-removed state: idempotent confirmation message.
 
 ## 8) Data and Query Requirements
@@ -118,7 +123,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 - Filters:
   - `transaction.user_id = current_user_id`
   - `transaction.category_id IS NOT NULL`
-  - `transaction.note` similar to current note (exact match first; fallback ilike/normalized match)
+  - `transaction.note ILIKE '<current_note_prefix>%'` (prefix search, user-scoped)
   - Exclude current transaction id.
 - Distinct by category (`DISTINCT ON (category_id)` or equivalent Piccolo strategy).
 - Rank by similarity + recency, limit 3.
@@ -131,7 +136,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 ### Prompt policy
 - Constrain to choose from provided category ids only.
-- Strongly bias to exact historical-note matches.
+- Strongly bias to historical prefix-note matches.
 - Allow abstain when evidence is weak.
 
 ### Suggested output schema
@@ -148,7 +153,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 - `top_category_id` must exist in fetched category ids.
 - `alternatives` should contain unique category ids, ordered best-to-worst, target length >= 3 when possible.
 - If invalid -> treat as no suggestion.
-- Store alternatives/confidence only if product later needs explainability (optional for v1).
+- Do not persist alternatives/confidence in v1.
 
 ## 10) Error Handling
 
@@ -165,8 +170,6 @@ Add structured logs/counters for:
 - `category_suggestion_failed`
 - `category_overridden_by_user`
 - `category_removed_by_user`
-- `telegram_message_edit_succeeded`
-- `telegram_message_edit_fallback_sent`
 
 Track quality KPI:
 - **Undo rate** = removed_auto_category / applied_auto_category.
@@ -184,36 +187,51 @@ Track quality KPI:
 - Target: p50 end-to-end reply < 3s, p95 < 7s (to be validated in staging).
 - Timeout/retry policy should avoid duplicate Telegram replies.
 
-## 14) Rollout Plan
+## 14) Technical Implementation Requirements
 
-1. Implement behind feature flag: `ENABLE_AUTO_CATEGORY_SUGGESTION`.
-2. Dark launch: compute suggestion but do not apply/send button; log outcomes.
-3. Enable auto-apply for internal user(s).
-4. Gradually enable for all users.
-5. Monitor undo rate and parsing-to-category success rate.
+1. Keep architecture boundaries explicit:
+   - Business logic layer: category selection pipeline, note-based retrieval, LLM decision handling, and DB updates.
+   - Integration layer: Telegram message formatting, inline keyboard construction, `callback_query` handling, and webhook transport concerns.
+2. Do not mix business logic with Telegram integration code. Integration handlers must orchestrate calls into business services rather than embed category-selection/query logic inline.
+3. Category update from Telegram callbacks must flow through business-service boundaries with user-scoped validation.
 
-## 15) Acceptance Criteria
+## 15) Testing Requirements
+
+1. Add an end-to-end test for this flow with Telegram isolation:
+   - Input: SMS text.
+   - Output/assertions: saved transaction includes selected category and exactly 3 suggested categories matching expected result.
+2. Test must use real database and real LLM calls.
+3. Test must not touch real Telegram infrastructure (no real webhook/network calls to Telegram); Telegram transport must be isolated/mocked at integration boundary.
+
+## 16) Rollout Plan
+
+1. Implement and verify locally.
+2. Run manual end-to-end testing for parse, auto-assign, category override, and removal actions.
+3. Deploy directly after successful manual validation.
+
+## 17) Acceptance Criteria
 
 1. Parsed SMS still saves transaction successfully with existing behavior.
 2. For eligible transactions, category is auto-assigned immediately after save.
 3. Similar examples provided to LLM are max 3 and category-distinct.
 4. Telegram reply shows assigned category and `Remove category` action.
 5. Telegram reply contains exactly 4 inline actions (top-3 categories + remove category).
-6. Clicking any category action updates `category_id` and updates bot message (edit if possible, otherwise fallback message).
-7. Clicking `Remove category` clears `category_id` and confirms to user.
+6. Clicking any category action is handled via Telegram `callback_query` webhook flow and updates `category_id` with user-scoped validation.
+7. Clicking `Remove category` via callback flow clears `category_id` and sends a confirmation message.
 8. Suggestion failure does not block transaction creation.
 9. All operations remain scoped by `user_id`.
+10. On Telegram message edits, suggestion runs only if transaction category is currently not selected.
 
-## 16) Open Questions
+## 18) Resolved Decisions
 
-1. Should auto-suggestion run on edited Telegram messages that upsert existing rows?
-2. If user manually changes category later in web app, should future same-note suggestions prioritize that correction signal?
-3. Should we persist confidence/alternatives for analytics or keep transient only?
-4. Exact similarity strategy for `note` in v1: exact normalized match only, or include fuzzy matching?
-5. If user presses `Remove category`, do we suppress re-auto-assignment for that message permanently?
-6. Should fallback category buttons (when LLM returns <3) come from global popularity, recent user usage, or first in category order?
+1. Auto-suggestion on edited Telegram messages runs only when transaction `category_id` is null.
+2. No special correction-memory logic is needed now; category diversity is handled by fetching up to 3 examples with distinct categories.
+3. Confidence/alternatives are not stored.
+4. Note similarity in v1 uses `ILIKE` prefix search (`'<prefix>%'`) with mandatory `user_id` filter.
+5. Message action buttons (top-3 categories + remove/cancel) use Telegram `callback_data`; backend handles `callback_query` and applies updates server-side (service call in-process, or internal API call if bot/API are split).
+6. Fallback categories (when LLM returns fewer than 3) are filled in stable category order (`order_index`, then `name`).
 
-## 17) Out of Scope for This PRD
+## 19) Out of Scope for This PRD
 
 - Frontend category suggestion UI in React transaction screens.
 - Multi-language category synonym model.
