@@ -20,7 +20,9 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
    - Similar historical transactions (same user) with existing categories.
    - Full available category list.
 3. Auto-apply top recommended category to the just-saved transaction.
-4. Reply in Telegram with an action to cancel/unset the auto-assigned category.
+4. Reply in Telegram with actionable category controls:
+   - Top-3 LLM category buttons.
+   - One button to remove category assignment.
 
 ## 4) Non-goals
 
@@ -61,17 +63,29 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
   - Similar categorized examples (up to 3 distinct-category rows).
   - Available categories.
 - LLM outputs ranked candidates (1..N), with top-1 required.
-- For v1 execution, system applies only top-1 category.
+- For v1 execution:
+  - System auto-applies top-1 category.
+  - System surfaces top-3 categories as Telegram actions for quick correction.
 
 ### FR-5: Apply recommendation
 - If top-1 category maps to valid category id from DB list, update saved transaction `category_id`.
 - If LLM result invalid/empty, keep transaction uncategorized.
 - Never fail whole ingestion because recommendation step fails.
 
-### FR-6: Telegram response with cancel action
+### FR-6: Telegram response with 4 inline actions
 - Success reply includes assigned category name (if assigned).
-- Add inline action button: **"Remove category"**.
-- On button click, bot sets `category_id = null` for that transaction and confirms to user.
+- Add exactly 4 inline action buttons:
+  1. Top-1 suggested category
+  2. Top-2 suggested category
+  3. Top-3 suggested category
+  4. **"Remove category"**
+- On category button click:
+  - Bot updates transaction `category_id` to selected category.
+  - Bot edits the original bot message to reflect the new selected category, if Telegram edit is allowed.
+  - If edit is not possible, bot sends a new confirmation message.
+- On **"Remove category"** click:
+  - Bot sets `category_id = null`.
+  - Bot edits original message if possible; otherwise sends a new confirmation message.
 
 ### FR-7: Idempotency and edits
 - Re-processing same message (`user_id`, `message_id` upsert path) should be deterministic:
@@ -82,12 +96,20 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 ### New saved-reply format
 - Existing fields remain: Date, Amount, Currency, Note.
 - Add `Category: <name>` when assigned, else `Category: Not assigned`.
-- Add inline keyboard with one button: `Remove category` (enabled only when category exists).
+- Add inline keyboard with 4 buttons:
+  - `Category A` (LLM top-1)
+  - `Category B` (LLM top-2)
+  - `Category C` (LLM top-3)
+  - `Remove category`
+- If fewer than 3 valid LLM suggestions are available, fill remaining category buttons with deterministic fallbacks from available categories (excluding duplicates) so UX always shows 4 buttons.
 
 ### Callback behavior
 - Secure callback payload should include transaction identifier (compact + signed if possible).
-- On success: `Category removed. You can set it manually in app.`
-- On already-removed state: idempotent confirmation message.
+- On category selection success: `Category updated to: <CategoryName>`.
+- On removal success: `Category removed. You can set it manually in app.`
+- For each callback, attempt `editMessageText` / `editMessageReplyMarkup` first.
+- If Telegram edit fails (e.g., message too old/not editable), send a new confirmation message as fallback.
+- On already-selected/already-removed state: idempotent confirmation message.
 
 ## 8) Data and Query Requirements
 
@@ -124,6 +146,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 ### Validation rules
 - `top_category_id` must exist in fetched category ids.
+- `alternatives` should contain unique category ids, ordered best-to-worst, target length >= 3 when possible.
 - If invalid -> treat as no suggestion.
 - Store alternatives/confidence only if product later needs explainability (optional for v1).
 
@@ -140,7 +163,10 @@ Add structured logs/counters for:
 - `category_suggestion_applied`
 - `category_suggestion_skipped_no_candidates`
 - `category_suggestion_failed`
+- `category_overridden_by_user`
 - `category_removed_by_user`
+- `telegram_message_edit_succeeded`
+- `telegram_message_edit_fallback_sent`
 
 Track quality KPI:
 - **Undo rate** = removed_auto_category / applied_auto_category.
@@ -172,9 +198,11 @@ Track quality KPI:
 2. For eligible transactions, category is auto-assigned immediately after save.
 3. Similar examples provided to LLM are max 3 and category-distinct.
 4. Telegram reply shows assigned category and `Remove category` action.
-5. Clicking `Remove category` clears `category_id` and sends confirmation.
-6. Suggestion failure does not block transaction creation.
-7. All operations remain scoped by `user_id`.
+5. Telegram reply contains exactly 4 inline actions (top-3 categories + remove category).
+6. Clicking any category action updates `category_id` and updates bot message (edit if possible, otherwise fallback message).
+7. Clicking `Remove category` clears `category_id` and confirms to user.
+8. Suggestion failure does not block transaction creation.
+9. All operations remain scoped by `user_id`.
 
 ## 16) Open Questions
 
@@ -183,6 +211,7 @@ Track quality KPI:
 3. Should we persist confidence/alternatives for analytics or keep transient only?
 4. Exact similarity strategy for `note` in v1: exact normalized match only, or include fuzzy matching?
 5. If user presses `Remove category`, do we suppress re-auto-assignment for that message permanently?
+6. Should fallback category buttons (when LLM returns <3) come from global popularity, recent user usage, or first in category order?
 
 ## 17) Out of Scope for This PRD
 
