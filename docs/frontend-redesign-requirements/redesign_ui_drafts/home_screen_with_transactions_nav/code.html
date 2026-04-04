@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MoneyTrack - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col">
+<header class="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-3 flex items-center justify-center border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">account_balance_wallet</span>
+<h1 class="text-lg font-bold tracking-tight">MoneyTrack</h1>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto hide-scrollbar pb-24">
+<section class="p-4">
+<div class="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 shadow-lg shadow-primary/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+<div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
+<div class="relative z-10">
+<p class="text-white/80 text-sm font-medium mb-1">Total Balance</p>
+<h2 class="text-white text-3xl font-bold mb-6">$12,450.00</h2>
+<div class="flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<span class="text-white/70 text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-green-300 font-bold">arrow_downward</span>
+                                Monthly Income
+                            </span>
+<span class="text-white font-semibold text-base">+$4,200.00</span>
+</div>
+<div class="w-px h-8 bg-white/20"></div>
+<div class="flex flex-col">
+<span class="text-white/70 text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-red-300 font-bold">arrow_upward</span>
+                                Monthly Expense
+                            </span>
+<span class="text-white font-semibold text-base">-$1,850.40</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="px-4 mb-6">
+<div class="flex items-center bg-slate-200 dark:bg-slate-800/80 rounded-xl p-1.5 shadow-inner">
+<button class="flex-1 flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-slate-700 dark:text-white transition-all">
+<span class="material-symbols-outlined text-lg">calendar_month</span>
+<span class="text-sm font-semibold truncate">Oct 1 - Oct 31, 2023</span>
+<span class="material-symbols-outlined text-sm ml-auto opacity-50">expand_more</span>
+</button>
+<div class="flex items-center px-1">
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">search</span>
+</button>
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">tune</span>
+</button>
+</div>
+</div>
+</section>
+<section class="px-4 space-y-6">
+<div>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Today, Oct 24</h3>
+<span class="text-xs text-slate-400">-$42.00</span>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-slate-700/50">
+<div class="p-4 flex items-center gap-4 hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors">
+<div class="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">restaurant</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="font-semibold text-sm truncate">Starbucks Coffee</h4>
+<span class="font-bold text-sm">-$12.50</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-500">10:24 AM</span>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">#Food</span>
+<button class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors">
+<div class="w-10 h-10 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">payments</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="font-semibold text-sm truncate">Salary Deposit</h4>
+<span class="font-bold text-sm text-green-500">+$2,400.00</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-500">09:00 AM</span>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">#Work</span>
+<button class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Yesterday, Oct 23</h3>
+<span class="text-xs text-slate-400">-$156.20</span>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-slate-700/50">
+<div class="p-4 flex items-center gap-4 hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors">
+<div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">local_taxi</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="font-semibold text-sm truncate">Uber Ride</h4>
+<span class="font-bold text-sm">-$24.80</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-500">08:15 PM</span>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">#Transport</span>
+<button class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors">
+<div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">shopping_bag</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="font-semibold text-sm truncate">Apple Store</h4>
+<span class="font-bold text-sm">-$129.00</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-500">02:30 PM</span>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">#Gadget</span>
+<button class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Oct 22</h3>
+<span class="text-xs text-slate-400">-$15.00</span>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-slate-700/50">
+<div class="p-4 flex items-center gap-4 hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors">
+<div class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">movie</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="font-semibold text-sm truncate">Netflix Subscription</h4>
+<span class="font-bold text-sm">-$15.00</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-500">10:00 AM</span>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-medium text-slate-600 dark:text-slate-400">#Service</span>
+<button class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 right-0 bg-background-light dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 px-4 pt-2 flex justify-between z-20 items-center pb-2">
+<a class="flex flex-col items-center gap-1 flex-1 text-primary" href="#">
+<span class="material-symbols-outlined font-fill">receipt_long</span>
+<span class="text-[10px] font-bold">Transactions</span>
+</a>
+<a class="flex flex-col items-center gap-1 flex-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">pie_chart</span>
+<span class="text-[10px] font-medium">Analytics</span>
+</a>
+<a class="flex flex-col items-center gap-1 flex-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="text-[10px] font-medium">AI Chat</span>
+</a>
+<a class="flex flex-col items-center gap-1 flex-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</nav>
+</body></html>

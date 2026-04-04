@@ -1,0 +1,159 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="relative mx-auto max-w-md h-screen overflow-hidden bg-slate-200 dark:bg-slate-950 flex items-end">
+<div class="w-full h-[95vh] bg-background-light dark:bg-background-dark rounded-t-xl shadow-2xl flex flex-col">
+<div class="relative px-4 pt-6 pb-2">
+<div class="flex items-center justify-center relative">
+<button class="absolute left-0 p-2 -ml-2 text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center" style="">
+<span class="material-symbols-outlined text-[24px]" style="">arrow_back</span>
+</button>
+<h4 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-normal tracking-tight" style="">Select Category</h4>
+</div>
+<div class="text-center mt-1">
+<p class="text-slate-500 dark:text-slate-400 text-xs" style="">Choose a category for your transaction</p>
+</div>
+</div>
+<div class="px-4 py-3">
+<label class="flex flex-col w-full" style="">
+<div class="flex w-full items-stretch rounded-xl h-11 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 focus-within:border-primary transition-colors">
+<div class="text-slate-400 flex items-center justify-center pl-3">
+<span class="material-symbols-outlined text-[20px]" style="">search</span>
+</div>
+<input class="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 px-3 text-sm font-normal" placeholder="Search categories..." type="text">
+</div>
+</label>
+</div>
+<div class="flex-1 overflow-y-auto px-4 pb-8">
+<details class="group border-b border-slate-200 dark:border-slate-800" open="" style="">
+<summary class="flex cursor-pointer items-center justify-between py-4 list-none" style="">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+<span class="material-symbols-outlined" style="">directions_car</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-base" style="">Car &amp; Transport</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180" style="">expand_more</span>
+</summary>
+<div class="flex flex-col pl-12 pb-4 space-y-2">
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" style="">
+<span class="text-slate-600 dark:text-slate-400 text-sm" style="">Fuel &amp; Gas</span>
+<div class="w-2 h-2 rounded-full bg-primary opacity-0"></div>
+</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" style="">
+<span class="text-slate-600 dark:text-slate-400 text-sm" style="">Car Wash</span>
+<div class="w-2 h-2 rounded-full bg-primary opacity-0"></div>
+</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg bg-primary/10 text-primary" style="">
+<span class="font-medium text-sm" style="">Repair &amp; Service</span>
+<span class="material-symbols-outlined text-sm" style="">check_circle</span>
+</button>
+</div>
+</details>
+<details class="group border-b border-slate-200 dark:border-slate-800" style="">
+<summary class="flex cursor-pointer items-center justify-between py-4 list-none" style="">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+<span class="material-symbols-outlined" style="">home</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-base" style="">Home &amp; Utilities</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180" style="">expand_more</span>
+</summary>
+<div class="flex flex-col pl-12 pb-4 space-y-2">
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 text-sm" style="">Electricity</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 text-sm" style="">Water</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 text-sm" style="">Internet</button>
+</div>
+</details>
+<div class="flex items-center justify-between py-4 border-b border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 -mx-4 px-4 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+<span class="material-symbols-outlined" style="">shopping_bag</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-base" style="">Shopping</span>
+</div>
+<span class="material-symbols-outlined text-slate-400" style="">chevron_right</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 -mx-4 px-4 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-500">
+<span class="material-symbols-outlined" style="">restaurant</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-base" style="">Food &amp; Drinks</span>
+</div>
+<span class="material-symbols-outlined text-slate-400" style="">chevron_right</span>
+</div>
+<details class="group border-b border-slate-200 dark:border-slate-800" style="">
+<summary class="flex cursor-pointer items-center justify-between py-4 list-none" style="">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-pink-500">
+<span class="material-symbols-outlined" style="">celebration</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-base" style="">Entertainment</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180" style="">expand_more</span>
+</summary>
+<div class="flex flex-col pl-12 pb-4 space-y-2">
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 text-sm" style="">Movies</button>
+<button class="flex items-center justify-between w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 text-sm" style="">Gaming</button>
+</div>
+</details>
+</div>
+<div class="p-4 bg-background-light dark:bg-background-dark border-t border-slate-200 dark:border-slate-800">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98]" style="">Update</button>
+</div>
+</div>
+</div>
+
+</body></html>

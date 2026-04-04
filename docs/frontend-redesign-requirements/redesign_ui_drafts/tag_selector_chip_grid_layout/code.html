@@ -1,0 +1,162 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Tag Selector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="text-primary flex size-10 shrink-0 items-center justify-start cursor-pointer">
+<span class="material-symbols-outlined" style="">arrow_back</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 text-center" style="">Add tags</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="text-primary text-base font-bold leading-normal tracking-wide hover:opacity-80 transition-opacity" style=""><br></button>
+</div>
+</header>
+<!-- Search & Chip Input Area -->
+<div class="px-4 py-4 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+<div class="flex flex-col w-full gap-3 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+<!-- Selected Chips (Inside Input Area) -->
+<div class="flex flex-wrap gap-2">
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-1 rounded-full bg-primary pl-3 pr-2">
+<span class="text-white text-xs font-semibold leading-normal" style="">Crypto</span>
+<span class="material-symbols-outlined text-white text-base cursor-pointer" style="">close</span>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-1 rounded-full bg-primary pl-3 pr-2">
+<span class="text-white text-xs font-semibold leading-normal" style="">Trading</span>
+<span class="material-symbols-outlined text-white text-base cursor-pointer" style="">close</span>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-1 rounded-full bg-primary pl-3 pr-2">
+<span class="text-white text-xs font-semibold leading-normal" style="">NFTs</span>
+<span class="material-symbols-outlined text-white text-base cursor-pointer" style="">close</span>
+</div>
+<!-- Inline Search Input -->
+<div class="flex-1 min-w-[120px]">
+<input class="w-full h-8 bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm py-0" placeholder="Search tags..." type="text">
+</div>
+</div>
+</div>
+</div>
+<!-- Tag Grid Scroll Area -->
+<div class="flex-1 overflow-y-auto p-4">
+<h3 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 px-1" style="">Available Tags</h3>
+<div class="flex gap-2 flex-wrap pb-10">
+<!-- Tag Chips: Dense Grid Style -->
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Bitcoin</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Ethereum</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Solana</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">DeFi</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Web3</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Metaverse</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Airdrop</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Staking</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Wallet</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Mining</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">DAOs</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Memecoins</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">GameFi</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">News</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Analysis</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Layer 1</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Layer 2</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Security</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Development</p>
+</div>
+<div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-200 dark:bg-slate-800/80 px-4 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent active:scale-95">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg" style="">tag</span>
+<p class="text-slate-900 dark:text-slate-100 text-sm font-medium" style="">Hardware</p>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Done Button (Mobile mini-app feel) -->
+<div class="p-4 bg-background-light dark:bg-background-dark border-t border-slate-200 dark:border-slate-800">
+<button class="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all" style="">
+                Update</button>
+</div>
+</div>
+</body></html>

@@ -19,6 +19,8 @@ Legend: Pending | In Progress | Complete | Blocked
 | Telegram Reply Formatting | Telegram save confirmation now renders amounts with two decimal places | Complete | 2026-03-23 | Normalized reply text to fixed `.2f` amount formatting for saved transactions |
 | Auto Category Suggestion PRD | Product requirements and rollout definition for two-step LLM category assignment in Telegram ingestion | Complete | 2026-04-03 | Added PRD covering retrieval, LLM ranking, auto-apply, and Telegram remove-category action |
 | Auto Category Suggestion Implementation | Two-step Telegram category suggestion, inline callback actions, signed callback payloads, and real-LLM Telegram e2e coverage | Complete | 2026-04-03 | Added business services, callback handling, observability logs, and gated integration e2e validating auto-assign/override/remove |
+| Frontend Redesign Requirements Pack | Current UX baseline, user flows, and functional requirements for FE redesign handoff | Complete | 2026-04-04 | Added `docs/frontend-redesign-requirements/` with as-is UX, flow mapping, and MUST-level behavior contract |
+| Frontend Requirements Alignment (Draft Refresh) | Align FE requirement docs with refreshed redesign screenshots and approved UX decisions | Complete | 2026-04-04 | Updated nav to include Settings stub, explicit category/tag confirmation flows, category-icon trigger, and analytics category drilldown popup requirements |
 
 ## Working Rules
 
