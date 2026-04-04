@@ -31,7 +31,8 @@ Source contract:
 2. Each slice must include loading, error, and retry behaviors where network is involved.
 3. Each slice must preserve Telegram-safe viewport behavior.
 4. Each slice must be validated against `frontend_new/docs/qa-acceptance-checklist.md`.
-5. Avoid broad refactors until core behavior parity is in place.
+5. End-of-phase gate: spawn a QA sub-agent and run browser verification with Chrome DevTools MCP for that phase's FR IDs; include explicit pass/fail notes and console/network findings.
+6. Avoid broad refactors until core behavior parity is in place.
 
 ## Draft-to-Implementation Mapping
 

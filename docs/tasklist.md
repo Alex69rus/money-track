@@ -24,6 +24,7 @@ Legend: Pending | In Progress | Complete | Blocked
 | Frontend New Agent Scaffolding | `frontend_new` agent guide and execution docs for Tailwind v4 + shadcn + Telegram Mini App redesign | Complete | 2026-04-04 | Added `frontend_new/AGENTS.MD`, roadmap, API evolution plan, Telegram/shadcn playbooks, QA checklist, and root guide routing update |
 | Frontend New Phase-0 Bootstrap | Runnable `frontend_new` scaffold with Vite/TS/Tailwind v4, Telegram bootstrap, nav shell, chat backend stub, and CI quality workflow | Complete | 2026-04-04 | Added app skeleton, env template (`VITE_API_BASE_URL` only), locked redesign decisions, and frontend-new CI pipeline |
 | Frontend Redesign Decision Freeze | Lock FR-038/FR-039 and AI chat stub scope for autonomous agent execution | Complete | 2026-04-04 | Updated functional requirements to single-category filtering + multi-currency edit, and documented backend-based `/api/chat` stub scope |
+| Frontend New Phase-1 Transactions Slice | Transactions list and filter UX with debounced auto-apply, resilient loading/error states, and incremental loading | Complete | 2026-04-04 | Implemented typed transactions/categories/tags API adapters, responsive mobile+desktop list surfaces, infinite scroll, retry paths, and full frontend quality gates |
 
 ## Working Rules
 

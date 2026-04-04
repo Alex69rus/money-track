@@ -1,16 +1,18 @@
 import { render, screen } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import App from "@/app/App";
 
 describe("App", () => {
   it("renders the shell header", () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter
+        future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
+        initialEntries={["/settings"]}
+      >
         <App />
-      </BrowserRouter>,
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("Money Track")).toBeInTheDocument();
   });
 });
-

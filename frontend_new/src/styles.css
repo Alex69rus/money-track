@@ -4,14 +4,26 @@
   --color-background: var(--tg-theme-bg-color, #0f172a);
   --color-foreground: var(--tg-theme-text-color, #e2e8f0);
   --color-card: var(--tg-theme-secondary-bg-color, #111827);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-card);
+  --color-popover-foreground: var(--color-foreground);
   --color-muted: color-mix(in srgb, var(--color-background) 78%, white 22%);
   --color-muted-foreground: color-mix(in srgb, var(--color-foreground) 55%, black 45%);
+  --color-secondary: color-mix(in srgb, var(--color-card) 82%, white 18%);
+  --color-secondary-foreground: var(--color-foreground);
+  --color-accent: color-mix(in srgb, var(--color-card) 72%, white 28%);
+  --color-accent-foreground: var(--color-foreground);
+  --color-border: color-mix(in srgb, var(--color-foreground) 16%, var(--color-background) 84%);
+  --color-input: color-mix(in srgb, var(--color-card) 85%, white 15%);
+  --color-ring: color-mix(in srgb, var(--color-primary) 72%, white 28%);
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
   --color-primary: var(--tg-theme-button-color, #137fec);
   --color-primary-foreground: var(--tg-theme-button-text-color, #ffffff);
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: dark light;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
@@ -27,7 +39,9 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-background);
+  background:
+    radial-gradient(1200px 600px at -10% -20%, color-mix(in srgb, var(--color-primary) 20%, transparent), transparent 65%),
+    radial-gradient(900px 500px at 120% -10%, color-mix(in srgb, var(--color-foreground) 10%, transparent), transparent 60%),
+    var(--color-background);
   color: var(--color-foreground);
 }
-

@@ -2,6 +2,10 @@
 
 Use this checklist for every redesign slice and before release.
 
+Execution requirement:
+- At the end of each phase, run this checklist via a dedicated QA sub-agent in browser (Chrome DevTools MCP) for the FR IDs mapped to that phase.
+- Do not mark a phase complete until QA sub-agent results are recorded with pass/fail and any console/network issues.
+
 ## A. App Shell and Navigation
 
 - [ ] Four tabs are present: Transactions, Analytics, AI Chat, Settings.

@@ -209,8 +209,19 @@ frontend_new/
 3. Implement UI + data wiring + loading/error states + recovery path.
 4. Validate against `frontend_new/docs/qa-acceptance-checklist.md`.
 5. Run quality gates.
-6. Call `iteration-retrospective-capture` and append concise takeaways to `frontend_new/GUARDRAILS.md`.
-7. Update `docs/tasklist.md` with meaningful progress.
+6. At the end of each phase, spawn a dedicated QA sub-agent to run FE verification in browser using Chrome DevTools MCP:
+   - run the frontend,
+   - execute FR-focused checks for the current phase FR IDs,
+   - record pass/fail evidence (including console and network errors if any).
+7. Treat phase completion as blocked until this QA sub-agent verification is complete and reported.
+   - QA reliability defaults:
+     - Start QA FE on a fixed host/port (`127.0.0.1` + explicit port) and report the exact URL first.
+     - Use isolated browser context/profile for MCP-style browser sessions to avoid shared-profile lock failures.
+     - If the QA sub-agent does not produce a full FR matrix within one wait window, interrupt once, request interim status, then respawn a fresh QA sub-agent.
+     - For failure-path FRs (for example error-with-retry and recovery), prefer deterministic environment-based probes (such as unreachable `VITE_API_BASE_URL`) over flaky request interception/reload loops.
+     - Do not accept `PARTIAL` as phase-exit output; require explicit `PASS` / `FAIL` for each phase FR.
+8. Call `iteration-retrospective-capture` and append concise takeaways to `frontend_new/GUARDRAILS.md`.
+9. Update `docs/tasklist.md` with meaningful progress.
 
 ## Quality Gates
 
