@@ -35,10 +35,7 @@ class DbHelper:
         try:
             # Cleanup only namespaced artifacts created by this suite.
             await conn.execute(
-                (
-                    'DELETE FROM "transaction" '
-                    "WHERE message_id LIKE $1 OR note LIKE $2 OR sms_text LIKE $3"
-                ),
+                ('DELETE FROM "transaction" WHERE message_id LIKE $1 OR note LIKE $2 OR sms_text LIKE $3'),
                 f"{self._namespace}%",
                 f"{self._namespace}%",
                 f"{self._namespace}%",
@@ -113,6 +110,31 @@ class DbHelper:
                 WHERE id = $1
                 """,
                 tx_id,
+            )
+        finally:
+            await conn.close()
+        return dict(row) if row else None
+
+    async def get_transaction_by_user_and_message_id(
+        self,
+        *,
+        user_id: int,
+        message_id: str,
+    ) -> dict[str, Any] | None:
+        conn = await asyncpg.connect(self._database_url)
+        try:
+            row = await conn.fetchrow(
+                """
+                SELECT
+                    id, user_id, transaction_date, amount, note, category_id, tags, currency,
+                    sms_text, message_id
+                FROM "transaction"
+                WHERE user_id = $1 AND message_id = $2
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                user_id,
+                message_id,
             )
         finally:
             await conn.close()

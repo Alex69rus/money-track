@@ -89,7 +89,7 @@ def test_telegram_runtime_registers_webhook(monkeypatch) -> None:
     assert fake_application.bot.webhook_calls == [
         {
             "url": "https://money-track.org/api/telegram/webhook",
-            "allowed_updates": ["message", "edited_message"],
+            "allowed_updates": ["message", "edited_message", "callback_query"],
             "secret_token": "secret-value",
         }
     ]

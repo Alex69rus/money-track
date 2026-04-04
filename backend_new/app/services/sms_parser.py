@@ -15,10 +15,7 @@ SMS_PARSER_SYSTEM_PROMPT = "\n".join(
     [
         "You are an information extraction system for financial SMS alerts.",
         "Your task is to extract only what is explicitly written in the SMS text.",
-        (
-            "If the SMS lacks any required field or if extraction is uncertain, "
-            "return an empty JSON object."
-        ),
+        ("If the SMS lacks any required field or if extraction is uncertain, return an empty JSON object."),
         "",
         "Extract the following fields:",
         (
@@ -33,10 +30,7 @@ SMS_PARSER_SYSTEM_PROMPT = "\n".join(
         ),
         "",
         "Strict Rules:",
-        (
-            "1. Never infer or assume information not explicitly present. Only return what "
-            "is clearly stated in the SMS."
-        ),
+        ("1. Never infer or assume information not explicitly present. Only return what is clearly stated in the SMS."),
         (
             "2. Always extract ONLY ONE AED amount if SMS contains more that one amount and "
             "currency. amount in AED has the highest priority."
@@ -45,10 +39,7 @@ SMS_PARSER_SYSTEM_PROMPT = "\n".join(
         "- Use a negative sign (-) for expenses like purchases, debits, payments.",
         "- Use a positive sign (+) for credits like refunds, deposits, earnings.",
         "4. If you cannot reliably extract all required fields, return an empty object: {}",
-        (
-            "5. If the SMS does not clearly match an expense or income, do not guess the "
-            "sign — return {}."
-        ),
+        ("5. If the SMS does not clearly match an expense or income, do not guess the sign — return {}."),
         "",
         "Output format (as JSON):",
         "{",
@@ -63,9 +54,7 @@ SMS_PARSER_SYSTEM_PROMPT = "\n".join(
 
 class ParsedSmsTransaction(BaseModel):
     amount: Decimal | None = Field(description="Amount of the transaction", default=None)
-    currency: str | None = Field(
-        description="Currency code (ISO 4217) of the transaction", default=None
-    )
+    currency: str | None = Field(description="Currency code (ISO 4217) of the transaction", default=None)
     note: str | None = Field(description="Note or description of the transaction", default=None)
 
 
@@ -85,9 +74,7 @@ def _to_amount_fragment(amount: Decimal) -> str:
     return as_text or "0"
 
 
-def _get_parse_validation_failure_reason(
-    parsed: ParsedSmsTransaction, message_text: str
-) -> str | None:
+def _get_parse_validation_failure_reason(parsed: ParsedSmsTransaction, message_text: str) -> str | None:
     if parsed.amount is None:
         return "amount is missing"
     if parsed.amount == 0:
@@ -104,10 +91,7 @@ def _get_parse_validation_failure_reason(
     normalized_message_text = lower_message_text.replace(",", "")
     if amount_fragment.lower() in normalized_message_text:
         return None
-    return (
-        "absolute amount fragment not found in source text "
-        f"(fragment={amount_fragment})"
-    )
+    return f"absolute amount fragment not found in source text (fragment={amount_fragment})"
 
 
 async def parse_sms_transaction(message_text: str) -> ParsedSmsTransaction | None:

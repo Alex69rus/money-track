@@ -152,9 +152,7 @@ def record_result(request: pytest.FixtureRequest):
 
 @pytest.fixture
 def perform_request(record_result):
-    def _perform(
-        client: httpx.Client, method: str, url: str, path: str, **kwargs: Any
-    ) -> tuple[httpx.Response, Any]:
+    def _perform(client: httpx.Client, method: str, url: str, path: str, **kwargs: Any) -> tuple[httpx.Response, Any]:
         response = client.request(method, f"{url}{path}", **kwargs)
         body = _json_or_text(response)
         record_result(method=method.upper(), path=path, status_code=response.status_code, body=body)
@@ -177,6 +175,4 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(serialized, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(serialized, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")

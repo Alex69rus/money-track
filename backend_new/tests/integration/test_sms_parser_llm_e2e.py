@@ -27,8 +27,7 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
     SmsParserE2ECase(
         name="wio_usd_with_aed_converted_amount",
         input_text=(
-            "Payment of USD 10 (AED 37) was done at Github inc "
-            "using your Wio Personal card 9759 with Credit money"
+            "Payment of USD 10 (AED 37) was done at Github inc using your Wio Personal card 1234 with Credit money"
         ),
         expected_amount=Decimal("-37"),
         expected_currency="AED",
@@ -37,7 +36,7 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
     SmsParserE2ECase(
         name="loan_installment_with_grouped_amount",
         input_text=(
-            "AED 2,343.00 has been debited from your account 101XXX34XXX02 "
+            "AED 2,343.00 has been debited from your account 123XXX45XXX67 "
             "for loan installment. The available balance is AED 658.63"
         ),
         expected_amount=Decimal("-2343"),
@@ -57,8 +56,7 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
     SmsParserE2ECase(
         name="wio_purchase_with_grouped_amount",
         input_text=(
-            "Payment of AED 3,345.3 was done at Sukoon insurance "
-            "using your Wio Personal card 4027 with Credit money"
+            "Payment of AED 3,345.3 was done at Sukoon insurance using your Wio Personal card 1234 with Credit money"
         ),
         expected_amount=Decimal("-3345.3"),
         expected_currency="AED",
@@ -80,22 +78,20 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
     # ),
     SmsParserE2ECase(
         name="cbd_loan_installment_compact_aed",
-        input_text=(
-            "A loan installment of AED5211.56 for LMF*****3902 is debited from CBD account #xxx5597"
-        ),
+        input_text=("A loan installment of AED5211.56 for LMF*****3355 is debited from CBD account #xxx1234"),
         expected_amount=Decimal("-5211.56"),
         expected_currency="AED",
-        expected_note="loan installment for LMF*****3902",
+        expected_note="loan installment for LMF*****3355",
     ),
     SmsParserE2ECase(
         name="salary_credit",
         input_text=(
             "AED 12,000.00 has been credited to your account no. 101XXX34XXX02 DTB "
-            "SALARY EPBCOP056091J2J2 BY RAPYD MANAGEMENT LIMITEDSalary"
+            "SALARY SPBZXC122345Z7X8 BY ORCHID DEVELOPMENT LIMITEDSalary"
         ),
         expected_amount=Decimal("12000.00"),
         expected_currency="AED",
-        expected_note="RAPYD MANAGEMENT LIMITEDSalary",
+        expected_note="ORCHID DEVELOPMENT LIMITEDSalary",
     ),
 ]
 
@@ -170,11 +166,7 @@ def test_sms_parser_real_llm(case: SmsParserE2ECase) -> None:
 
     parsed = asyncio.run(parse_sms_transaction(case.input_text))
 
-    if (
-        case.expected_amount is None
-        and case.expected_currency is None
-        and case.expected_note is None
-    ):
+    if case.expected_amount is None and case.expected_currency is None and case.expected_note is None:
         assert parsed is None
         return
 

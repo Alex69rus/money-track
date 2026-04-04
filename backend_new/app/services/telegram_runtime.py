@@ -11,7 +11,7 @@ from app.services.telegram_ingestion import handle_telegram_update
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_UPDATES = ["message", "edited_message"]
+ALLOWED_UPDATES = ["message", "edited_message", "callback_query"]
 
 
 class TelegramBotRuntime:
@@ -36,9 +36,7 @@ class TelegramBotRuntime:
             logger.info("Telegram runtime is disabled: TELEGRAM_WEBHOOK_URL is not configured")
             return
         if not settings.telegram_webhook_secret.strip():
-            raise RuntimeError(
-                "TELEGRAM_WEBHOOK_SECRET must be configured when TELEGRAM_WEBHOOK_URL is set"
-            )
+            raise RuntimeError("TELEGRAM_WEBHOOK_SECRET must be configured when TELEGRAM_WEBHOOK_URL is set")
 
         application = Application.builder().token(settings.telegram_bot_token).updater(None).build()
         application.add_handler(TypeHandler(type=Update, callback=handle_telegram_update))

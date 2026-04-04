@@ -27,9 +27,7 @@ def _is_webhook_secret_valid(received_secret: str | None) -> bool:
 @router.post("/webhook", response_class=PlainTextResponse)
 async def telegram_webhook(
     request: Request,
-    x_telegram_bot_api_secret_token: str | None = Header(
-        default=None, alias="X-Telegram-Bot-Api-Secret-Token"
-    ),
+    x_telegram_bot_api_secret_token: str | None = Header(default=None, alias="X-Telegram-Bot-Api-Secret-Token"),
 ) -> PlainTextResponse:
     if not _is_webhook_secret_valid(x_telegram_bot_api_secret_token):
         raise HTTPException(
@@ -46,14 +44,10 @@ async def telegram_webhook(
 
     body = await request.json()
     if not isinstance(body, Mapping):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
     parsed_update = Update.de_json(dict(body), runtime.application.bot)
     if parsed_update is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
 
     await runtime.application.update_queue.put(parsed_update)
     return PlainTextResponse("OK")

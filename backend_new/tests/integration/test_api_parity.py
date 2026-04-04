@@ -490,10 +490,7 @@ def test_transactions_filter_by_min_max_amount(
             )
         )
 
-    path = (
-        f"/api/transactions/?tags={amount_tag}&minAmount={min_amount}"
-        f"&maxAmount={max_amount}&take=100"
-    )
+    path = f"/api/transactions/?tags={amount_tag}&minAmount={min_amount}&maxAmount={max_amount}&take=100"
     response, body = perform_request(http_client, "GET", base_url, path)
 
     assert response.status_code == 200
@@ -512,12 +509,8 @@ def test_transactions_filter_by_category_id(
     perform_request,
 ) -> None:
     filter_tag = _unique_value(db_helper.namespace, "category-filter")
-    keep_category_id = asyncio.run(
-        db_helper.insert_category(name=_unique_value(db_helper.namespace, "KeepCategory"))
-    )
-    other_category_id = asyncio.run(
-        db_helper.insert_category(name=_unique_value(db_helper.namespace, "OtherCategory"))
-    )
+    keep_category_id = asyncio.run(db_helper.insert_category(name=_unique_value(db_helper.namespace, "KeepCategory")))
+    other_category_id = asyncio.run(db_helper.insert_category(name=_unique_value(db_helper.namespace, "OtherCategory")))
     keep_note = _unique_value(db_helper.namespace, "category-keep")
     other_note = _unique_value(db_helper.namespace, "category-other")
 
@@ -637,9 +630,7 @@ def test_transactions_filter_by_text_note_tag_amount_category(
     )
 
     for term in [note_term, tag_term, amount_term, category_name.lower()]:
-        response, body = perform_request(
-            http_client, "GET", base_url, f"/api/transactions/?text={term}&take=100"
-        )
+        response, body = perform_request(http_client, "GET", base_url, f"/api/transactions/?text={term}&take=100")
         assert response.status_code == 200
         assert body["totalCount"] >= 1
 
@@ -654,9 +645,7 @@ def test_create_transaction_persists_expected_defaults_and_fields(
     note = _unique_value(db_helper.namespace, "create-note")
     payload = _transaction_payload(message_id=message_id, note=note)
 
-    response, body = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=payload
-    )
+    response, body = perform_request(http_client, "POST", base_url, "/api/transactions/", json=payload)
 
     assert response.status_code == 201
     assert response.headers["location"] == f"/api/transactions/{body['id']}"
@@ -687,9 +676,7 @@ def test_create_transaction_with_category_returns_null_embedded_category(
     note = _unique_value(db_helper.namespace, "create-category-note")
     payload = _transaction_payload(message_id=message_id, note=note, category_id=category_id)
 
-    response, body = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=payload
-    )
+    response, body = perform_request(http_client, "POST", base_url, "/api/transactions/", json=payload)
 
     assert response.status_code == 201
     assert body["categoryId"] == category_id
@@ -713,9 +700,7 @@ def test_create_transaction_omits_null_optional_fields_in_response(
         "messageId": None,
     }
 
-    response, body = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=payload
-    )
+    response, body = perform_request(http_client, "POST", base_url, "/api/transactions/", json=payload)
 
     assert response.status_code == 201
     assert body["amount"] == payload["amount"]
@@ -743,9 +728,7 @@ def test_create_transaction_accepts_negative_and_positive_amounts(
     note = _unique_value(db_helper.namespace, f"create-sign-{amount_label}")
     payload = _transaction_payload(message_id=message_id, note=note, amount=amount)
 
-    response, body = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=payload
-    )
+    response, body = perform_request(http_client, "POST", base_url, "/api/transactions/", json=payload)
 
     assert response.status_code == 201
     assert body["amount"] == amount
@@ -790,9 +773,7 @@ def test_update_transaction_owned_success(
         "currency": "AED",
     }
 
-    response, body = perform_request(
-        http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload
-    )
+    response, body = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
 
     assert response.status_code == 200
     assert body["id"] == tx_id
@@ -832,9 +813,7 @@ def test_update_transaction_not_owned_returns_not_found(
         "currency": "AED",
     }
 
-    response, _ = perform_request(
-        http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload
-    )
+    response, _ = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
     assert response.status_code == 404
 
 
@@ -853,9 +832,7 @@ def test_update_transaction_missing_returns_not_found(
         "currency": "AED",
     }
 
-    response, _ = perform_request(
-        http_client, "PUT", base_url, "/api/transactions/99999999", json=payload
-    )
+    response, _ = perform_request(http_client, "PUT", base_url, "/api/transactions/99999999", json=payload)
     assert response.status_code == 404
 
 
@@ -971,21 +948,13 @@ def test_unique_user_message_constraint_enforced(
     perform_request,
 ) -> None:
     message_id = _unique_value(db_helper.namespace, "msg-unique")
-    payload = _transaction_payload(
-        message_id=message_id, note=_unique_value(db_helper.namespace, "unique-a")
-    )
+    payload = _transaction_payload(message_id=message_id, note=_unique_value(db_helper.namespace, "unique-a"))
 
-    first_response, _ = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=payload
-    )
+    first_response, _ = perform_request(http_client, "POST", base_url, "/api/transactions/", json=payload)
     assert first_response.status_code == 201
 
-    duplicate_payload = _transaction_payload(
-        message_id=message_id, note=_unique_value(db_helper.namespace, "unique-b")
-    )
-    second_response, body = perform_request(
-        http_client, "POST", base_url, "/api/transactions/", json=duplicate_payload
-    )
+    duplicate_payload = _transaction_payload(message_id=message_id, note=_unique_value(db_helper.namespace, "unique-b"))
+    second_response, body = perform_request(http_client, "POST", base_url, "/api/transactions/", json=duplicate_payload)
 
     assert second_response.status_code == 500
     assert isinstance(body, dict)
@@ -997,9 +966,7 @@ def test_category_fk_set_null_on_category_delete(
     db_helper: DbHelper,
     test_user_id: int,
 ) -> None:
-    category_id = asyncio.run(
-        db_helper.insert_category(name=_unique_value(db_helper.namespace, "fk-set-null"))
-    )
+    category_id = asyncio.run(db_helper.insert_category(name=_unique_value(db_helper.namespace, "fk-set-null")))
     tx_id = asyncio.run(
         db_helper.insert_transaction(
             SeedTransaction(
@@ -1079,9 +1046,7 @@ def test_transactions_text_search_matches_tag_substring_case_insensitive(
         )
     )
 
-    response, body = perform_request(
-        http_client, "GET", base_url, "/api/transactions/?text=betag&take=100"
-    )
+    response, body = perform_request(http_client, "GET", base_url, "/api/transactions/?text=betag&take=100")
 
     assert response.status_code == 200
     notes = {item.get("note") for item in body["data"]}
@@ -1130,9 +1095,7 @@ def test_transactions_text_search_matches_amount_substring_not_only_exact(
         )
     )
 
-    response, body = perform_request(
-        http_client, "GET", base_url, "/api/transactions/?text=45.6&take=100"
-    )
+    response, body = perform_request(http_client, "GET", base_url, "/api/transactions/?text=45.6&take=100")
 
     assert response.status_code == 200
     notes = {item.get("note") for item in body["data"]}

@@ -60,7 +60,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
 
 ### FR-4: LLM category proposal
 - Input context includes:
-  - Current transaction: note, amount, currency.
+  - Current transaction: note, sms_text, amount, currency.
   - Similar categorized examples (up to 3 distinct-category rows).
   - Available categories.
 - LLM outputs ranked candidates (1..N), with top-1 required.
@@ -106,6 +106,9 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
   - `Category C` (LLM top-3)
   - `Remove category`
 - If fewer than 3 valid LLM suggestions are available, fill remaining category buttons with deterministic fallbacks from available categories (excluding duplicates) so UX always shows 4 buttons.
+  - Fallback ordering rule:
+    - Keep global stable ordering baseline (`order_index`, then `name`).
+    - Prioritize categories whose `type` matches transaction amount sign (`Expense` for negative, `Income` for positive), then append remaining categories in stable order.
 
 ### Callback behavior
 - Secure callback payload should include transaction identifier (compact + signed if possible).
@@ -127,6 +130,7 @@ We need a two-step enrichment flow that keeps current parsing behavior but adds 
   - Exclude current transaction id.
 - Distinct by category (`DISTINCT ON (category_id)` or equivalent Piccolo strategy).
 - Rank by similarity + recency, limit 3.
+  - Implementation should keep category-distinct reduction in DB query (avoid loading large candidate sets and de-duplicating in application memory).
 
 ## Category list query
 - Fetch global categories table (id, name, type).
@@ -230,6 +234,8 @@ Track quality KPI:
 4. Note similarity in v1 uses `ILIKE` prefix search (`'<prefix>%'`) with mandatory `user_id` filter.
 5. Message action buttons (top-3 categories + remove/cancel) use Telegram `callback_data`; backend handles `callback_query` and applies updates server-side (service call in-process, or internal API call if bot/API are split).
 6. Fallback categories (when LLM returns fewer than 3) are filled in stable category order (`order_index`, then `name`).
+7. LLM context includes original `sms_text` in addition to `note`, `amount`, and `currency`.
+8. Fallback category prioritization is sign-aware: for positive amounts prioritize `Income` categories; for negative amounts prioritize `Expense` categories; then append remaining categories in stable order.
 
 ## 19) Out of Scope for This PRD
 
