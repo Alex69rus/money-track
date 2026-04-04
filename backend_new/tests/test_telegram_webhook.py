@@ -90,3 +90,45 @@ def test_telegram_webhook_enqueues_update(monkeypatch) -> None:
         assert response.text == "OK"
         assert fake_app.update_queue.qsize() == 1
         delattr(test_app.state, "telegram_runtime")
+
+
+def test_telegram_webhook_enqueues_callback_query(monkeypatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql://postgres:password@127.0.0.1:5432/moneytrack")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "secret-value")
+    get_settings.cache_clear()
+
+    fake_app = _FakeApplication(
+        bot=Bot("123456:ABCDEF"),
+        update_queue=asyncio.Queue(),
+    )
+    fake_runtime = _FakeRuntime(application=fake_app, is_enabled=True)
+
+    payload = {
+        "update_id": 2,
+        "callback_query": {
+            "id": "abc123",
+            "from": {"id": 459885395, "is_bot": False, "first_name": "Aleksei"},
+            "chat_instance": "ci1",
+            "data": "cs1:1:1:r:0:sig",
+            "message": {
+                "message_id": 20,
+                "date": 1758301908,
+                "chat": {"id": 459885395, "type": "private"},
+                "text": "Saved",
+            },
+        },
+    }
+
+    test_app = _build_test_app()
+    with TestClient(test_app) as client:
+        test_app.state.telegram_runtime = fake_runtime
+        response = client.post(
+            "/api/telegram/webhook",
+            headers={"X-Telegram-Bot-Api-Secret-Token": "secret-value"},
+            json=payload,
+        )
+        assert response.status_code == 200
+        assert response.text == "OK"
+        assert fake_app.update_queue.qsize() == 1
+        delattr(test_app.state, "telegram_runtime")

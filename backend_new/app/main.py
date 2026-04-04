@@ -28,9 +28,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
 
 configure_logging()
 settings = get_settings()
-allowed_origins = [
-    origin.strip() for origin in settings.cors_allow_origins.split(",") if origin.strip()
-]
+allowed_origins = [origin.strip() for origin in settings.cors_allow_origins.split(",") if origin.strip()]
 
 app = FastAPI(title="Money Track API (Python)", version="0.1.0", lifespan=lifespan)
 app.add_middleware(

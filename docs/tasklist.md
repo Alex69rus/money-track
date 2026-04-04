@@ -18,6 +18,7 @@ Legend: Pending | In Progress | Complete | Blocked
 | Telegram Flow Migration | `SavingTransactions` flow moved from n8n to FastAPI + PTB webhook ingestion | Complete | 2026-03-20 | Added `/api/telegram/webhook`, PTB runtime, OpenAI parsing, and Telegram ingestion tests |
 | Telegram Reply Formatting | Telegram save confirmation now renders amounts with two decimal places | Complete | 2026-03-23 | Normalized reply text to fixed `.2f` amount formatting for saved transactions |
 | Auto Category Suggestion PRD | Product requirements and rollout definition for two-step LLM category assignment in Telegram ingestion | Complete | 2026-04-03 | Added PRD covering retrieval, LLM ranking, auto-apply, and Telegram remove-category action |
+| Auto Category Suggestion Implementation | Two-step Telegram category suggestion, inline callback actions, signed callback payloads, and real-LLM Telegram e2e coverage | Complete | 2026-04-03 | Added business services, callback handling, observability logs, and gated integration e2e validating auto-assign/override/remove |
 
 ## Working Rules
 

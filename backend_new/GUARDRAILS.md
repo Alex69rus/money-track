@@ -72,3 +72,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: sandboxed `uv` runs can panic or fail with cache/system permission errors, causing false infrastructure failures.
 - Exploration: ruled out app defects by rerunning the same orchestration with `UV_CACHE_DIR=./.uv-cache` and escalated execution; tests then passed.
 - Prevention rule: default to orchestrated runs with `UV_CACHE_DIR=./.uv-cache`; escalate only when failure class is `sandbox/permission`.
+
+### 2026-04-03 - Async Loop Consistency in Piccolo E2E
+- Takeaway: running Piccolo pool operations across multiple `asyncio.run(...)` calls causes cross-loop failures (`Future attached to a different loop` / `another operation is in progress`).
+- Exploration: ruled out query logic by reproducing failures only when pool start/query/close spanned different event loops; stable behavior returned after executing the full scenario in one coroutine.
+- Prevention rule: when tests use `engine.start_connection_pool()`, run setup, business calls, and teardown in a single async coroutine with one `asyncio.run(...)` entrypoint.
