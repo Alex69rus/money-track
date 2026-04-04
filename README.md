@@ -38,7 +38,7 @@ docker-compose up --build
 ```bash
 cd backend_new
 uv sync --group dev
-ENVIRONMENT=Development DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/moneytrack TELEGRAM_BOT_TOKEN=test-token uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+uv run uvicorn app.main:app
 ```
 
 ### Frontend

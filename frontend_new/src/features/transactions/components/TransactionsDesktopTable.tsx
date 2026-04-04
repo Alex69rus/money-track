@@ -1,4 +1,6 @@
+import { FolderPenIcon, PencilLineIcon, TagsIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,6 +14,9 @@ import type { Transaction } from "@/types/transactions";
 
 interface TransactionsDesktopTableProps {
   transactions: Transaction[];
+  onEditCategory: (transaction: Transaction) => void;
+  onEditTags: (transaction: Transaction) => void;
+  onEditTransaction: (transaction: Transaction) => void;
 }
 
 function formatDateLabel(value: Date): string {
@@ -22,7 +27,12 @@ function formatDateLabel(value: Date): string {
   }).format(value);
 }
 
-export function TransactionsDesktopTable({ transactions }: TransactionsDesktopTableProps): JSX.Element {
+export function TransactionsDesktopTable({
+  transactions,
+  onEditCategory,
+  onEditTags,
+  onEditTransaction,
+}: TransactionsDesktopTableProps): JSX.Element {
   return (
     <div className="hidden md:block">
       <Table>
@@ -33,6 +43,7 @@ export function TransactionsDesktopTable({ transactions }: TransactionsDesktopTa
             <TableHead>Category</TableHead>
             <TableHead>Tags</TableHead>
             <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -41,7 +52,7 @@ export function TransactionsDesktopTable({ transactions }: TransactionsDesktopTa
             const isPositive = transaction.amount >= 0;
 
             return (
-              <TableRow key={transaction.id}>
+              <TableRow data-testid={`tx-desktop-row-${transaction.id}`} key={transaction.id}>
                 <TableCell>
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">{formatDateLabel(transaction.transactionDate)}</span>
@@ -55,7 +66,19 @@ export function TransactionsDesktopTable({ transactions }: TransactionsDesktopTa
                   {transaction.note?.trim() || "Untitled transaction"}
                 </TableCell>
 
-                <TableCell>{transaction.category?.name || "Uncategorized"}</TableCell>
+                <TableCell>
+                  <Button
+                    aria-label={`Change category for transaction ${transaction.id}`}
+                    data-testid={`tx-desktop-category-${transaction.id}`}
+                    onClick={() => onEditCategory(transaction)}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <FolderPenIcon aria-hidden data-icon="inline-start" />
+                    {transaction.category?.name || "Uncategorized"}
+                  </Button>
+                </TableCell>
 
                 <TableCell>
                   {transaction.tags.length > 0 ? (
@@ -76,6 +99,31 @@ export function TransactionsDesktopTable({ transactions }: TransactionsDesktopTa
 
                 <TableCell className={isPositive ? "text-right font-semibold text-primary" : "text-right font-semibold"}>
                   {formatSignedAmount(transaction.amount, transaction.currency)}
+                </TableCell>
+
+                <TableCell>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      aria-label={`Edit tags for transaction ${transaction.id}`}
+                      data-testid={`tx-desktop-tags-${transaction.id}`}
+                      onClick={() => onEditTags(transaction)}
+                      size="icon-sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <TagsIcon aria-hidden />
+                    </Button>
+                    <Button
+                      aria-label={`Edit transaction ${transaction.id}`}
+                      data-testid={`tx-desktop-edit-${transaction.id}`}
+                      onClick={() => onEditTransaction(transaction)}
+                      size="icon-sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <PencilLineIcon aria-hidden />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

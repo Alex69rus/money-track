@@ -202,24 +202,92 @@ frontend_new/
   docs/
 ```
 
+## Failure-Prevention Protocols (Required)
+
+Use these protocols as operational playbooks. They are mandatory when their trigger condition applies.
+
+### Protocol A: shadcn Generation Safety
+
+Trigger: any `npx shadcn@latest add ...` execution.
+
+Execution steps:
+1. Run `npx shadcn@latest info --json` before generation.
+2. Generate required component(s) with `npx shadcn@latest add ...`.
+3. Immediately verify output paths are inside intended `src/**` locations (especially `src/components/ui/**`).
+4. If output path is wrong, stop implementation work and fix alias mapping in `components.json` before continuing.
+5. If CLI asks to overwrite existing base primitives (for example `button.tsx`), do not overwrite by default; keep existing primitives and add only missing files manually using the documented pattern.
+
+Exit criteria:
+1. Generated files are in correct repo paths.
+2. No accidental primitive overwrite occurred.
+
+### Protocol B: API Contract Verification Before UI Wiring
+
+Trigger: any slice that introduces or changes API-driven UI behavior.
+
+Execution steps:
+1. Confirm endpoint path, request shape, and response shape directly from backend route/schema code.
+2. Treat backend routes/schemas and redesign docs as source of truth.
+3. Do not use legacy `frontend/` DTOs or env assumptions as contract evidence.
+4. If FE needs contract changes, document deltas in `frontend_new/docs/api-evolution-plan.md` before coding around them.
+
+Exit criteria:
+1. Adapter types map to confirmed backend payloads.
+2. All intentional FE/BE deltas are recorded in the API evolution plan.
+
+### Protocol C: QA Runtime Ownership and Stability
+
+Trigger: end-of-phase browser QA and FR verification.
+
+Execution steps:
+1. Assign one runtime owner for FE/BE lifecycle orchestration.
+2. Start FE on fixed host/port (`127.0.0.1` + explicit port) and report exact URL.
+3. Use isolated browser context/profile for MCP browser sessions.
+4. Run deterministic readiness gate from the same network context used by QA (`frontend URL` and backend `/health`) before FR checks.
+5. If QA sub-agent fails to return full FR matrix in one wait window, interrupt once for interim status, then respawn once.
+6. For failure-path FRs, use deterministic environment-based probes (for example unreachable `VITE_API_BASE_URL`) instead of flaky interception/reload loops.
+7. If MCP session is still locked/unstable after one restart attempt, switch to canonical headless QA runner flow.
+
+Exit criteria:
+1. QA environment is reproducible and stable.
+2. Runtime orchestration is not split across competing agents.
+
+### Protocol D: Phase Exit Evidence Standard
+
+Trigger: phase completion decision.
+
+Execution steps:
+1. Produce one final FR matrix for the phase.
+2. Mark every phase FR as explicit `PASS` or `FAIL`.
+3. Include concise runtime evidence for each failed FR and key diagnostics (console/network where relevant).
+4. Treat `PARTIAL` as non-exit status.
+
+Exit criteria:
+1. Single final report contains `PASS`/`FAIL` for every mapped FR.
+2. Phase is blocked until this report exists.
+
+### Protocol E: Canonical QA Execution Path
+
+Trigger: adding or running phase QA automation.
+
+Execution steps:
+1. Use shared entrypoint `npm run qa:phase -- <phase-id>`.
+2. Implement new phase checks as isolated modules under `frontend_new/scripts/qa/phases/`.
+3. Do not add one-off inline shell QA snippets for phase-exit checks.
+
+Exit criteria:
+1. Phase QA runs through shared runner.
+2. New checks are reusable and module-based.
+
 ## Working Loop (Required)
 
 1. Pick one small vertical slice from `frontend_new/docs/implementation-roadmap.md`.
 2. List FR IDs covered by this slice in your working notes/PR summary.
-3. Implement UI + data wiring + loading/error states + recovery path.
-4. Validate against `frontend_new/docs/qa-acceptance-checklist.md`.
-5. Run quality gates.
-6. At the end of each phase, spawn a dedicated QA sub-agent to run FE verification in browser using Chrome DevTools MCP:
-   - run the frontend,
-   - execute FR-focused checks for the current phase FR IDs,
-   - record pass/fail evidence (including console and network errors if any).
-7. Treat phase completion as blocked until this QA sub-agent verification is complete and reported.
-   - QA reliability defaults:
-     - Start QA FE on a fixed host/port (`127.0.0.1` + explicit port) and report the exact URL first.
-     - Use isolated browser context/profile for MCP-style browser sessions to avoid shared-profile lock failures.
-     - If the QA sub-agent does not produce a full FR matrix within one wait window, interrupt once, request interim status, then respawn a fresh QA sub-agent.
-     - For failure-path FRs (for example error-with-retry and recovery), prefer deterministic environment-based probes (such as unreachable `VITE_API_BASE_URL`) over flaky request interception/reload loops.
-     - Do not accept `PARTIAL` as phase-exit output; require explicit `PASS` / `FAIL` for each phase FR.
+3. Run Protocol A and Protocol B when applicable before or during implementation.
+4. Implement UI + data wiring + loading/error states + recovery path.
+5. Validate against `frontend_new/docs/qa-acceptance-checklist.md`.
+6. Run quality gates.
+7. Run Protocol C, Protocol D, and Protocol E for end-of-phase QA and exit decisions.
 8. Call `iteration-retrospective-capture` and append concise takeaways to `frontend_new/GUARDRAILS.md`.
 9. Update `docs/tasklist.md` with meaningful progress.
 

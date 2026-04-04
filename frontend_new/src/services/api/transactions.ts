@@ -1,7 +1,12 @@
 import { apiRequest } from "@/services/api/client";
-import type { PaginatedTransactionsDto } from "@/services/api/dto";
-import { mapPaginatedTransactions } from "@/services/api/mappers";
-import type { PaginatedTransactions, TransactionsQueryFilters } from "@/types/transactions";
+import type { PaginatedTransactionsDto, TransactionDto } from "@/services/api/dto";
+import { mapPaginatedTransactions, mapTransaction } from "@/services/api/mappers";
+import type {
+  PaginatedTransactions,
+  Transaction,
+  TransactionsQueryFilters,
+  UpdateTransactionPayload,
+} from "@/types/transactions";
 
 interface ListTransactionsParams extends TransactionsQueryFilters {
   skip?: number;
@@ -53,4 +58,25 @@ export async function listTransactions(
   });
 
   return mapPaginatedTransactions(response);
+}
+
+export async function updateTransaction(
+  transactionId: number,
+  payload: UpdateTransactionPayload,
+  signal?: AbortSignal,
+): Promise<Transaction> {
+  const response = await apiRequest<TransactionDto>(`/api/transactions/${transactionId}`, {
+    body: JSON.stringify(payload),
+    method: "PUT",
+    signal,
+  });
+
+  return mapTransaction(response);
+}
+
+export async function deleteTransaction(transactionId: number, signal?: AbortSignal): Promise<void> {
+  await apiRequest<void>(`/api/transactions/${transactionId}`, {
+    method: "DELETE",
+    signal,
+  });
 }

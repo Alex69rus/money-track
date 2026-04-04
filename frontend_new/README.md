@@ -25,6 +25,28 @@ Use this once when turning scaffolding into runnable app code:
 5. Add scripts: `lint`, `typecheck`, `test`, `build`.
 6. Add `.env` support with `VITE_API_BASE_URL` only.
 
+## Phase QA Automation
+
+Reusable phase QA runner (phase modules live under `frontend_new/scripts/qa/phases/`):
+
+- From repo root, run:
+  - `npm run qa:phase -- <phase-id>`
+- Shortcut for current implemented phase:
+  - `npm run qa:phase2`
+  - `npm run qa:phase3` (scaffold with TODO assertions)
+
+What it does:
+
+1. Reuses running FE/BE if reachable.
+2. Starts missing services (backend via `uv run uvicorn app.main:app`, frontend via Vite on `127.0.0.1:4173`).
+3. Runs the phase module with Playwright and prints a machine-readable FR PASS/FAIL matrix.
+4. Exits non-zero if any FR fails.
+
+Phase scaffolding pattern:
+
+- `frontend_new/scripts/qa/phases/phase3.mjs` is an intentional TODO scaffold for analytics FRs.
+- Copy that pattern for next phases and replace TODO entries with concrete Playwright assertions in `run()`.
+
 ## Document Map
 
 - `frontend_new/AGENTS.MD`: main operating guide for AI agents.

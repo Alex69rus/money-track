@@ -16,6 +16,8 @@ interface UseTransactionsListResult {
   retryInitialLoad: () => void;
   retryLoadMore: () => void;
   loadMore: () => Promise<void>;
+  replaceTransaction: (transaction: Transaction) => void;
+  removeTransaction: (transactionId: number) => void;
 }
 
 function isAbortError(error: unknown): boolean {
@@ -193,6 +195,31 @@ export function useTransactionsList(filters: TransactionsQueryFilters): UseTrans
     void loadMore();
   }, [loadMore]);
 
+  const replaceTransaction = useCallback((updatedTransaction: Transaction): void => {
+    setTransactions((current) => {
+      let found = false;
+      const next = current.map((transaction) => {
+        if (transaction.id !== updatedTransaction.id) {
+          return transaction;
+        }
+
+        found = true;
+        return updatedTransaction;
+      });
+
+      if (!found) {
+        return current;
+      }
+
+      return next;
+    });
+  }, []);
+
+  const removeTransaction = useCallback((transactionId: number): void => {
+    setTransactions((current) => current.filter((transaction) => transaction.id !== transactionId));
+    setTotalCount((current) => Math.max(0, current - 1));
+  }, []);
+
   return {
     transactions,
     totalCount,
@@ -204,5 +231,7 @@ export function useTransactionsList(filters: TransactionsQueryFilters): UseTrans
     retryInitialLoad,
     retryLoadMore,
     loadMore,
+    replaceTransaction,
+    removeTransaction,
   };
 }

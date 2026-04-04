@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "qa:phase": "node scripts/qa/run-phase.mjs",
+    "qa:phase2": "node scripts/qa/run-phase.mjs phase2",
+    "qa:phase3": "node scripts/qa/run-phase.mjs phase3"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -41,6 +44,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.44.0",
     "vite": "^7.1.7",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "playwright": "^1.54.2"
   }
 }

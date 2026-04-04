@@ -41,3 +41,12 @@ export interface TransactionsQueryFilters {
   minAmount?: number;
   maxAmount?: number;
 }
+
+export interface UpdateTransactionPayload {
+  transactionDate: string;
+  amount: number;
+  note: string | null;
+  categoryId: number | null;
+  tags: string[];
+  currency: string;
+}

@@ -1,10 +1,15 @@
+import { PencilLineIcon, TagsIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatSignedAmount, formatTransactionTime, groupTransactionsByDay } from "@/features/transactions/utils";
 import type { Transaction } from "@/types/transactions";
 
 interface TransactionsMobileListProps {
   transactions: Transaction[];
+  onEditCategory: (transaction: Transaction) => void;
+  onEditTags: (transaction: Transaction) => void;
+  onEditTransaction: (transaction: Transaction) => void;
 }
 
 function getAvatarText(transaction: Transaction): string {
@@ -16,7 +21,12 @@ function getAvatarText(transaction: Transaction): string {
   return trimmed[0]?.toUpperCase() ?? "?";
 }
 
-export function TransactionsMobileList({ transactions }: TransactionsMobileListProps): JSX.Element {
+export function TransactionsMobileList({
+  transactions,
+  onEditCategory,
+  onEditTags,
+  onEditTransaction,
+}: TransactionsMobileListProps): JSX.Element {
   const groups = groupTransactionsByDay(transactions);
 
   return (
@@ -40,9 +50,14 @@ export function TransactionsMobileList({ transactions }: TransactionsMobileListP
 
                   return (
                     <li className="flex items-start gap-3 px-4 py-3" key={transaction.id}>
-                      <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      <button
+                        aria-label={`Change category for transaction ${transaction.id}`}
+                        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => onEditCategory(transaction)}
+                        type="button"
+                      >
                         {getAvatarText(transaction)}
-                      </div>
+                      </button>
 
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex items-center justify-between gap-3">
@@ -68,6 +83,29 @@ export function TransactionsMobileList({ transactions }: TransactionsMobileListP
                             ))}
                           </div>
                         ) : null}
+
+                        <div className="flex items-center gap-1 pt-1">
+                          <Button
+                            aria-label={`Edit tags for transaction ${transaction.id}`}
+                            onClick={() => onEditTags(transaction)}
+                            size="xs"
+                            type="button"
+                            variant="outline"
+                          >
+                            <TagsIcon aria-hidden data-icon="inline-start" />
+                            Tags
+                          </Button>
+                          <Button
+                            aria-label={`Edit transaction ${transaction.id}`}
+                            onClick={() => onEditTransaction(transaction)}
+                            size="xs"
+                            type="button"
+                            variant="outline"
+                          >
+                            <PencilLineIcon aria-hidden data-icon="inline-start" />
+                            Edit
+                          </Button>
+                        </div>
                       </div>
                     </li>
                   );
