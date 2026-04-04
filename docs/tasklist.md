@@ -21,6 +21,9 @@ Legend: Pending | In Progress | Complete | Blocked
 | Auto Category Suggestion Implementation | Two-step Telegram category suggestion, inline callback actions, signed callback payloads, and real-LLM Telegram e2e coverage | Complete | 2026-04-03 | Added business services, callback handling, observability logs, and gated integration e2e validating auto-assign/override/remove |
 | Frontend Redesign Requirements Pack | Current UX baseline, user flows, and functional requirements for FE redesign handoff | Complete | 2026-04-04 | Added `docs/frontend-redesign-requirements/` with as-is UX, flow mapping, and MUST-level behavior contract |
 | Frontend Requirements Alignment (Draft Refresh) | Align FE requirement docs with refreshed redesign screenshots and approved UX decisions | Complete | 2026-04-04 | Updated nav to include Settings stub, explicit category/tag confirmation flows, category-icon trigger, and analytics category drilldown popup requirements |
+| Frontend New Agent Scaffolding | `frontend_new` agent guide and execution docs for Tailwind v4 + shadcn + Telegram Mini App redesign | Complete | 2026-04-04 | Added `frontend_new/AGENTS.MD`, roadmap, API evolution plan, Telegram/shadcn playbooks, QA checklist, and root guide routing update |
+| Frontend New Phase-0 Bootstrap | Runnable `frontend_new` scaffold with Vite/TS/Tailwind v4, Telegram bootstrap, nav shell, chat backend stub, and CI quality workflow | Complete | 2026-04-04 | Added app skeleton, env template (`VITE_API_BASE_URL` only), locked redesign decisions, and frontend-new CI pipeline |
+| Frontend Redesign Decision Freeze | Lock FR-038/FR-039 and AI chat stub scope for autonomous agent execution | Complete | 2026-04-04 | Updated functional requirements to single-category filtering + multi-currency edit, and documented backend-based `/api/chat` stub scope |
 
 ## Working Rules
 

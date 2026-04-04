@@ -129,14 +129,10 @@ All recoverable failures in critical flows (transactions list, analytics load, s
 
 ## 8. Compatibility Notes and Constraints To Preserve or Resolve
 ### FR-038
-If multi-category filtering is exposed in UI, implementation MUST either:
-- truly support multi-category filtering end-to-end, or
-- clearly constrain UI to single category to match backend behavior.
+Transactions filtering UI MUST use single-category selection in redesign scope.
 
 ### FR-039
-Currency behavior MUST be explicitly defined for redesign:
-- either keep multi-currency edit support, or
-- enforce AED-only consistently across UI and API payloads.
+Transaction edit flow MUST keep multi-currency support across UI and API payloads.
 
 ### FR-040
 Any new tabs/screens beyond approved scope (Transactions, Analytics, AI Chat, Settings stub) MUST NOT be assumed in implementation without approved product scope extension.

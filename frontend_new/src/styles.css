@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--tg-theme-bg-color, #0f172a);
+  --color-foreground: var(--tg-theme-text-color, #e2e8f0);
+  --color-card: var(--tg-theme-secondary-bg-color, #111827);
+  --color-muted: color-mix(in srgb, var(--color-background) 78%, white 22%);
+  --color-muted-foreground: color-mix(in srgb, var(--color-foreground) 55%, black 45%);
+  --color-primary: var(--tg-theme-button-color, #137fec);
+  --color-primary-foreground: var(--tg-theme-button-text-color, #ffffff);
+}
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
