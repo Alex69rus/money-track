@@ -80,3 +80,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Confirmed existing runner already supports phase plug-ins via `PHASES` map; ruled out any need for runtime bootstrap script changes.
 - Prevention rule: Do not begin a new phase with ad-hoc checks; add/wire phase module and npm shortcut first, then fill FR assertions.
 - Files/areas affected: `frontend_new/scripts/qa/phases/phase3.mjs`, `frontend_new/scripts/qa/phases/scaffold-utils.mjs`, `frontend_new/scripts/qa/run-phase.mjs`, `frontend_new/package.json`, `package.json`, `frontend_new/README.md`, `frontend_new/docs/qa-acceptance-checklist.md`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-04-05 - Iteration Phase 3 (Analytics + Drilldown)
+
+- Scope: Implement FR-018..FR-022 with analytics date-range controls, summary/category/tag/trend widgets, and category drilldown popup in `frontend_new`.
+- What went wrong: Initial FR-020 QA evidence was flaky because loading-state detection relied on first page load timing and occasionally missed the transient loader.
+- Root cause: Loading assertion timing was coupled to startup race conditions instead of a deterministic forced-latency request.
+- Guardrail to apply next time: For loading-state QA, inject one delayed network request on demand and assert loader visibility during that known delay window.
+- Validated pattern to repeat: Keep analytics derived from one normalized dataset (`buildAnalyticsModel`) so summary, category, tag, and trends always recompute together on range changes.
+- Exploration notes: Verified drilldown context preservation by comparing date-filter values before/after close and ruled out route-based drilldown because modal state keeps analytics context simpler and more robust.
+- Prevention rule: Add explicit `data-testid` hooks for each FR-critical widget before writing phase QA so assertion coverage does not depend on fragile text selectors.
+- Files/areas affected: `frontend_new/src/pages/AnalyticsPage.tsx`, `frontend_new/src/features/analytics/**`, `frontend_new/src/services/api/analytics.ts`, `frontend_new/scripts/qa/phases/phase3.mjs`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
