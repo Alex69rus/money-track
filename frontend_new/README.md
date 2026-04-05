@@ -33,7 +33,8 @@ Reusable phase QA runner (phase modules live under `frontend_new/scripts/qa/phas
   - `npm run qa:phase -- <phase-id>`
 - Shortcut for current implemented phase:
   - `npm run qa:phase2`
-  - `npm run qa:phase3` (scaffold with TODO assertions)
+  - `npm run qa:phase3`
+  - `npm run qa:phase4`
 
 What it does:
 
@@ -42,10 +43,34 @@ What it does:
 3. Runs the phase module with Playwright and prints a machine-readable FR PASS/FAIL matrix.
 4. Exits non-zero if any FR fails.
 
+### QA/MCP Troubleshooting
+
+If browser QA fails, use this order:
+
+1. Start services manually with known-good commands:
+   - backend: `cd backend_new && uv run uvicorn app.main:app`
+   - frontend: `cd frontend_new && npm run dev`
+2. Validate runtime readiness first:
+   - `curl -sf http://localhost:5173 >/dev/null`
+   - `curl -sf http://localhost:8000/health >/dev/null`
+   - if `localhost` is unreachable, retry with `127.0.0.1` and keep one host style consistently in QA URLs.
+3. Run QA with explicit URLs:
+   - `cd frontend_new && QA_FRONTEND_URL=http://localhost:5173 QA_BACKEND_URL=http://localhost:8000 npm run qa:phase -- <phase-id>`
+4. If frontend startup fails with `listen EPERM`:
+   - switch to another port and pass `QA_FRONTEND_URL`.
+   - if sandbox blocks binding, rerun startup with escalation.
+5. If backend startup fails before `/health` (for example uv cache permission errors):
+   - rerun backend startup with explicit env and escalation.
+6. If Playwright reports missing browser:
+   - `cd frontend_new && npx playwright install chromium`
+7. If Chrome channel launch fails (`SIGABRT`, `kill EPERM`, target closed):
+   - use bundled Chromium fallback in the runner.
+   - if still unstable, mark browser QA blocked and run deterministic component-level tests with captured error logs.
+
 Phase scaffolding pattern:
 
-- `frontend_new/scripts/qa/phases/phase3.mjs` is an intentional TODO scaffold for analytics FRs.
-- Copy that pattern for next phases and replace TODO entries with concrete Playwright assertions in `run()`.
+- `frontend_new/scripts/qa/phases/phase3.mjs` and `phase4.mjs` are concrete FR assertion modules.
+- Use `scaffold-utils.mjs` when creating future phase modules, then replace TODO entries with concrete Playwright assertions in `run()`.
 
 ## Document Map
 

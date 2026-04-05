@@ -1,10 +1,12 @@
 import { chromium } from "playwright";
 import { phase2Definition } from "./phases/phase2.mjs";
 import { phase3Definition } from "./phases/phase3.mjs";
+import { phase4Definition } from "./phases/phase4.mjs";
 
 const PHASES = {
   [phase2Definition.id]: phase2Definition,
   [phase3Definition.id]: phase3Definition,
+  [phase4Definition.id]: phase4Definition,
 };
 
 function failResult(frIds, message) {
@@ -28,6 +30,27 @@ function mergeFrResults(frIds, partial, fallback) {
     };
   }
   return merged;
+}
+
+async function launchBrowserWithFallback() {
+  const launchArgs = {
+    headless: true,
+    args: ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu"],
+  };
+
+  try {
+    return await chromium.launch({
+      ...launchArgs,
+      channel: "chrome",
+    });
+  } catch (error) {
+    console.warn(
+      `[qa-runner] Chrome channel launch failed, retrying with bundled Chromium: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return await chromium.launch(launchArgs);
+  }
 }
 
 async function main() {
@@ -55,11 +78,7 @@ async function main() {
   let runError = null;
 
   try {
-    browser = await chromium.launch({
-      channel: "chrome",
-      headless: true,
-      args: ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu"],
-    });
+    browser = await launchBrowserWithFallback();
     context = await browser.newContext({ viewport: { width: 1440, height: 1200 } });
     page = await context.newPage();
     page.__mainFrameNavigations = 0;

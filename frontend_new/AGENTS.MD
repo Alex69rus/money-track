@@ -279,6 +279,43 @@ Exit criteria:
 1. Phase QA runs through shared runner.
 2. New checks are reusable and module-based.
 
+### Protocol F: Browser QA and Chrome MCP Triage
+
+Trigger: any browser-driven QA run (Chrome DevTools MCP or Playwright runner) fails or stalls.
+
+Execution steps:
+1. Preflight runtime ownership:
+   - keep one owner process for FE/BE startup and teardown.
+   - avoid parallel agents starting/stopping the same FE/BE ports.
+2. Use manual baseline startup before browser QA when services are not already up:
+   - backend: `cd backend_new && uv run uvicorn app.main:app`
+   - frontend: `cd frontend_new && npm run dev`
+3. Deterministic readiness gate from the same context used by QA:
+   - `curl -sf http://localhost:5173 >/dev/null`
+   - `curl -sf http://localhost:8000/health >/dev/null`
+   - if `localhost` fails but `127.0.0.1` works (or vice versa), use the reachable host consistently in QA URLs.
+4. Run phase QA with explicit URLs matching reachable hosts:
+   - `cd frontend_new && QA_FRONTEND_URL=http://localhost:5173 QA_BACKEND_URL=http://localhost:8000 npm run qa:phase -- <phase-id>`
+5. If FE fails with `listen EPERM`:
+   - switch to an allowed/working port and update `QA_FRONTEND_URL`.
+   - if sandbox blocks local bind, re-run startup with escalation.
+6. If backend fails before `/health` (for example uv cache permission errors):
+   - run backend with explicit env contract and escalation when sandbox blocks cache/process access.
+   - do not continue browser checks until `/health` succeeds.
+7. If Playwright/Chrome launch fails (`SIGABRT`, `Target page/context/browser closed`, `kill EPERM`):
+   - run `npx playwright install chromium` once.
+   - prefer bundled Chromium fallback when Chrome channel is unstable.
+   - if headless browser still hangs, mark browser QA blocked and switch to deterministic component-level tests while recording blocker evidence.
+8. For Chrome DevTools MCP instability (session lock/transport closure):
+   - restart MCP browser context once, then retry.
+   - keep a single MCP session owner; avoid concurrent MCP sub-agents.
+   - if still unstable after one restart, fall back to canonical headless runner and capture diagnostics.
+9. Always record one explicit pass/fail matrix with blocker reason, not `PARTIAL`.
+
+Exit criteria:
+1. Browser QA either completes with explicit FR `PASS`/`FAIL` matrix.
+2. Or is marked blocked with concrete runtime evidence and deterministic fallback test evidence.
+
 ## Working Loop (Required)
 
 1. Pick one small vertical slice from `frontend_new/docs/implementation-roadmap.md`.

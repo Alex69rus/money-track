@@ -91,3 +91,25 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Verified drilldown context preservation by comparing date-filter values before/after close and ruled out route-based drilldown because modal state keeps analytics context simpler and more robust.
 - Prevention rule: Add explicit `data-testid` hooks for each FR-critical widget before writing phase QA so assertion coverage does not depend on fragile text selectors.
 - Files/areas affected: `frontend_new/src/pages/AnalyticsPage.tsx`, `frontend_new/src/features/analytics/**`, `frontend_new/src/services/api/analytics.ts`, `frontend_new/scripts/qa/phases/phase3.mjs`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-04-05 - Iteration Phase 4 (AI Chat)
+
+- Scope: Implement FR-023..FR-027 in `frontend_new` with `/api/chat` adapter wiring, timeline UI, keyboard/send behavior, pending state, reset confirmation, and failure fallback handling.
+- What went wrong: Browser-based phase QA could not complete reliably in this environment because Playwright-launched Chromium headless processes hung/aborted.
+- Root cause: Local runtime constraints around headless browser launch/process lifecycle (`SIGABRT`/stalled Chromium shell) prevented deterministic Playwright execution.
+- Guardrail to apply next time: Before phase-exit QA, run a minimal Playwright smoke command to validate browser launch health; if blocked, immediately switch to component-level deterministic tests and document browser-runtime blocker explicitly.
+- Validated pattern to repeat: Keep chat request handling resilient by rendering a pending assistant bubble first, then replacing it in-place with either API response or fallback text while preserving message order.
+- Exploration notes: Verified `/api/chat` is not currently implemented in `backend_new`, so FE must tolerate 404/5xx gracefully; ruled out hard-failing UI on chat request errors.
+- Prevention rule: Add FR-critical `data-testid` hooks during implementation so QA can assert behavior with either Playwright or RTL tests without selector churn.
+- Files/areas affected: `frontend_new/src/pages/AiChatPage.tsx`, `frontend_new/src/services/api/chat.ts`, `frontend_new/src/pages/AiChatPage.test.tsx`, `frontend_new/scripts/qa/phases/phase4.mjs`, `frontend_new/scripts/qa/run-phase.mjs`, `frontend_new/src/components/ui/button.tsx`, `frontend_new/src/test/setup.ts`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-04-05 - Iteration Browser QA Triage (Chrome MCP + Playwright)
+
+- Scope: Investigate recurring browser QA failures and codify deterministic MCP/Playwright recovery steps for redesign phases.
+- What went wrong: QA failures mixed multiple root causes (`listen EPERM` frontend bind, backend startup permission failure, Chrome channel `SIGABRT`/`kill EPERM`, and missing Playwright browser binaries), causing non-deterministic recovery attempts.
+- Root cause: Browser QA preflight did not enforce strict readiness + single-owner runtime orchestration before launching MCP/Playwright sessions.
+- Guardrail to apply next time: Run runtime readiness checks first (`curl` FE root and backend `/health`) and classify failures as runtime/bootstrap vs browser engine before retrying tests.
+- Validated pattern to repeat: Keep one canonical fallback order: readiness gate -> browser binary check -> Chrome-to-Chromium fallback -> deterministic component tests with blocker evidence.
+- Exploration notes: Confirmed logs captured distinct failure signatures and ruled out product-regression attribution when runtime services/browser process lifecycle were failing first.
+- Prevention rule: Never continue FR browser assertions while FE/BE readiness checks fail; fix readiness first, then run MCP/Playwright.
+- Files/areas affected: `frontend_new/AGENTS.MD`, `frontend_new/README.md`, `frontend_new/GUARDRAILS.md`.

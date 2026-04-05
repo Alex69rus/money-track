@@ -2,7 +2,8 @@
   "scripts": {
     "qa:phase": "bash scripts/run_frontend_phase_qa.sh",
     "qa:phase2": "bash scripts/run_frontend_phase_qa.sh phase2",
-    "qa:phase3": "bash scripts/run_frontend_phase_qa.sh phase3"
+    "qa:phase3": "bash scripts/run_frontend_phase_qa.sh phase3",
+    "qa:phase4": "bash scripts/run_frontend_phase_qa.sh phase4"
   },
   "devDependencies": {
     "shadcn": "^4.1.2"
