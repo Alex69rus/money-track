@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str = Field(default="", alias="TELEGRAM_WEBHOOK_SECRET")
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
+    otel_service_name: str = Field(default="money-track-backend", alias="OTEL_SERVICE_NAME")
+    otel_traces_exporter: Literal["console", "none"] = Field(default="none", alias="OTEL_TRACES_EXPORTER")
 
     @property
     def business_tzinfo(self) -> ZoneInfo:

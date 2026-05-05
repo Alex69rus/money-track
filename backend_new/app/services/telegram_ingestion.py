@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from opentelemetry import trace
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
@@ -28,6 +29,7 @@ from app.services.transaction_category_actions import (
 )
 
 logger = logging.getLogger(__name__)
+tracer = trace.get_tracer("money-track-backend-new.telegram-ingestion")
 
 UNPARSED_REPLY_TEXT = "Cannot parse the transaction"
 
@@ -251,25 +253,26 @@ async def handle_telegram_update(update: object, context: ContextTypes.DEFAULT_T
     if not isinstance(update, Update):
         return
 
-    try:
-        if update.callback_query is not None:
-            await _handle_callback_query(update=update, context=context)
-            return
-        await _handle_message_update(update=update, context=context)
-    except Exception as exc:
-        logger.error("Failed to process Telegram update: %s", exc, exc_info=True)
-        normalized = _normalize_message_update(update)
-        if normalized is None:
-            return
+    with tracer.start_as_current_span("telegram.update.process"):
         try:
-            await _send_unparsed(
-                context.bot,
-                chat_id=normalized.chat_id,
-                reply_to_message_id=normalized.message_id,
-            )
-        except Exception as send_exc:
-            logger.error(
-                "Failed to send fallback Telegram reply: %s",
-                send_exc,
-                exc_info=True,
-            )
+            if update.callback_query is not None:
+                await _handle_callback_query(update=update, context=context)
+                return
+            await _handle_message_update(update=update, context=context)
+        except Exception as exc:
+            logger.error("Failed to process Telegram update: %s", exc, exc_info=True)
+            normalized = _normalize_message_update(update)
+            if normalized is None:
+                return
+            try:
+                await _send_unparsed(
+                    context.bot,
+                    chat_id=normalized.chat_id,
+                    reply_to_message_id=normalized.message_id,
+                )
+            except Exception as send_exc:
+                logger.error(
+                    "Failed to send fallback Telegram reply: %s",
+                    send_exc,
+                    exc_info=True,
+                )

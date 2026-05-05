@@ -8,6 +8,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
+from app.core.tracing import configure_tracing
 from app.db.engine import get_engine
 from app.services.telegram_runtime import TelegramBotRuntime
 
@@ -26,6 +27,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         await engine.close_connection_pool()
 
 
+configure_tracing()
 configure_logging()
 settings = get_settings()
 allowed_origins = [origin.strip() for origin in settings.cors_allow_origins.split(",") if origin.strip()]
