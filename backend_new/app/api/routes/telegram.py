@@ -32,10 +32,11 @@ async def telegram_webhook(
     x_telegram_bot_api_secret_token: str | None = Header(default=None, alias="X-Telegram-Bot-Api-Secret-Token"),
 ) -> PlainTextResponse:
     with tracer.start_as_current_span("telegram.webhook.receive"):
-        logger.info("Telegram webhook request received")
+        client_host = request.client.host if request.client is not None else "unknown"
+        logger.info("Telegram webhook request received from %s", client_host)
         if not _is_webhook_secret_valid(x_telegram_bot_api_secret_token):
-            logger.error(
-                "Telegram webhook rejected: invalid secret token (header present=%s)",
+            logger.warning(
+                "Rejected Telegram webhook request: invalid secret token (provided=%s)",
                 x_telegram_bot_api_secret_token is not None,
             )
             raise HTTPException(
@@ -60,5 +61,15 @@ async def telegram_webhook(
             logger.error("Telegram webhook rejected: failed to parse update payload")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
 
+        logger.info(
+            (
+                "Telegram webhook update parsed "
+                "update_id=%s has_message=%s has_edited_message=%s has_callback_query=%s"
+            ),
+            parsed_update.update_id,
+            parsed_update.message is not None,
+            parsed_update.edited_message is not None,
+            parsed_update.callback_query is not None,
+        )
         await runtime.application.update_queue.put(parsed_update)
         return PlainTextResponse("OK")

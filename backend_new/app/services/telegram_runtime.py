@@ -47,6 +47,26 @@ class TelegramBotRuntime:
             allowed_updates=ALLOWED_UPDATES,
             secret_token=settings.telegram_webhook_secret,
         )
+        try:
+            webhook_info = await application.bot.get_webhook_info()
+            logger.info(
+                (
+                    "Telegram webhook status "
+                    "url=%s pending_update_count=%s allowed_updates=%s last_error_message=%s"
+                ),
+                webhook_info.url,
+                webhook_info.pending_update_count,
+                webhook_info.allowed_updates,
+                webhook_info.last_error_message,
+            )
+            allowed_updates = set(webhook_info.allowed_updates or [])
+            if allowed_updates and "callback_query" not in allowed_updates:
+                logger.warning(
+                    "Telegram webhook configuration missing callback_query in allowed_updates: %s",
+                    sorted(allowed_updates),
+                )
+        except Exception as exc:
+            logger.error("Failed to inspect Telegram webhook status: %s", exc, exc_info=True)
         self._application = application
         logger.info("Telegram webhook registered at %s", webhook_url)
 

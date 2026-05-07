@@ -226,15 +226,37 @@ async def _handle_callback_query(
 
     message = callback_query.message
     chat_id = message.chat.id if message is not None else callback_query.from_user.id
+    logger.info(
+        "Telegram callback query received callback_query_id=%s user_id=%s data_length=%s",
+        callback_query.id,
+        callback_query.from_user.id,
+        len(callback_query.data or ""),
+    )
     try:
         callback_payload = decode_category_callback_data(callback_query.data or "")
         if callback_payload is None:
+            logger.warning(
+                "Telegram callback payload validation failed callback_query_id=%s user_id=%s",
+                callback_query.id,
+                callback_query.from_user.id,
+            )
             await context.bot.send_message(chat_id=chat_id, text=GENERIC_UPDATE_ERROR_TEXT)
             return
 
         result = await apply_category_callback_action(
             actor_user_id=callback_query.from_user.id,
             payload=callback_payload,
+        )
+        logger.info(
+            (
+                "Telegram callback action processed callback_query_id=%s user_id=%s "
+                "transaction_id=%s action=%s success=%s"
+            ),
+            callback_query.id,
+            callback_query.from_user.id,
+            callback_payload.transaction_id,
+            callback_payload.action,
+            result.success,
         )
         await context.bot.send_message(chat_id=chat_id, text=result.message)
     except Exception as exc:
@@ -254,6 +276,16 @@ async def handle_telegram_update(update: object, context: ContextTypes.DEFAULT_T
         return
 
     with tracer.start_as_current_span("telegram.update.process"):
+        logger.info(
+            (
+                "Telegram update processing started "
+                "update_id=%s has_message=%s has_edited_message=%s has_callback_query=%s"
+            ),
+            update.update_id,
+            update.message is not None,
+            update.edited_message is not None,
+            update.callback_query is not None,
+        )
         try:
             if update.callback_query is not None:
                 await _handle_callback_query(update=update, context=context)
