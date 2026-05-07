@@ -234,23 +234,6 @@ jobs:
           echo "Waiting for services to initialize..."
           sleep 30
 
-          # Force Telegram webhook to backend endpoint after all services are up.
-          # This prevents n8n Telegram Trigger workflows from winning registration races.
-          echo "Setting Telegram webhook to backend endpoint..."
-          telegram_bot_token="$(grep '^TELEGRAM_BOT_TOKEN=' .env.prod | cut -d= -f2-)"
-          set_webhook_result="$(curl -sS -X POST "https://api.telegram.org/bot${telegram_bot_token}/setWebhook" \
-            -H "Content-Type: application/json" \
-            -d "{\"url\":\"${telegram_webhook_url}\",\"secret_token\":\"${telegram_webhook_secret}\",\"allowed_updates\":[\"message\",\"edited_message\"]}")"
-          echo "Telegram setWebhook result: ${set_webhook_result}"
-          echo "${set_webhook_result}" | grep -q '"ok":true' || { echo "ERROR: Telegram setWebhook failed"; exit 1; }
-
-          webhook_info_result="$(curl -sS "https://api.telegram.org/bot${telegram_bot_token}/getWebhookInfo")"
-          echo "Telegram getWebhookInfo result: ${webhook_info_result}"
-          echo "${webhook_info_result}" | grep -q "\"url\":\"${telegram_webhook_url}\"" || {
-            echo "ERROR: Telegram webhook URL mismatch after deployment"
-            exit 1
-          }
-          
           # Verify services are running
           echo "Verifying services are running..."
           docker-compose -f docker-compose.prod.yml --env-file .env.prod ps || { echo "ERROR: Failed to check service status"; exit 1; }
