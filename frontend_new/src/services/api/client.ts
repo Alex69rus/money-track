@@ -1,6 +1,7 @@
 import { getTelegramInitData } from "@/services/telegram/webapp";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? "";
+const API_MODE = import.meta.env.MODE;
 
 export class ApiRequestError extends Error {
   readonly status: number;
@@ -14,6 +15,18 @@ export class ApiRequestError extends Error {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+export function isApiRequestError(error: unknown): error is ApiRequestError {
+  return error instanceof ApiRequestError;
+}
+
+export function isNetworkApiRequestError(error: unknown): error is ApiRequestError {
+  return isApiRequestError(error) && error.status === 0;
+}
+
+export function canUseControlledFallbackMode(): boolean {
+  return import.meta.env.DEV || API_MODE === "test";
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

@@ -15,7 +15,8 @@
     "qa:phase": "node scripts/qa/run-phase.mjs",
     "qa:phase2": "node scripts/qa/run-phase.mjs phase2",
     "qa:phase3": "node scripts/qa/run-phase.mjs phase3",
-    "qa:phase4": "node scripts/qa/run-phase.mjs phase4"
+    "qa:phase4": "node scripts/qa/run-phase.mjs phase4",
+    "qa:phase5": "node scripts/qa/run-phase.mjs phase5"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

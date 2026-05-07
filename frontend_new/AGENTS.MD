@@ -288,7 +288,7 @@ Execution steps:
    - keep one owner process for FE/BE startup and teardown.
    - avoid parallel agents starting/stopping the same FE/BE ports.
 2. Use manual baseline startup before browser QA when services are not already up:
-   - backend: `cd backend_new && uv run uvicorn app.main:app`
+   - backend: `cd backend_new && uv run python -m uvicorn app.main:app`
    - frontend: `cd frontend_new && npm run dev`
 3. Deterministic readiness gate from the same context used by QA:
    - `curl -sf http://localhost:5173 >/dev/null`

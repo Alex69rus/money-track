@@ -1,5 +1,11 @@
-import { apiRequest } from "@/services/api/client";
+import {
+  apiRequest,
+  canUseControlledFallbackMode,
+  isNetworkApiRequestError,
+} from "@/services/api/client";
 import type { PaginatedTransactionsDto, TransactionDto } from "@/services/api/dto";
+import { listFallbackTransactions } from "@/services/api/fallback-data";
+import { activateFallbackMode } from "@/services/api/fallback-mode";
 import { mapPaginatedTransactions, mapTransaction } from "@/services/api/mappers";
 import type {
   PaginatedTransactions,
@@ -53,11 +59,20 @@ export async function listTransactions(
     params.set("tags", options.tags.join(","));
   }
 
-  const response = await apiRequest<PaginatedTransactionsDto>(`/api/transactions?${params.toString()}`, {
-    signal,
-  });
+  try {
+    const response = await apiRequest<PaginatedTransactionsDto>(`/api/transactions?${params.toString()}`, {
+      signal,
+    });
 
-  return mapPaginatedTransactions(response);
+    return mapPaginatedTransactions(response);
+  } catch (error) {
+    if (canUseControlledFallbackMode() && isNetworkApiRequestError(error)) {
+      activateFallbackMode("Backend is unreachable. Showing local fallback data.");
+      return listFallbackTransactions(options);
+    }
+
+    throw error;
+  }
 }
 
 export async function updateTransaction(

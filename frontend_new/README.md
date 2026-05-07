@@ -35,11 +35,12 @@ Reusable phase QA runner (phase modules live under `frontend_new/scripts/qa/phas
   - `npm run qa:phase2`
   - `npm run qa:phase3`
   - `npm run qa:phase4`
+  - `npm run qa:phase5`
 
 What it does:
 
 1. Reuses running FE/BE if reachable.
-2. Starts missing services (backend via `uv run uvicorn app.main:app`, frontend via Vite on `127.0.0.1:4173`).
+2. Starts missing services (backend via `uv run python -m uvicorn app.main:app`, frontend via Vite on `127.0.0.1:4173`).
 3. Runs the phase module with Playwright and prints a machine-readable FR PASS/FAIL matrix.
 4. Exits non-zero if any FR fails.
 
@@ -48,7 +49,7 @@ What it does:
 If browser QA fails, use this order:
 
 1. Start services manually with known-good commands:
-   - backend: `cd backend_new && uv run uvicorn app.main:app`
+   - backend: `cd backend_new && uv run python -m uvicorn app.main:app`
    - frontend: `cd frontend_new && npm run dev`
 2. Validate runtime readiness first:
    - `curl -sf http://localhost:5173 >/dev/null`

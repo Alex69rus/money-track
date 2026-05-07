@@ -2,11 +2,13 @@ import { chromium } from "playwright";
 import { phase2Definition } from "./phases/phase2.mjs";
 import { phase3Definition } from "./phases/phase3.mjs";
 import { phase4Definition } from "./phases/phase4.mjs";
+import { phase5Definition } from "./phases/phase5.mjs";
 
 const PHASES = {
   [phase2Definition.id]: phase2Definition,
   [phase3Definition.id]: phase3Definition,
   [phase4Definition.id]: phase4Definition,
+  [phase5Definition.id]: phase5Definition,
 };
 
 function failResult(frIds, message) {

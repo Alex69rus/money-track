@@ -1,0 +1,33 @@
+[[rules]]
+patterns = ["rm -rf *", "dd if=*", "chmod 777 *"]
+decision = "forbidden"
+justification = "Do not allow destructive shell commands."
+
+[[rules]]
+patterns = [
+  "git add",
+  "git add *",
+  "git add .*",
+  "git add -A",
+  "git add -A *",
+  "git add --all",
+  "git add --all *",
+  "git add -u",
+  "git add -u *",
+  "git add --update",
+  "git add --update *",
+]
+decision = "forbidden"
+justification = "User policy: Codex must not stage files. Ask the user to run git add manually."
+
+[[rules]]
+patterns = [
+  "git restore",
+  "git restore *",
+  "git restore .*",
+  "git restore --staged",
+  "git restore --staged *",
+  "git restore --staged .*",
+]
+decision = "forbidden"
+justification = "User policy: Codex must not restore or unstage changes. Ask the user to run git restore manually."

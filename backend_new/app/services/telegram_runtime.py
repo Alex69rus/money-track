@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from telegram import Update
+from telegram import MenuButtonWebApp, Update, WebAppInfo
 from telegram.ext import Application, TypeHandler
 
 from app.core.config import get_settings
@@ -32,6 +32,7 @@ class TelegramBotRuntime:
     async def start(self) -> None:
         settings = get_settings()
         webhook_url = settings.telegram_webhook_url.strip()
+        web_app_url = settings.telegram_web_app_url.strip()
         if not webhook_url:
             logger.info("Telegram runtime is disabled: TELEGRAM_WEBHOOK_URL is not configured")
             return
@@ -47,6 +48,11 @@ class TelegramBotRuntime:
             allowed_updates=ALLOWED_UPDATES,
             secret_token=settings.telegram_webhook_secret,
         )
+        if web_app_url:
+            await application.bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(text="App", web_app=WebAppInfo(url=web_app_url))
+            )
+            logger.info("Telegram Web App menu button configured at %s", web_app_url)
         self._application = application
         logger.info("Telegram webhook registered at %s", webhook_url)
 

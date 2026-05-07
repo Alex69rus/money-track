@@ -57,6 +57,10 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function toTestIdSegment(value: string): string {
+  return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
 function toggleTag(currentTags: string[], tag: string): string[] {
   if (currentTags.includes(tag)) {
     return currentTags.filter((item) => item !== tag);
@@ -353,6 +357,7 @@ export function TransactionsFiltersCard({
                   return (
                     <Button
                       aria-pressed={isActive}
+                      data-testid={`tx-filter-tag-option-${toTestIdSegment(tag)}`}
                       key={tag}
                       onClick={() => onTagToggle(tag)}
                       size="xs"

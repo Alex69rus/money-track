@@ -25,7 +25,7 @@ describe("AiChatPage", () => {
   });
 
   it("sends via Enter, shows pending state, and appends user/assistant timeline messages", async () => {
-    let resolveFetch: ((value: Response) => void) | null = null;
+    let resolveFetch!: (value: Response) => void;
     const fetchMock = vi.fn(
       () =>
         new Promise<Response>((resolve) => {
@@ -43,7 +43,7 @@ describe("AiChatPage", () => {
     expect(await screen.findByTestId("ai-chat-pending")).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-send")).toBeDisabled();
 
-    resolveFetch?.(
+    resolveFetch(
       new Response(JSON.stringify({ response: "You spent AED 1200 this month." }), {
         status: 200,
         headers: { "Content-Type": "application/json" },

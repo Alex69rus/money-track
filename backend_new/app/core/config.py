@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     telegram_bot_token: str = Field(alias="TELEGRAM_BOT_TOKEN")
     telegram_webhook_url: str = Field(default="", alias="TELEGRAM_WEBHOOK_URL")
     telegram_webhook_secret: str = Field(default="", alias="TELEGRAM_WEBHOOK_SECRET")
+    telegram_web_app_url: str = Field(
+        default="https://delicate-halibut-tolerant.ngrok-free.app", alias="TELEGRAM_WEB_APP_URL"
+    )
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
 

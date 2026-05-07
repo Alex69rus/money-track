@@ -74,3 +74,14 @@ src/services/api/
 - In development, backend outages must not crash app (FR-031).
 - Fallback data is allowed for non-critical workflows when explicitly labeled.
 - Avoid hidden mock behavior in production builds.
+
+## Phase 5 Hardening Status
+
+- Read adapters (`/api/transactions`, `/api/categories`, `/api/tags`) now switch to explicit fallback mode only for network-unreachable scenarios in `development` and `test` runtimes.
+- Fallback mode is surfaced in UI with a visible banner so the user knows data is local and limited.
+- Write operations (`PUT`/`DELETE` and chat POST) remain backend-bound and intentionally do not silently fall back.
+
+## Deferred Contract Tracking
+
+- `/api/chat` response schema remains weakly-typed and still needs a stable backend contract.
+- Analytics remains list-based client aggregation; dedicated backend analytics endpoint is still deferred.

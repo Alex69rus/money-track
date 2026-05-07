@@ -1,5 +1,7 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useFallbackModeState } from "@/hooks/useFallbackModeState";
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +19,14 @@ const NAV_ITEMS = [
 export function AppShell({ children }: AppShellProps): JSX.Element {
   const location = useLocation();
   const isKeyboardOpen = useKeyboardOpen();
+  const fallbackMode = useFallbackModeState();
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col bg-background text-foreground">
+    <div
+      className="mx-auto flex w-full max-w-4xl flex-col bg-background text-foreground"
+      data-testid="app-shell-root"
+      style={{ minHeight: "var(--mt-viewport-stable-height, 100dvh)" }}
+    >
       <header className="sticky top-0 z-20 border-b bg-background/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center justify-center">
           <h1 className="text-lg font-semibold tracking-tight">Money Track</h1>
@@ -27,17 +34,29 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
       </header>
 
       <main className={cn("flex-1 px-4 py-4", isKeyboardOpen ? "pb-4" : "pb-24")}>
+        {fallbackMode.active ? (
+          <Alert className="mb-4" data-testid="app-shell-fallback-mode">
+            <AlertTitle>Fallback mode</AlertTitle>
+            <AlertDescription>
+              {fallbackMode.reason ?? "Backend is unavailable. Showing limited local data for testing."}
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {children}
       </main>
 
       <nav
         aria-label="Primary navigation"
+        data-testid="app-shell-nav"
         className={cn(
           "fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-2 pt-2 backdrop-blur",
           isKeyboardOpen ? "hidden" : "block",
         )}
       >
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+        <div
+          className="mx-auto flex w-full max-w-4xl items-center justify-between gap-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
+          data-testid="app-shell-nav-inner"
+        >
           {NAV_ITEMS.map((item) => {
             const isActive =
               location.pathname === item.to ||
@@ -53,6 +72,7 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
+                data-testid={`app-shell-nav-link-${item.to.replace("/", "")}`}
                 to={item.to}
               >
                 {item.label}
@@ -64,4 +84,3 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
     </div>
   );
 }
-

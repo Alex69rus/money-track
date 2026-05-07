@@ -5,11 +5,15 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { AiChatPage } from "@/pages/AiChatPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TransactionsPage } from "@/pages/TransactionsPage";
-import { initializeTelegramWebApp } from "@/services/telegram/webapp";
+import { initializeTelegramWebApp, subscribeTelegramViewportChanges } from "@/services/telegram/webapp";
 
 export default function App(): JSX.Element {
   useEffect(() => {
     initializeTelegramWebApp();
+    const unsubscribe = subscribeTelegramViewportChanges(() => undefined);
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
@@ -25,4 +29,3 @@ export default function App(): JSX.Element {
     </AppShell>
   );
 }
-

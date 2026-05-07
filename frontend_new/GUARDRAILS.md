@@ -113,3 +113,25 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Confirmed logs captured distinct failure signatures and ruled out product-regression attribution when runtime services/browser process lifecycle were failing first.
 - Prevention rule: Never continue FR browser assertions while FE/BE readiness checks fail; fix readiness first, then run MCP/Playwright.
 - Files/areas affected: `frontend_new/AGENTS.MD`, `frontend_new/README.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-04-05 - Iteration Phase 5 (Integration Hardening)
+
+- Scope: Implement FR-028, FR-030, FR-031, FR-033, FR-040 with adapter-level fallback mode, Telegram viewport hardening, and Phase-5 QA coverage.
+- What went wrong: Existing resilience handled failure states but did not provide deterministic fallback data mode for dev/test outage scenarios.
+- Root cause: API adapters surfaced network errors directly without an explicit read-only fallback layer and without shell-level fallback visibility.
+- Guardrail to apply next time: Keep fallback behavior adapter-local and network-error-specific (`status=0`) so forced 4xx/5xx QA checks remain truthful.
+- Validated pattern to repeat: Use a shared fallback-state store plus shell banner so all surfaces (transactions/analytics/filters) clearly indicate fallback mode activation.
+- Exploration notes: Verified Telegram-safe reachability improves when shell min-height tracks `viewportStableHeight`; ruled out silent production fallback behavior to prevent hidden data drift.
+- Prevention rule: Fallback data is allowed only in dev/test and only for read paths; never silently fallback writes.
+- Files/areas affected: `frontend_new/src/services/api/**`, `frontend_new/src/app/layout/AppShell.tsx`, `frontend_new/src/services/telegram/webapp.ts`, `frontend_new/scripts/qa/phases/phase5.mjs`, `frontend_new/docs/**`, `docs/tasklist.md`.
+
+## 2026-05-07 - Iteration Phase 5 QA Runtime Fix
+
+- Scope: Restore deterministic Phase-5 QA startup flow after backend bootstrap failed before `/health`.
+- What went wrong: `qa:phase5` failed with backend readiness timeout even though dependencies were installed.
+- Root cause: QA script invoked `uv run uvicorn app.main:app`, but `uvicorn` executable was not resolvable in this environment.
+- Guardrail to apply next time: In QA bootstrap scripts, start backend using module invocation (`uv run python -m uvicorn app.main:app`) to avoid PATH/executable lookup drift.
+- Validated pattern to repeat: Keep backend/frontend lifecycle ownership inside one script and verify phase matrix only after readiness checks pass.
+- Exploration notes: Confirmed failure came from process spawn (`No such file or directory: uvicorn`), not backend API regressions; ruled out FE regression because Phase-5 FR matrix passed immediately after command fix.
+- Prevention rule: Treat readiness timeouts as runtime-bootstrap defects first; inspect startup logs before changing feature code.
+- Files/areas affected: `scripts/run_frontend_phase_qa.sh`, `frontend_new/README.md`, `frontend_new/AGENTS.MD`, `frontend_new/GUARDRAILS.md`.

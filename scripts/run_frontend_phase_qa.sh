@@ -60,7 +60,7 @@ else
   echo "[qa:${PHASE_ID}] Starting backend (log: ${BACKEND_LOG})"
   (
     cd "${ROOT_DIR}/backend_new"
-    uv run uvicorn app.main:app
+    uv run python -m uvicorn app.main:app
   ) >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!
   STARTED_BACKEND=1
