@@ -32,7 +32,12 @@ async def telegram_webhook(
     x_telegram_bot_api_secret_token: str | None = Header(default=None, alias="X-Telegram-Bot-Api-Secret-Token"),
 ) -> PlainTextResponse:
     with tracer.start_as_current_span("telegram.webhook.receive"):
+        logger.info("Telegram webhook request received")
         if not _is_webhook_secret_valid(x_telegram_bot_api_secret_token):
+            logger.error(
+                "Telegram webhook rejected: invalid secret token (header present=%s)",
+                x_telegram_bot_api_secret_token is not None,
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid Telegram webhook secret",
@@ -40,6 +45,7 @@ async def telegram_webhook(
 
         runtime = cast(TelegramBotRuntime | None, getattr(request.app.state, "telegram_runtime", None))
         if runtime is None or not runtime.is_enabled:
+            logger.error("Telegram webhook rejected: runtime is not enabled")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Telegram runtime is not enabled",
@@ -47,9 +53,11 @@ async def telegram_webhook(
 
         body = await request.json()
         if not isinstance(body, Mapping):
+            logger.error("Telegram webhook rejected: payload is not a JSON object")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
         parsed_update = Update.de_json(dict(body), runtime.application.bot)
         if parsed_update is None:
+            logger.error("Telegram webhook rejected: failed to parse update payload")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
 
         await runtime.application.update_queue.put(parsed_update)
