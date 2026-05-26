@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { PlusIcon, SearchIcon, TagIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, PlusIcon, XIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,65 +129,112 @@ export function TransactionTagSelectorDialog({
     await onConfirm(dedupeTags(selectedTags));
   };
 
+  const updateLabel = useMemo(() => {
+    if (pending) {
+      return "Updating...";
+    }
+
+    const count = selectedTags.length;
+    if (count > 0) {
+      return `Update ${count} ${count === 1 ? "Tag" : "Tags"}`;
+    }
+
+    return "Update Tags";
+  }, [pending, selectedTags.length]);
+
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
-        className="top-auto right-0 bottom-0 left-0 max-h-[85vh] w-full max-w-none translate-x-0 translate-y-0 rounded-t-3xl rounded-b-none p-0 sm:rounded-t-3xl sm:rounded-b-none"
+        className="top-auto right-0 bottom-0 left-0 !flex max-h-[88vh] w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-h-[88vh] sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
         data-testid="tx-tags-dialog"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-4 py-3 text-left">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+        <DialogHeader className="border-b border-[#22334a]/80 bg-[#0f1b2a] px-4 py-3 text-left">
+          <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
+            <Button
+              aria-label="Close tag selector"
+              className="size-10 rounded-full text-[#2d8cff] hover:bg-white/10 hover:text-[#2d8cff]"
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="ghost"
+            >
+              <ChevronLeftIcon aria-hidden className="size-6" />
+            </Button>
+            <DialogTitle className="text-center text-[2rem] font-semibold tracking-tight text-slate-100">
+              {title}
+            </DialogTitle>
+            <Button
+              aria-label={hasChanges ? "Confirm selected tags" : "Close tag selector"}
+              className="h-10 min-w-0 px-2 text-base font-semibold text-[#2d8cff] hover:bg-white/10 hover:text-[#2d8cff]"
+              disabled={pending}
+              onClick={() => {
+                if (hasChanges) {
+                  void handleConfirm();
+                  return;
+                }
+                onOpenChange(false);
+              }}
+              type="button"
+              variant="ghost"
+            >
+              Done
+            </Button>
+          </div>
+          <DialogDescription className="sr-only">{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3 px-4 py-3">
+        <div className="flex min-h-0 flex-1 flex-col bg-[#0b1624]">
           {error ? (
-            <Alert variant="destructive">
+            <Alert className="mx-4 mt-4 border-destructive/60 bg-destructive/10 text-destructive" variant="destructive">
               <AlertTitle>Could not update tags</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
 
-          <div className="rounded-xl border bg-muted/40 p-3">
-            <div className="flex flex-wrap gap-2">
-              {selectedTags.map((tag) => (
-                <Badge className="gap-1.5" key={tag} variant="default">
-                  {tag}
-                  <button
-                    aria-label={`Remove ${tag} tag`}
-                    className="rounded-full"
-                    onClick={() => toggleTag(tag)}
-                    type="button"
+          <div className="border-b border-[#22334a]/80 px-4 py-4">
+            <div className="rounded-2xl border border-[#2a3c56] bg-[#162337] p-3">
+              <div className="flex flex-wrap gap-2">
+                {selectedTags.map((tag) => (
+                  <Badge
+                    className="h-10 rounded-full bg-[#2d8cff] px-4 text-base font-semibold text-white hover:bg-[#2d8cff]"
+                    key={tag}
+                    variant="secondary"
                   >
-                    <XIcon aria-hidden className="size-3" />
-                  </button>
-                </Badge>
-              ))}
+                    <span className="truncate">{tag}</span>
+                    <button
+                      aria-label={`Remove ${tag} tag`}
+                      className="ml-2 rounded-full text-white/95 transition-opacity hover:opacity-80"
+                      onClick={() => toggleTag(tag)}
+                      type="button"
+                    >
+                      <XIcon aria-hidden className="size-4" />
+                    </button>
+                  </Badge>
+                ))}
 
-              <div className="relative min-w-36 flex-1">
-                <SearchIcon className="pointer-events-none absolute top-3 left-2.5 size-4 text-muted-foreground" />
-                <Input
-                  aria-label="Search tags"
-                  className="h-10 pl-8 text-base"
-                  data-testid="tx-tags-search"
-                  onChange={(event) => setSearch(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleAddFromSearch();
-                    }
-                  }}
-                  placeholder="Search tags..."
-                  type="search"
-                  value={search}
-                />
+                <div className="min-w-[9rem] flex-1">
+                  <Input
+                    aria-label="Search tags"
+                    className="h-10 border-none bg-transparent px-2 text-[1.1rem] text-slate-100 placeholder:text-slate-500 focus-visible:ring-0"
+                    data-testid="tx-tags-search"
+                    onChange={(event) => setSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleAddFromSearch();
+                      }
+                    }}
+                    placeholder="Search tags..."
+                    type="search"
+                    value={search}
+                  />
+                </div>
               </div>
             </div>
 
             {canCreateTag ? (
               <Button
-                className="mt-2 w-full"
+                className="mt-3 w-full rounded-xl border-[#2a3c56] bg-transparent text-sm font-medium text-[#81b8ff] hover:bg-[#2a3c56]/35 hover:text-[#9bc7ff]"
                 data-testid="tx-tags-add-from-search"
                 onClick={handleAddFromSearch}
                 size="xs"
@@ -200,8 +247,11 @@ export function TransactionTagSelectorDialog({
             ) : null}
           </div>
 
-          <div className="max-h-[48vh] overflow-y-auto pr-1">
-            <div className="flex flex-wrap gap-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6">
+            <h3 className="mb-4 px-1 text-[0.78rem] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+              Available Tags
+            </h3>
+            <div className="flex flex-wrap gap-3">
               {filteredAvailableTags.map((tag) => {
                 const isSelected = selectedTags.some((item) => normalizeTag(item) === normalizeTag(tag));
 
@@ -209,40 +259,40 @@ export function TransactionTagSelectorDialog({
                   <button
                     aria-label={`${isSelected ? "Remove" : "Add"} ${tag} tag`}
                     className={cn(
-                      "flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors",
+                      "flex h-11 items-center gap-2 rounded-[0.85rem] px-4 text-[1.1rem] font-medium transition-colors",
                       isSelected
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card hover:bg-accent",
+                        ? "bg-[#2d8cff] text-white hover:bg-[#2d8cff]/90"
+                        : "bg-[#1a2a40] text-slate-100 hover:bg-[#22334d]",
                     )}
                     data-testid={`tx-tag-option-${normalizeTag(tag)}`}
                     key={tag}
                     onClick={() => toggleTag(tag)}
                     type="button"
                   >
-                    <TagIcon aria-hidden className="size-4 text-muted-foreground" />
-                    <span>{tag}</span>
+                    <span className={cn("text-[1.3rem] leading-none", isSelected ? "text-white" : "text-slate-400")}>#</span>
+                    <span className="leading-none">{tag}</span>
                   </button>
                 );
               })}
             </div>
 
             {filteredAvailableTags.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <p className="py-4 text-center text-sm text-slate-400">
                 No tags match your search.
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="border-t px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+        <div className="border-t border-[#22334a]/80 bg-[#0f1b2a] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <Button
-            className="w-full"
+            className="h-14 w-full rounded-2xl bg-[#2d8cff] text-[1.2rem] font-semibold text-white shadow-[0_10px_24px_rgba(45,140,255,0.38)] hover:bg-[#2d8cff]/90"
             data-testid="tx-tags-update"
             disabled={!hasChanges || pending}
             onClick={() => void handleConfirm()}
             type="button"
           >
-            {pending ? "Updating..." : "Update"}
+            {updateLabel}
           </Button>
         </div>
       </DialogContent>

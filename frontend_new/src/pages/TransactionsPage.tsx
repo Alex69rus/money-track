@@ -535,7 +535,7 @@ export function TransactionsPage(): JSX.Element {
 
       <TransactionTagSelectorDialog
         availableTags={tags}
-        description="Select tags and confirm to apply."
+        description="Choose tags for your transaction"
         error={tagUpdateError}
         initialTags={tagSelectorTransaction?.tags ?? []}
         onConfirm={handleQuickTagsConfirm}
@@ -546,7 +546,7 @@ export function TransactionsPage(): JSX.Element {
         }}
         open={tagSelectorTransaction !== null}
         pending={tagUpdatePending}
-        title="Update tags"
+        title="Add tags"
       />
 
       <TransactionEditDialog

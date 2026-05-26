@@ -522,7 +522,7 @@ export function TransactionEditDialog({
 
       <TransactionTagSelectorDialog
         availableTags={availableTags}
-        description="Add or remove tags, then confirm."
+        description="Choose tags for your transaction"
         error={null}
         initialTags={tags}
         onConfirm={(nextTags) => {
@@ -532,7 +532,7 @@ export function TransactionEditDialog({
         onOpenChange={setTagSelectorOpen}
         open={tagSelectorOpen}
         pending={false}
-        title="Edit tags"
+        title="Add tags"
       />
     </>
   );

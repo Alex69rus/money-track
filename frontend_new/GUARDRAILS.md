@@ -179,3 +179,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Tested fixed-height sheet geometry and ruled it out because default dialog breakpoint transforms and content density made action controls inaccessible in QA.
 - Prevention rule: After any dialog/list visual density change, rerun phase QA immediately and treat “outside viewport” click errors as layout regressions, not test flakiness.
 - Files/areas affected: `frontend_new/src/features/transactions/components/TransactionCategorySelectorDialog.tsx`, `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/docs/visual-audit/vf-3-after/category-selector-dialog-vf3.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-05-26 - Iteration VF-4 (Tag Selector Alignment)
+
+- Scope: Align `TransactionTagSelectorDialog` to `tag_selector_chip_grid_layout` while preserving FR-012 explicit confirmation and Phase-2 update-in-place behavior.
+- What went wrong: Early QA reruns failed with all FR checks red either from browser runtime permissions or from frontend requests accidentally targeting `:4173/api/*`.
+- Root cause: QA command context drift (`VITE_API_BASE_URL` missing in frontend runtime) plus sandbox-restricted browser launch during combined runtime checks.
+- Guardrail to apply next time: Run Phase QA with a single escalated runtime owner and always start frontend with explicit `VITE_API_BASE_URL=http://127.0.0.1:8000` before asserting FR outcomes.
+- Validated pattern to repeat: Keep VF-safe behavior by preserving `data-testid` hooks and confirm handlers while refactoring only sheet composition/tokens/copy.
+- Exploration notes: Verified Playwright viewport capture at `390x844` / `DPR 3` works deterministically when FE/BE readiness gates pass; ruled out marking QA failures from `ERR_CONNECTION_REFUSED` or browser bootstrap errors as product regressions.
+- Prevention rule: Before any VF phase exit, enforce this sequence: quality gates -> backend/ frontend readiness gate -> phase QA -> phone screenshot artifact capture.
+- Files/areas affected: `frontend_new/src/features/transactions/components/TransactionTagSelectorDialog.tsx`, `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/docs/visual-audit/vf-4-after/tag-selector-dialog-vf4.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
