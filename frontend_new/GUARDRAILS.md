@@ -135,3 +135,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Confirmed failure came from process spawn (`No such file or directory: uvicorn`), not backend API regressions; ruled out FE regression because Phase-5 FR matrix passed immediately after command fix.
 - Prevention rule: Treat readiness timeouts as runtime-bootstrap defects first; inspect startup logs before changing feature code.
 - Files/areas affected: `scripts/run_frontend_phase_qa.sh`, `frontend_new/README.md`, `frontend_new/AGENTS.MD`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-05-26 - Iteration VF-0 (Visual Audit + Baseline Capture)
+
+- Scope: Complete `VF-0` by producing draft-vs-current visual inventory, token extraction, and baseline phone screenshots at `390x844` / `DPR 3`.
+- What went wrong: Local screenshot capture initially failed twice (`vite` bind `EPERM` in sandbox and Playwright Chromium launch permission failure).
+- Root cause: Browser QA/capture operations required escalated runtime permissions for local port binding and headless browser process control in this environment.
+- Guardrail to apply next time: When visual audit needs browser capture, run with a single escalated runtime owner early and capture all target surfaces in one deterministic Playwright script.
+- Validated pattern to repeat: Use backend-unreachable fallback mode for deterministic visual baseline captures when the task is fidelity-only and behavior must remain unchanged.
+- Exploration notes: Verified default analytics date preset can produce empty states with fallback seed data; ruled out relying on default month during screenshot automation and forced a deterministic date range in the capture script.
+- Prevention rule: Before writing VF gap conclusions, ensure every draft-mapped surface has an actual captured artifact at the target viewport (including dialogs/popups), not only route-level screenshots.
+- Files/areas affected: `frontend_new/docs/vf-0-visual-audit.md`, `frontend_new/docs/visual-audit/vf-0-current/*.png`, `frontend_new/.codex-tmp/vf0_capture.mjs`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.

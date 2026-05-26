@@ -198,3 +198,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 .pyre/
+
+# Codex
+.codex-tmp/
