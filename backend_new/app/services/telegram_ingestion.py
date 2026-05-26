@@ -74,6 +74,11 @@ def _normalize_message_update(update: Update) -> NormalizedTelegramMessage | Non
 
 
 async def _send_unparsed(bot: Bot, *, chat_id: int, reply_to_message_id: int) -> None:
+    logger.info(
+        "Telegram outgoing reply reply_type=parse_failed_reply chat_id=%s reply_to_message_id=%s",
+        chat_id,
+        reply_to_message_id,
+    )
     await bot.send_message(
         chat_id=chat_id,
         text=UNPARSED_REPLY_TEXT,
@@ -140,6 +145,12 @@ async def _send_create_reply(
         f"Currency: {transaction.currency}\n"
         f"Note: {note}"
     )
+    logger.info(
+        ("Telegram outgoing reply reply_type=success_reply chat_id=%s reply_to_message_id=%s transaction_id=%s"),
+        chat_id,
+        reply_to_message_id,
+        transaction.id,
+    )
     await bot.send_message(
         chat_id=chat_id,
         text=text,
@@ -203,14 +214,27 @@ async def _handle_message_update(
     )
     suggestion = await _resolve_suggestion(normalized=normalized, transaction=created)
 
-    await _send_create_reply(
-        context.bot,
-        chat_id=normalized.chat_id,
-        user_id=normalized.from_id,
-        reply_to_message_id=normalized.message_id,
-        transaction=created,
-        suggestion=suggestion,
-    )
+    try:
+        await _send_create_reply(
+            context.bot,
+            chat_id=normalized.chat_id,
+            user_id=normalized.from_id,
+            reply_to_message_id=normalized.message_id,
+            transaction=created,
+            suggestion=suggestion,
+        )
+    except Exception as exc:
+        logger.error(
+            (
+                "Failed to send Telegram success reply after persisted transaction: %s "
+                "transaction_id=%s user_id=%s chat_id=%s"
+            ),
+            exc,
+            created.id,
+            normalized.from_id,
+            normalized.chat_id,
+            exc_info=True,
+        )
 
 
 async def _handle_callback_query(
@@ -293,18 +317,3 @@ async def handle_telegram_update(update: object, context: ContextTypes.DEFAULT_T
             await _handle_message_update(update=update, context=context)
         except Exception as exc:
             logger.error("Failed to process Telegram update: %s", exc, exc_info=True)
-            normalized = _normalize_message_update(update)
-            if normalized is None:
-                return
-            try:
-                await _send_unparsed(
-                    context.bot,
-                    chat_id=normalized.chat_id,
-                    reply_to_message_id=normalized.message_id,
-                )
-            except Exception as send_exc:
-                logger.error(
-                    "Failed to send fallback Telegram reply: %s",
-                    send_exc,
-                    exc_info=True,
-                )
