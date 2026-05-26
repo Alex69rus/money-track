@@ -69,6 +69,22 @@ function toggleTag(currentTags: string[], tag: string): string[] {
   return [...currentTags, tag];
 }
 
+function formatRangeLabel(fromDate: string, toDate: string): string {
+  if (!fromDate && !toDate) {
+    return "Any date";
+  }
+
+  if (fromDate && toDate) {
+    return `${fromDate} - ${toDate}`;
+  }
+
+  if (fromDate) {
+    return `From ${fromDate}`;
+  }
+
+  return `Until ${toDate}`;
+}
+
 export function TransactionsFiltersCard({
   categories,
   tags,
@@ -162,44 +178,63 @@ export function TransactionsFiltersCard({
     onTagSearchChange("");
   };
 
+  const rangeLabel = formatRangeLabel(draft.fromDate, draft.toDate);
+
   return (
-    <Card>
-      <CardHeader className="gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontalIcon aria-hidden className="size-4 text-muted-foreground" />
-            <CardTitle className="text-base">Filters</CardTitle>
+    <Card className="rounded-xl border-border/70 bg-card/70 py-0">
+      <CardHeader className="gap-3 px-4 pt-4 pb-3">
+        <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 p-1.5">
+          <Button
+            aria-label={expanded ? "Hide filters" : "Show filters"}
+            className="h-9 flex-1 justify-start rounded-lg px-3"
+            onClick={() => onSetExpanded(!expanded)}
+            size="sm"
+            type="button"
+            variant={expanded ? "default" : "outline"}
+          >
+            <SlidersHorizontalIcon aria-hidden data-icon="inline-start" />
+            <span className="truncate text-xs font-semibold">{rangeLabel}</span>
+          </Button>
+          <div className="flex items-center gap-1">
             {activeFiltersCount > 0 ? (
-              <Badge variant="secondary">{activeFiltersCount}</Badge>
+              <Badge className="h-6 rounded-full px-2 text-[10px]" variant="secondary">
+                {activeFiltersCount}
+              </Badge>
             ) : null}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isDebouncing ? <Badge variant="outline">Applying...</Badge> : null}
-
-            <Button
-              aria-label={expanded ? "Hide filters" : "Show filters"}
-              onClick={() => onSetExpanded(!expanded)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {expanded ? "Hide" : "Show"}
-            </Button>
-
             {activeFiltersCount > 0 ? (
-              <Button aria-label="Clear all filters" onClick={clearAll} size="sm" type="button" variant="ghost">
-                <XIcon aria-hidden data-icon="inline-start" />
-                Clear
+              <Button aria-label="Clear all filters" onClick={clearAll} size="icon-sm" type="button" variant="ghost">
+                <XIcon aria-hidden />
               </Button>
             ) : null}
           </div>
         </div>
 
-        <CardDescription>Changes apply automatically after a short debounce.</CardDescription>
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
+          <Input
+            aria-label="Search transactions"
+            className="rounded-xl border-border/80 bg-background/80 pl-9"
+            id="transactions-search-text"
+            name="transactionsSearchText"
+            onChange={(event) => onFieldChange("text", event.target.value)}
+            placeholder="Search transactions"
+            type="search"
+            value={draft.text}
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold">Filters</CardTitle>
+          {isDebouncing ? (
+            <Badge className="h-6 rounded-full px-2 text-[10px]" variant="outline">
+              Applying...
+            </Badge>
+          ) : null}
+        </div>
+        <CardDescription className="text-xs">Changes apply automatically after a short debounce.</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className={cn("flex flex-col gap-4 px-4 pb-4", expanded ? "pt-0" : "hidden")}>
         {optionsError ? (
           <Alert variant="destructive">
             <AlertTitle>Failed to load filter options</AlertTitle>
@@ -212,21 +247,7 @@ export function TransactionsFiltersCard({
           </Alert>
         ) : null}
 
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
-          <Input
-            aria-label="Search transactions"
-            className="pl-9"
-            id="transactions-search-text"
-            name="transactionsSearchText"
-            onChange={(event) => onFieldChange("text", event.target.value)}
-            placeholder="Search by note, tags, amount, or category"
-            type="search"
-            value={draft.text}
-          />
-        </div>
-
-        <div className={cn("grid gap-3", expanded ? "grid" : "hidden")}>
+        <div className="grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium" htmlFor="transactions-from-date">

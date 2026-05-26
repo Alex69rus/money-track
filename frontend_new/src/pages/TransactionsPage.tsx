@@ -363,9 +363,61 @@ export function TransactionsPage(): JSX.Element {
   );
 
   const hasEmptyState = !loading && !error && transactions.length === 0;
+  const totals = useMemo(() => {
+    return transactions.reduce(
+      (accumulator, transaction) => {
+        if (transaction.amount >= 0) {
+          accumulator.income += transaction.amount;
+        } else {
+          accumulator.expense += Math.abs(transaction.amount);
+        }
+
+        return accumulator;
+      },
+      { income: 0, expense: 0 },
+    );
+  }, [transactions]);
+  const balance = totals.income - totals.expense;
+  const displayCurrency = transactions[0]?.currency ?? "AED";
+  const moneyFormatter = useMemo(() => {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: displayCurrency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [displayCurrency]);
 
   return (
     <section className="flex flex-col gap-4">
+      <Card className="mt-balance-card overflow-hidden border-0 py-0 text-primary-foreground">
+        <CardContent className="relative flex flex-col gap-5 p-5">
+          <div className="mt-balance-glow mt-balance-glow-top" />
+          <div className="mt-balance-glow mt-balance-glow-bottom" />
+          <div className="relative z-10 flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-medium text-primary-foreground/80">Balance Snapshot</p>
+              <p className="text-3xl font-bold tracking-tight">{moneyFormatter.format(balance)}</p>
+            </div>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
+                  Monthly Income
+                </span>
+                <span className="text-sm font-semibold">+{moneyFormatter.format(totals.income)}</span>
+              </div>
+              <div className="h-8 w-px bg-primary-foreground/20" />
+              <div className="flex flex-col text-right">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
+                  Monthly Expense
+                </span>
+                <span className="text-sm font-semibold">-{moneyFormatter.format(totals.expense)}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <TransactionsFiltersCard
         activeFiltersCount={activeFiltersCount}
         categories={categories}
@@ -385,8 +437,10 @@ export function TransactionsPage(): JSX.Element {
       />
 
       <div className="flex items-center justify-between gap-2 px-1">
-        <h2 className="text-lg font-semibold tracking-tight">Transactions</h2>
-        <Badge variant="outline">{totalCount} records</Badge>
+        <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Recent Transactions</h2>
+        <Badge className="rounded-full px-2 text-[10px]" variant="outline">
+          {totalCount} records
+        </Badge>
       </div>
 
       {loading && !error ? <TransactionsListSkeleton /> : null}

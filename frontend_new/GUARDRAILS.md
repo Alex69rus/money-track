@@ -146,3 +146,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Verified default analytics date preset can produce empty states with fallback seed data; ruled out relying on default month during screenshot automation and forced a deterministic date range in the capture script.
 - Prevention rule: Before writing VF gap conclusions, ensure every draft-mapped surface has an actual captured artifact at the target viewport (including dialogs/popups), not only route-level screenshots.
 - Files/areas affected: `frontend_new/docs/vf-0-visual-audit.md`, `frontend_new/docs/visual-audit/vf-0-current/*.png`, `frontend_new/.codex-tmp/vf0_capture.mjs`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-05-26 - Iteration VF-1 (App Shell + Transactions Home Alignment)
+
+- Scope: Align `AppShell` and transactions home surface to the `home_screen_with_transactions_nav` draft while preserving Phase 1/2 behaviors.
+- What went wrong: A mid-iteration patch left duplicated stale JSX in `TransactionsMobileList.tsx`, breaking the file structure.
+- Root cause: Partial patch replacement was applied over a large component without revalidating full-file integrity immediately.
+- Guardrail to apply next time: After any large visual refactor patch, re-open the entire edited file before running quality gates to catch duplicate/stray blocks early.
+- Validated pattern to repeat: Keep visual refactor behavior-safe by retaining existing callbacks/test hooks and only changing composition/styling layers first.
+- Exploration notes: Verified backend already returns `category.icon` in FE types/mappers and ruled out any BE contract change for VF-1 icon rendering.
+- Prevention rule: For visual parity work, add deterministic post-change phone screenshots (`390x844`/`DPR 3`) and run mapped phase QA before considering a VF slice complete.
+- Files/areas affected: `frontend_new/src/app/layout/AppShell.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/src/features/transactions/components/TransactionsFiltersCard.tsx`, `frontend_new/src/features/transactions/components/TransactionsMobileList.tsx`, `frontend_new/src/styles.css`, `frontend_new/index.html`, `frontend_new/docs/visual-audit/vf-1-after/transactions-home-vf1.png`, `docs/tasklist.md`.

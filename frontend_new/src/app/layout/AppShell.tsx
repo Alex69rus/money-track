@@ -1,4 +1,11 @@
 import { type ReactNode } from "react";
+import {
+  ChartPieIcon,
+  MessageCircleMoreIcon,
+  ReceiptTextIcon,
+  SettingsIcon,
+  WalletMinimalIcon,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFallbackModeState } from "@/hooks/useFallbackModeState";
@@ -10,10 +17,10 @@ interface AppShellProps {
 }
 
 const NAV_ITEMS = [
-  { to: "/transactions", label: "Transactions" },
-  { to: "/analytics", label: "Analytics" },
-  { to: "/chat", label: "AI Chat" },
-  { to: "/settings", label: "Settings" },
+  { to: "/transactions", label: "Transactions", icon: ReceiptTextIcon },
+  { to: "/analytics", label: "Analytics", icon: ChartPieIcon },
+  { to: "/chat", label: "AI Chat", icon: MessageCircleMoreIcon },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
 export function AppShell({ children }: AppShellProps): JSX.Element {
@@ -23,19 +30,20 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
 
   return (
     <div
-      className="mx-auto flex w-full max-w-4xl flex-col bg-background text-foreground"
+      className="mx-auto flex w-full max-w-md flex-col bg-background text-foreground md:max-w-4xl"
       data-testid="app-shell-root"
       style={{ minHeight: "var(--mt-viewport-stable-height, 100dvh)" }}
     >
-      <header className="sticky top-0 z-20 border-b bg-background/90 px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-center">
-          <h1 className="text-lg font-semibold tracking-tight">Money Track</h1>
+      <header className="sticky top-0 z-20 border-b border-border/80 bg-background/80 px-4 py-3 backdrop-blur-md">
+        <div className="flex items-center justify-center gap-2">
+          <WalletMinimalIcon aria-hidden className="size-5 text-primary" />
+          <h1 className="text-lg font-bold tracking-tight">Money Track</h1>
         </div>
       </header>
 
       <main className={cn("flex-1 px-4 py-4", isKeyboardOpen ? "pb-4" : "pb-24")}>
         {fallbackMode.active ? (
-          <Alert className="mb-4" data-testid="app-shell-fallback-mode">
+          <Alert className="mb-4 rounded-xl border-border/70 bg-card/70" data-testid="app-shell-fallback-mode">
             <AlertTitle>Fallback mode</AlertTitle>
             <AlertDescription>
               {fallbackMode.reason ?? "Backend is unavailable. Showing limited local data for testing."}
@@ -49,33 +57,41 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
         aria-label="Primary navigation"
         data-testid="app-shell-nav"
         className={cn(
-          "fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-2 pt-2 backdrop-blur",
+          "fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-background/95 px-3 pt-1.5 backdrop-blur-md",
           isKeyboardOpen ? "hidden" : "block",
         )}
       >
         <div
-          className="mx-auto flex w-full max-w-4xl items-center justify-between gap-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
+          className="mx-auto flex w-full max-w-md items-center justify-between gap-1 pb-[calc(env(safe-area-inset-bottom)+0.4rem)] md:max-w-4xl"
           data-testid="app-shell-nav-inner"
         >
           {NAV_ITEMS.map((item) => {
             const isActive =
               location.pathname === item.to ||
               (item.to === "/transactions" && location.pathname === "/");
+            const Icon = item.icon;
 
             return (
               <Link
                 key={item.to}
                 aria-label={`Open ${item.label}`}
                 className={cn(
-                  "flex h-11 flex-1 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors",
+                  "flex h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] leading-none transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}
                 data-testid={`app-shell-nav-link-${item.to.replace("/", "")}`}
                 to={item.to}
               >
-                {item.label}
+                <Icon
+                  aria-hidden
+                  className={cn(
+                    "size-4",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
+                <span className={cn(isActive ? "font-bold" : "font-medium")}>{item.label}</span>
               </Link>
             );
           })}

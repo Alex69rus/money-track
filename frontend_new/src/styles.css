@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: var(--tg-theme-bg-color, #0f172a);
-  --color-foreground: var(--tg-theme-text-color, #e2e8f0);
-  --color-card: var(--tg-theme-secondary-bg-color, #111827);
+  --color-background: var(--tg-theme-bg-color, #f6f7f8);
+  --color-foreground: var(--tg-theme-text-color, #0f172a);
+  --color-card: var(--tg-theme-secondary-bg-color, #ffffff);
   --color-card-foreground: var(--color-foreground);
   --color-popover: var(--color-card);
   --color-popover-foreground: var(--color-foreground);
-  --color-muted: color-mix(in srgb, var(--color-background) 78%, white 22%);
-  --color-muted-foreground: color-mix(in srgb, var(--color-foreground) 55%, black 45%);
-  --color-secondary: color-mix(in srgb, var(--color-card) 82%, white 18%);
+  --color-muted: color-mix(in srgb, var(--color-background) 88%, #cbd5e1 12%);
+  --color-muted-foreground: color-mix(in srgb, var(--color-foreground) 58%, white 42%);
+  --color-secondary: color-mix(in srgb, var(--color-card) 90%, #e2e8f0 10%);
   --color-secondary-foreground: var(--color-foreground);
-  --color-accent: color-mix(in srgb, var(--color-card) 72%, white 28%);
+  --color-accent: color-mix(in srgb, var(--color-card) 84%, #e2e8f0 16%);
   --color-accent-foreground: var(--color-foreground);
-  --color-border: color-mix(in srgb, var(--color-foreground) 16%, var(--color-background) 84%);
-  --color-input: color-mix(in srgb, var(--color-card) 85%, white 15%);
+  --color-border: color-mix(in srgb, var(--color-foreground) 18%, var(--color-background) 82%);
+  --color-input: color-mix(in srgb, var(--color-card) 92%, #e2e8f0 8%);
   --color-ring: color-mix(in srgb, var(--color-primary) 72%, white 28%);
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
@@ -23,7 +23,7 @@
 }
 
 :root {
-  color-scheme: dark light;
+  color-scheme: light dark;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
@@ -40,8 +40,36 @@ body,
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 600px at -10% -20%, color-mix(in srgb, var(--color-primary) 20%, transparent), transparent 65%),
-    radial-gradient(900px 500px at 120% -10%, color-mix(in srgb, var(--color-foreground) 10%, transparent), transparent 60%),
+    radial-gradient(1200px 560px at -10% -20%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 68%),
+    radial-gradient(1000px 480px at 120% -20%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 64%),
     var(--color-background);
   color: var(--color-foreground);
+}
+
+.mt-balance-card {
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 82%, #2563eb 18%));
+}
+
+.mt-balance-glow {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.mt-balance-glow-top {
+  top: -4.5rem;
+  right: -4.5rem;
+  width: 10rem;
+  height: 10rem;
+  background: color-mix(in srgb, #ffffff 18%, transparent);
+  filter: blur(22px);
+}
+
+.mt-balance-glow-bottom {
+  bottom: -4rem;
+  left: -4rem;
+  width: 7rem;
+  height: 7rem;
+  background: color-mix(in srgb, #000000 14%, transparent);
+  filter: blur(16px);
 }

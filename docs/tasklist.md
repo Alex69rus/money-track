@@ -36,13 +36,14 @@ Legend: Pending | In Progress | Complete | Blocked
 | Frontend Redesign Handoff Docs | Compact current-state handoff for the next agent | Complete | 2026-05-26 | Updated `frontend_new/README.md` and roadmap with implemented status, QA commands, visual-fidelity gap, next slice (`VF-0`), and deferred contracts |
 | Frontend Agent Guide Current-State Cleanup | Remove bootstrap-era and desktop-first guidance from `frontend_new/AGENTS.MD` | Complete | 2026-05-26 | Updated scope to continue existing implementation, made VF-0 the active work, documented phone-first Telegram Web App usage, set 390x844/DPR 3 as primary viewport, and removed stale suggested project layout |
 | Frontend VF-0 Visual Audit | Draft-vs-current visual gap inventory with phone-baseline screenshots and reusable token extraction | Complete | 2026-05-26 | Added `frontend_new/docs/vf-0-visual-audit.md` and 390x844/DPR3 captures under `frontend_new/docs/visual-audit/vf-0-current/`; defined VF-1 exact first implementation slice and approval-needed deviations |
+| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions home visuals to `home_screen_with_transactions_nav` while preserving existing behavior and QA coverage | Complete | 2026-05-26 | Refactored app header/nav and transactions visual hierarchy in `frontend_new/src/**`, wired category icons from backend data on mobile rows, passed `lint/typecheck/test/build`, and passed `qa:phase2`; captured post-change phone screenshot in `frontend_new/docs/visual-audit/vf-1-after/transactions-home-vf1.png` |
 
 ## Upcoming Delivery Checkpoints
 
 | Step | Scope | Status | Notes |
 |------|-------|--------|-------|
 | Frontend VF-0 Visual Audit | Compare current `frontend_new` screens against every approved redesign draft and extract shared visual tokens/layout rules | Complete | Completed in `frontend_new/docs/vf-0-visual-audit.md` with artifact screenshots and VF-1 start scope |
-| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions surface to `home_screen_with_transactions_nav` while preserving Phase 1/2 behavior | Pending | Run visual review plus `qa:phase2` after implementation |
+| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions surface to `home_screen_with_transactions_nav` while preserving Phase 1/2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-2 next |
 | Frontend VF-2..VF-6 Draft Alignment | Align transaction edit, category selector, tag selector, analytics dashboard, and analytics drilldown drafts | Pending | Execute one draft surface at a time with matching phase QA after each slice |
 
 ## Working Rules
