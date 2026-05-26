@@ -21,6 +21,7 @@ interface TransactionCategorySelectorDialogProps {
   error: string | null;
   title: string;
   description: string;
+  instantApply?: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (categoryId: number | null) => Promise<void> | void;
 }
@@ -66,6 +67,7 @@ export function TransactionCategorySelectorDialog({
   error,
   title,
   description,
+  instantApply = false,
   onOpenChange,
   onConfirm,
 }: TransactionCategorySelectorDialogProps): JSX.Element {
@@ -152,6 +154,21 @@ export function TransactionCategorySelectorDialog({
     await onConfirm(selectedCategoryId);
   };
 
+  const handleCategorySelect = async (nextCategoryId: number | null): Promise<void> => {
+    setSelectedCategoryId(nextCategoryId);
+
+    if (!instantApply || pending) {
+      return;
+    }
+
+    if (nextCategoryId === currentCategoryId) {
+      onOpenChange(false);
+      return;
+    }
+
+    await onConfirm(nextCategoryId);
+  };
+
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
@@ -176,7 +193,7 @@ export function TransactionCategorySelectorDialog({
             <SearchIcon className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
             <Input
               aria-label="Search categories"
-              className="pl-9"
+              className="h-10 pl-9 text-base"
               data-testid="tx-category-search"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search categories"
@@ -196,7 +213,7 @@ export function TransactionCategorySelectorDialog({
                     : "border-transparent hover:bg-accent",
                 )}
                 data-testid="tx-category-option-uncategorized"
-                onClick={() => setSelectedCategoryId(null)}
+                onClick={() => void handleCategorySelect(null)}
                 type="button"
               >
                 <span>Uncategorized</span>
@@ -218,7 +235,7 @@ export function TransactionCategorySelectorDialog({
                           isParentSelected ? "bg-primary/10 text-primary" : "hover:bg-accent",
                         )}
                         data-testid={`tx-category-option-${group.parent.id}`}
-                        onClick={() => setSelectedCategoryId(group.parent.id)}
+                        onClick={() => void handleCategorySelect(group.parent.id)}
                         type="button"
                       >
                         <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
@@ -258,7 +275,7 @@ export function TransactionCategorySelectorDialog({
                               )}
                               data-testid={`tx-category-option-${category.id}`}
                               key={category.id}
-                              onClick={() => setSelectedCategoryId(category.id)}
+                              onClick={() => void handleCategorySelect(category.id)}
                               type="button"
                             >
                               <span className="truncate">{category.name}</span>
@@ -281,17 +298,19 @@ export function TransactionCategorySelectorDialog({
           </div>
         </div>
 
-        <div className="border-t px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-          <Button
-            className="w-full"
-            data-testid="tx-category-update"
-            disabled={!hasCategoryChanges || pending}
-            onClick={() => void handleConfirm()}
-            type="button"
-          >
-            {pending ? "Updating..." : "Update"}
-          </Button>
-        </div>
+        {instantApply ? null : (
+          <div className="border-t px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+            <Button
+              className="w-full"
+              data-testid="tx-category-update"
+              disabled={!hasCategoryChanges || pending}
+              onClick={() => void handleConfirm()}
+              type="button"
+            >
+              {pending ? "Updating..." : "Update"}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -166,10 +166,10 @@ export function TransactionTagSelectorDialog({
               ))}
 
               <div className="relative min-w-36 flex-1">
-                <SearchIcon className="pointer-events-none absolute top-2.5 left-2 size-3 text-muted-foreground" />
+                <SearchIcon className="pointer-events-none absolute top-3 left-2.5 size-4 text-muted-foreground" />
                 <Input
                   aria-label="Search tags"
-                  className="h-8 pl-7 text-xs"
+                  className="h-10 pl-8 text-base"
                   data-testid="tx-tags-search"
                   onChange={(event) => setSearch(event.target.value)}
                   onKeyDown={(event) => {

@@ -157,3 +157,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Verified backend already returns `category.icon` in FE types/mappers and ruled out any BE contract change for VF-1 icon rendering.
 - Prevention rule: For visual parity work, add deterministic post-change phone screenshots (`390x844`/`DPR 3`) and run mapped phase QA before considering a VF slice complete.
 - Files/areas affected: `frontend_new/src/app/layout/AppShell.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/src/features/transactions/components/TransactionsFiltersCard.tsx`, `frontend_new/src/features/transactions/components/TransactionsMobileList.tsx`, `frontend_new/src/styles.css`, `frontend_new/index.html`, `frontend_new/docs/visual-audit/vf-1-after/transactions-home-vf1.png`, `docs/tasklist.md`.
+
+## 2026-05-26 - Iteration VF-2 (Transaction Detail Popup Alignment)
+
+- Scope: Align `TransactionEditDialog` to the `transaction_detail_pop_up` draft while preserving Phase-2 edit/save/delete/category/tag flows.
+- What went wrong: First QA rerun failed with all FR checks red because `VITE_API_BASE_URL` was missing, and then a ref warning appeared after moving the date picker to a hidden field.
+- Root cause: Phase QA runner inherits the current shell env (no implicit API base), and `Input` is not `forwardRef`, so ref-based picker wiring on `Input` produced React warnings.
+- Guardrail to apply next time: For phase QA commands from repo root, always export `VITE_API_BASE_URL` explicitly; when a hidden control needs a ref, prefer native inputs unless the UI primitive forwards refs.
+- Validated pattern to repeat: Keep VF-only changes behavior-safe by preserving all FR test IDs and action handlers, then iterating strictly on composition and token-level styling.
+- Exploration notes: Verified backend-provided category icon names can be reused directly inside popup surfaces via Material Symbols rendering and ruled out frontend-only icon mapping.
+- Prevention rule: Treat QA `console_errors` as release blockers for VF phases even when FR matrix is all-pass, then rerun the phase after fixing warnings.
+- Files/areas affected: `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/docs/visual-audit/vf-2-after/transaction-edit-dialog-vf2.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.

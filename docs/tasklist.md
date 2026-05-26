@@ -37,6 +37,7 @@ Legend: Pending | In Progress | Complete | Blocked
 | Frontend Agent Guide Current-State Cleanup | Remove bootstrap-era and desktop-first guidance from `frontend_new/AGENTS.MD` | Complete | 2026-05-26 | Updated scope to continue existing implementation, made VF-0 the active work, documented phone-first Telegram Web App usage, set 390x844/DPR 3 as primary viewport, and removed stale suggested project layout |
 | Frontend VF-0 Visual Audit | Draft-vs-current visual gap inventory with phone-baseline screenshots and reusable token extraction | Complete | 2026-05-26 | Added `frontend_new/docs/vf-0-visual-audit.md` and 390x844/DPR3 captures under `frontend_new/docs/visual-audit/vf-0-current/`; defined VF-1 exact first implementation slice and approval-needed deviations |
 | Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions home visuals to `home_screen_with_transactions_nav` while preserving existing behavior and QA coverage | Complete | 2026-05-26 | Refactored app header/nav and transactions visual hierarchy in `frontend_new/src/**`, wired category icons from backend data on mobile rows, passed `lint/typecheck/test/build`, and passed `qa:phase2`; captured post-change phone screenshot in `frontend_new/docs/visual-audit/vf-1-after/transactions-home-vf1.png` |
+| Frontend VF-2 Transaction Detail Visual Alignment | Align transaction edit popup to `transaction_detail_pop_up` while preserving Phase-2 behavior and QA coverage | Complete | 2026-05-26 | Refactored `TransactionEditDialog` into draft-aligned bottom-sheet composition (header, amount hero, grouped cards, footer actions), reused backend category icons in popup, passed `lint/typecheck/test/build`, passed `VITE_API_BASE_URL=http://127.0.0.1:8000 npm run qa:phase2`, and captured phone screenshot at `frontend_new/docs/visual-audit/vf-2-after/transaction-edit-dialog-vf2.png` |
 
 ## Upcoming Delivery Checkpoints
 
@@ -44,7 +45,8 @@ Legend: Pending | In Progress | Complete | Blocked
 |------|-------|--------|-------|
 | Frontend VF-0 Visual Audit | Compare current `frontend_new` screens against every approved redesign draft and extract shared visual tokens/layout rules | Complete | Completed in `frontend_new/docs/vf-0-visual-audit.md` with artifact screenshots and VF-1 start scope |
 | Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions surface to `home_screen_with_transactions_nav` while preserving Phase 1/2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-2 next |
-| Frontend VF-2..VF-6 Draft Alignment | Align transaction edit, category selector, tag selector, analytics dashboard, and analytics drilldown drafts | Pending | Execute one draft surface at a time with matching phase QA after each slice |
+| Frontend VF-2 Transaction Detail Visual Alignment | Align transaction edit popup to `transaction_detail_pop_up` while preserving Phase-2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-3 next |
+| Frontend VF-3..VF-6 Draft Alignment | Align category selector, tag selector, analytics dashboard, and analytics drilldown drafts | Pending | Execute one draft surface at a time with matching phase QA after each slice |
 
 ## Working Rules
 
