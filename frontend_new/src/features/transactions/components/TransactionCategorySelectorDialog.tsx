@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2Icon, ChevronDownIcon, SearchIcon } from "lucide-react";
+import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,17 +46,56 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function getCategoryMonogram(category: Category): string {
-  const parts = category.name
-    .split(" ")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-
-  if (parts.length >= 2) {
-    return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+function getCategoryIcon(category: Category): string | null {
+  const icon = category.icon?.trim();
+  if (!icon) {
+    return null;
   }
 
-  return parts[0]?.slice(0, 2).toUpperCase() || "?";
+  return icon;
+}
+
+function getCategoryFallback(category: Category): string {
+  const trimmed = category.name.trim();
+  if (trimmed.length === 0) {
+    return "?";
+  }
+
+  return trimmed[0]?.toUpperCase() ?? "?";
+}
+
+function toHexPair(value: string): string {
+  return `${value}${value}`;
+}
+
+function normalizeHexColor(color: string): string | null {
+  const raw = color.trim();
+  if (!raw.startsWith("#")) {
+    return null;
+  }
+
+  const value = raw.slice(1);
+  if (/^[0-9a-fA-F]{3}$/.test(value)) {
+    return `${toHexPair(value[0] ?? "0")}${toHexPair(value[1] ?? "0")}${toHexPair(value[2] ?? "0")}`.toLowerCase();
+  }
+
+  if (/^[0-9a-fA-F]{6}$/.test(value)) {
+    return value.toLowerCase();
+  }
+
+  return null;
+}
+
+function withAlpha(hexColor: string | null, alpha: number, fallback: string): string {
+  if (!hexColor) {
+    return fallback;
+  }
+
+  const red = Number.parseInt(hexColor.slice(0, 2), 16);
+  const green = Number.parseInt(hexColor.slice(2, 4), 16);
+  const blue = Number.parseInt(hexColor.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 export function TransactionCategorySelectorDialog({
@@ -74,6 +113,7 @@ export function TransactionCategorySelectorDialog({
   const [search, setSearch] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(currentCategoryId);
   const [expandedGroupIds, setExpandedGroupIds] = useState<Record<number, boolean>>({});
+  const normalizedSearch = normalize(search);
 
   const groups = useMemo<CategoryGroup[]>(() => {
     const sorted = [...categories].sort(byCategoryOrder);
@@ -122,7 +162,7 @@ export function TransactionCategorySelectorDialog({
 
     return groups
       .map((group) => {
-        const parentMatches = normalize(group.parent.name).includes(query);
+        const parentMatches = normalize(group.parent.name).includes(query) || normalize(group.parent.type).includes(query);
         const matchingChildren = group.children.filter((category) => normalize(category.name).includes(query));
 
         if (!parentMatches && matchingChildren.length === 0) {
@@ -132,9 +172,10 @@ export function TransactionCategorySelectorDialog({
         return {
           ...group,
           visibleChildren: parentMatches ? group.children : matchingChildren,
+          parentMatches,
         };
       })
-      .filter((group): group is CategoryGroup & { visibleChildren: Category[] } => group !== null);
+      .filter((group): group is CategoryGroup & { visibleChildren: Category[]; parentMatches: boolean } => group !== null);
   }, [groups, search]);
 
   const hasCategoryChanges = selectedCategoryId !== currentCategoryId;
@@ -172,97 +213,138 @@ export function TransactionCategorySelectorDialog({
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
-        className="top-auto right-0 bottom-0 left-0 max-h-[85vh] w-full max-w-none translate-x-0 translate-y-0 rounded-t-3xl rounded-b-none p-0 sm:rounded-t-3xl sm:rounded-b-none"
+        className="top-auto right-0 bottom-0 left-0 !flex max-h-[85vh] w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0f1b2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-h-[85vh] sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
         data-testid="tx-category-dialog"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-4 py-3 text-left">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+        <DialogHeader className="px-4 pt-6 pb-2 text-left">
+          <div className="relative flex items-center justify-center">
+            <Button
+              aria-label="Close category selector"
+              className="absolute left-0 -ml-2 size-10 rounded-full text-slate-200 hover:bg-white/10 hover:text-white"
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="ghost"
+            >
+              <ChevronLeftIcon aria-hidden className="size-6" />
+            </Button>
+            <DialogTitle className="text-[1.95rem] font-bold tracking-tight text-slate-100">{title}</DialogTitle>
+          </div>
+          <DialogDescription className="pt-1 text-center text-base text-slate-400">{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3 px-4 py-3">
+        <div className="flex flex-1 flex-col px-4 pb-0">
           {error ? (
-            <Alert variant="destructive">
+            <Alert className="mb-3 border-destructive/60 bg-destructive/10 text-destructive" variant="destructive">
               <AlertTitle>Could not update category</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
 
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
+          <div className="relative py-3">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-6 -translate-y-1/2 text-slate-500" />
             <Input
               aria-label="Search categories"
-              className="h-10 pl-9 text-base"
+              className="h-11 rounded-2xl border border-white/10 bg-[#162237] pl-12 text-base text-slate-100 placeholder:text-slate-500 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/60"
               data-testid="tx-category-search"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search categories"
+              placeholder="Search categories..."
               type="search"
               value={search}
             />
           </div>
 
-          <div className="max-h-[48vh] overflow-y-auto pr-1">
-            <div className="flex flex-col gap-1">
+          <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+            <div className="flex flex-col border-b border-[#22334a]/80">
               <button
                 aria-label="Remove category"
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                  "flex w-full items-center justify-between border-b border-[#22334a]/80 py-3 text-left text-base font-semibold transition-colors",
                   selectedCategoryId === null
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-transparent hover:bg-accent",
+                    ? "rounded-xl bg-[#143450] px-3 text-[#2d8cff]"
+                    : "text-slate-100 hover:bg-white/5",
                 )}
                 data-testid="tx-category-option-uncategorized"
                 onClick={() => void handleCategorySelect(null)}
                 type="button"
               >
-                <span>Uncategorized</span>
-                {selectedCategoryId === null ? <CheckCircle2Icon aria-hidden className="size-4" /> : null}
+                <span className="truncate">Uncategorized</span>
+                {selectedCategoryId === null ? <CheckCircle2Icon aria-hidden className="size-6 shrink-0" /> : null}
               </button>
 
               {filteredGroups.map((group) => {
                 const isParentSelected = selectedCategoryId === group.parent.id;
-                const isExpanded = expandedGroupIds[group.parent.id] ?? false;
                 const hasChildren = group.children.length > 0;
+                const isExpanded = normalizedSearch.length > 0 ? true : (expandedGroupIds[group.parent.id] ?? false);
+                const parentColor = normalizeHexColor(group.parent.color ?? "");
+                const parentIcon = getCategoryIcon(group.parent);
+                const iconBackground = withAlpha(parentColor, 0.22, "rgba(45, 140, 255, 0.18)");
+                const iconForeground = parentColor ? `#${parentColor}` : "#2d8cff";
+                const showChildren = hasChildren && (isExpanded || normalizedSearch.length > 0);
+                const childIndentClass = hasChildren ? "pl-14" : "pl-0";
 
                 return (
-                  <div className="rounded-xl border border-border/70" key={group.parent.id}>
-                    <div className="flex items-center gap-1 p-1">
+                  <div className="border-t border-[#22334a]/80 py-1.5 first:border-t-0" key={group.parent.id}>
+                    <div className="flex items-center gap-3 py-0.5">
                       <button
                         aria-label={`Select category ${group.parent.name}`}
                         className={cn(
-                          "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-                          isParentSelected ? "bg-primary/10 text-primary" : "hover:bg-accent",
+                          "flex min-w-0 flex-1 items-center gap-3 rounded-xl px-0 py-1.5 text-left transition-colors",
+                          isParentSelected ? "text-[#2d8cff]" : "text-slate-100 hover:bg-white/5",
                         )}
                         data-testid={`tx-category-option-${group.parent.id}`}
                         onClick={() => void handleCategorySelect(group.parent.id)}
                         type="button"
                       >
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs font-semibold">
-                          {getCategoryMonogram(group.parent)}
+                        <div
+                          className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
+                          style={{
+                            backgroundColor: iconBackground,
+                            color: iconForeground,
+                          }}
+                        >
+                          {parentIcon ? (
+                            <span aria-hidden className="material-symbols-outlined text-[1.5rem] leading-none">
+                              {parentIcon}
+                            </span>
+                          ) : (
+                            <span className="text-base font-semibold">{getCategoryFallback(group.parent)}</span>
+                          )}
                         </div>
-                        <span className="truncate text-sm font-medium">{group.parent.name}</span>
-                        {isParentSelected ? <CheckCircle2Icon aria-hidden className="ml-auto size-4" /> : null}
+                        <span className="truncate text-[1.15rem] font-semibold tracking-tight">{group.parent.name}</span>
                       </button>
 
-                      {hasChildren ? (
-                        <Button
-                          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group.parent.name} group`}
-                          onClick={() => toggleExpanded(group.parent.id)}
-                          size="icon-xs"
-                          type="button"
-                          variant="ghost"
-                        >
+                      <button
+                        aria-label={
+                          hasChildren
+                            ? `${isExpanded ? "Collapse" : "Expand"} ${group.parent.name} group`
+                            : `Select category ${group.parent.name}`
+                        }
+                        className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                        onClick={() => {
+                          if (!hasChildren) {
+                            void handleCategorySelect(group.parent.id);
+                            return;
+                          }
+                          toggleExpanded(group.parent.id);
+                        }}
+                        type="button"
+                      >
+                        {hasChildren ? (
                           <ChevronDownIcon
                             aria-hidden
-                            className={cn("transition-transform", isExpanded ? "rotate-180" : "")}
+                            className={cn("size-5 transition-transform", isExpanded ? "rotate-180" : "")}
                           />
-                        </Button>
-                      ) : null}
+                        ) : isParentSelected ? (
+                          <CheckCircle2Icon aria-hidden className="size-5 text-[#2d8cff]" />
+                        ) : (
+                          <ChevronRightIcon aria-hidden className="size-5" />
+                        )}
+                      </button>
                     </div>
 
-                    {hasChildren && isExpanded ? (
-                      <div className="flex flex-col gap-1 px-2 pb-2">
+                    {showChildren ? (
+                      <div className={cn("flex flex-col gap-2 pb-2", childIndentClass)}>
                         {group.visibleChildren.map((category) => {
                           const isSelected = selectedCategoryId === category.id;
 
@@ -270,8 +352,10 @@ export function TransactionCategorySelectorDialog({
                             <button
                               aria-label={`Select category ${category.name}`}
                               className={cn(
-                                "flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                                isSelected ? "bg-primary/10 text-primary" : "hover:bg-accent",
+                                "flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-base transition-colors",
+                                isSelected
+                                  ? "bg-[#143450] text-[#2d8cff]"
+                                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
                               )}
                               data-testid={`tx-category-option-${category.id}`}
                               key={category.id}
@@ -279,7 +363,7 @@ export function TransactionCategorySelectorDialog({
                               type="button"
                             >
                               <span className="truncate">{category.name}</span>
-                              {isSelected ? <CheckCircle2Icon aria-hidden className="size-4" /> : null}
+                              {isSelected ? <CheckCircle2Icon aria-hidden className="size-5 shrink-0" /> : null}
                             </button>
                           );
                         })}
@@ -290,7 +374,7 @@ export function TransactionCategorySelectorDialog({
               })}
 
               {filteredGroups.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
+                <p className="py-8 text-center text-sm text-slate-400">
                   No categories match your search.
                 </p>
               ) : null}
@@ -299,15 +383,15 @@ export function TransactionCategorySelectorDialog({
         </div>
 
         {instantApply ? null : (
-          <div className="border-t px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <div className="border-t border-[#22334a] bg-[#0f1b2a] px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
             <Button
-              className="w-full"
+              className="h-14 w-full rounded-2xl bg-[#2d8cff] text-lg font-semibold text-white hover:bg-[#257de6]"
               data-testid="tx-category-update"
               disabled={!hasCategoryChanges || pending}
               onClick={() => void handleConfirm()}
               type="button"
             >
-              {pending ? "Updating..." : "Update"}
+              {pending ? "Updating..." : "Confirm Selection"}
             </Button>
           </div>
         )}

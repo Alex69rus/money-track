@@ -520,7 +520,7 @@ export function TransactionsPage(): JSX.Element {
       <TransactionCategorySelectorDialog
         categories={categories}
         currentCategoryId={categorySelectorTransaction?.categoryId ?? null}
-        description="Choose a category and confirm to apply."
+        description="Choose a category for your transaction"
         error={categoryUpdateError}
         onConfirm={handleQuickCategoryConfirm}
         onOpenChange={(nextOpen) => {
@@ -530,7 +530,7 @@ export function TransactionsPage(): JSX.Element {
         }}
         open={categorySelectorTransaction !== null}
         pending={categoryUpdatePending}
-        title="Update category"
+        title="Select Category"
       />
 
       <TransactionTagSelectorDialog

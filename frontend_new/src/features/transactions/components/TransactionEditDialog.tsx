@@ -507,7 +507,7 @@ export function TransactionEditDialog({
       <TransactionCategorySelectorDialog
         categories={categories}
         currentCategoryId={categoryId}
-        description="Choose a category and confirm to apply."
+        description="Choose a category for your transaction"
         error={null}
         instantApply
         onConfirm={(nextCategoryId) => {
@@ -517,7 +517,7 @@ export function TransactionEditDialog({
         onOpenChange={setCategorySelectorOpen}
         open={categorySelectorOpen}
         pending={false}
-        title="Select category"
+        title="Select Category"
       />
 
       <TransactionTagSelectorDialog

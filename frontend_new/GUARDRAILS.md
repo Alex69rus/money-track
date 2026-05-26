@@ -168,3 +168,14 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Verified backend-provided category icon names can be reused directly inside popup surfaces via Material Symbols rendering and ruled out frontend-only icon mapping.
 - Prevention rule: Treat QA `console_errors` as release blockers for VF phases even when FR matrix is all-pass, then rerun the phase after fixing warnings.
 - Files/areas affected: `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/docs/visual-audit/vf-2-after/transaction-edit-dialog-vf2.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-05-26 - Iteration VF-3 (Category Selector Alignment)
+
+- Scope: Align `TransactionCategorySelectorDialog` to the `category_selector_expandable_groups` draft while preserving FR-010/FR-011/FR-016 behavior.
+- What went wrong: Phase-2 QA initially failed because `tx-category-update` became unclickable (`element is outside of the viewport`) after sheet geometry and typography changes.
+- Root cause: Bottom-sheet sizing/positioning and overly large list typography allowed content to consume the viewport budget, pushing the explicit confirm action beyond QA-clickable bounds.
+- Guardrail to apply next time: For visual sheet refactors, lock the action area with constrained `max-h` + `overflow-hidden` on the sheet and verify primary action clickability in QA before polishing typography.
+- Validated pattern to repeat: Keep behavior by context using one selector component (`instantApply` for full edit, explicit confirm for quick edit) while limiting VF work to structure/tokens/icons.
+- Exploration notes: Tested fixed-height sheet geometry and ruled it out because default dialog breakpoint transforms and content density made action controls inaccessible in QA.
+- Prevention rule: After any dialog/list visual density change, rerun phase QA immediately and treat “outside viewport” click errors as layout regressions, not test flakiness.
+- Files/areas affected: `frontend_new/src/features/transactions/components/TransactionCategorySelectorDialog.tsx`, `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/docs/visual-audit/vf-3-after/category-selector-dialog-vf3.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
