@@ -32,6 +32,17 @@ Legend: Pending | In Progress | Complete | Blocked
 | Frontend Phase-5 QA Runtime Bootstrap Fix | Stabilize shared phase runner backend startup across local environments where `uvicorn` executable lookup fails | Complete | 2026-05-07 | Updated QA bootstrap script to use `uv run python -m uvicorn app.main:app`; reran `qa:phase5` with full FR PASS matrix |
 | Frontend Phase QA Automation | Reusable phase QA runner, runtime bootstrap script, and deterministic FR matrix output for future redesign phases | Complete | 2026-04-04 | Added generic `qa:phase` pipeline, phase module structure, stable test IDs for phase-critical controls, and documented usage in frontend docs |
 | Frontend Phase-3 QA Scaffold | Analytics phase QA skeleton with TODO FR assertions and reusable script wiring for future phase onboarding | Complete | 2026-04-04 | Added `phase3.mjs`, shared scaffold utils, and `qa:phase3` scripts so next phases only fill assertion bodies |
+| Frontend Visual Alignment Planning | Post-functional visual-fidelity track for matching approved `redesign_ui_drafts` | Complete | 2026-05-26 | Added VF-0..VF-6 roadmap phases covering audit, transactions shell, edit popup, category selector, tag selector, analytics, and drilldown visual alignment |
+| Frontend Redesign Handoff Docs | Compact current-state handoff for the next agent | Complete | 2026-05-26 | Updated `frontend_new/README.md` and roadmap with implemented status, QA commands, visual-fidelity gap, next slice (`VF-0`), and deferred contracts |
+| Frontend Agent Guide Current-State Cleanup | Remove bootstrap-era and desktop-first guidance from `frontend_new/AGENTS.MD` | Complete | 2026-05-26 | Updated scope to continue existing implementation, made VF-0 the active work, documented phone-first Telegram Web App usage, set 390x844/DPR 3 as primary viewport, and removed stale suggested project layout |
+
+## Upcoming Delivery Checkpoints
+
+| Step | Scope | Status | Notes |
+|------|-------|--------|-------|
+| Frontend VF-0 Visual Audit | Compare current `frontend_new` screens against every approved redesign draft and extract shared visual tokens/layout rules | Pending | Must produce concrete gap list and 390x844 phone screenshots before visual implementation |
+| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions surface to `home_screen_with_transactions_nav` while preserving Phase 1/2 behavior | Pending | Run visual review plus `qa:phase2` after implementation |
+| Frontend VF-2..VF-6 Draft Alignment | Align transaction edit, category selector, tag selector, analytics dashboard, and analytics drilldown drafts | Pending | Execute one draft surface at a time with matching phase QA after each slice |
 
 ## Working Rules
 

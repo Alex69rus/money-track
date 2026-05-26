@@ -1,0 +1,9 @@
+services:
+  nginx:
+    image: nginx:alpine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/conf.d/dev.compose.conf:/etc/nginx/conf.d/default.conf:ro

@@ -2,21 +2,26 @@
 
 New frontend workspace for the Money Track redesign.
 
-This folder currently contains the agent scaffolding and execution docs needed to implement the redesign with Tailwind v4 + shadcn/ui + Telegram Mini App patterns.
+This folder contains the redesigned frontend implementation and execution docs for Tailwind v4 + shadcn/ui + Telegram Mini App patterns.
+
+## Current Handoff State
+
+- Functional redesign phases 0-5 are implemented in `src/**`.
+- The frontend does not yet visually match the approved `redesign_ui_drafts`. The next work is the Visual Alignment Track in `frontend_new/docs/implementation-roadmap.md`, starting with `VF-0`.
+- This is a Telegram Web App and is expected to be used almost entirely on phones. Treat the phone screen as the primary product surface.
+- Use 390x844 / DPR 3 device emulation as the primary browser viewport unless a task names another phone device.
+- Do not restart from bootstrap. The app already exists; preserve existing behavior while aligning the UI to the drafts.
+- Deferred product/API contracts are tracked in `frontend_new/docs/api-evolution-plan.md`: `/api/chat` needs a stable backend schema, and analytics still uses client-side aggregation.
 
 ## Start Here
 
-1. Read `frontend_new/AGENTS.MD`.
-2. Read `docs/frontend-redesign-requirements/README.md` and linked requirement docs.
-3. Use `frontend_new/docs/implementation-roadmap.md` to pick the next vertical slice.
-4. Open matching assets in `docs/frontend-redesign-requirements/redesign_ui_drafts/**` (`screen.png` + `code.html`) and keep implementation visually close.
-5. Use mandatory skills during implementation:
-   - `telegram-mini-app` for Telegram WebApp integration concerns.
-   - `shadcn` for UI/component/layout/form implementation.
+1. Read `docs/frontend-redesign-requirements/README.md` and linked requirement docs.
+2. Use `frontend_new/docs/implementation-roadmap.md` to pick the next vertical slice. Current next slice is `VF-0`.
+3. Open matching assets in `docs/frontend-redesign-requirements/redesign_ui_drafts/**` (`screen.png` + `code.html`) and keep implementation visually close.
 
 ## Bootstrap Checklist
 
-Use this once when turning scaffolding into runnable app code:
+Historical checklist only. This has already been completed; do not rerun bootstrap unless intentionally rebuilding the app from scratch.
 
 1. Initialize a Vite React TypeScript app in `frontend_new/`.
 2. Set up Tailwind v4.
@@ -43,6 +48,10 @@ What it does:
 2. Starts missing services (backend via `uv run python -m uvicorn app.main:app`, frontend via Vite on `127.0.0.1:4173`).
 3. Runs the phase module with Playwright and prints a machine-readable FR PASS/FAIL matrix.
 4. Exits non-zero if any FR fails.
+
+Important runtime note:
+
+- Export `VITE_API_BASE_URL` when running QA from repo root. Without it, Vite starts with an empty API base URL and the browser calls `/api/*` on the frontend origin, which causes false QA failures before feature assertions run.
 
 ### QA/MCP Troubleshooting
 

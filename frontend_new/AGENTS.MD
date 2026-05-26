@@ -4,9 +4,12 @@ Operating guide for AI agents building the redesigned frontend in `frontend_new`
 
 ## Scope and Mission
 
-- Build a new frontend from scratch in `frontend_new`.
+- Continue the existing `frontend_new` implementation. Do not restart bootstrap or rebuild the app from scratch.
+- Current active work is visual alignment to the approved drafts, starting with `VF-0` in `frontend_new/docs/implementation-roadmap.md`.
+- This frontend is for a Telegram Web App and is expected to be used almost entirely on phones. The phone screen is the primary product surface; desktop/laptop layouts are secondary compatibility checks, not the visual baseline.
+- Use 390x844 / DPR 3 device emulation as the default visual QA viewport unless a task explicitly asks for another phone device.
 - Treat legacy `frontend/` as behavior reference only.
-- Treat backend API as a starting point, not a fixed contract.
+- Treat the current `frontend_new/src/**` behavior and API adapters as implemented baseline unless the task explicitly changes behavior.
 - Keep behavior aligned with `docs/frontend-redesign-requirements/functional-requirements.md` unless explicitly changed.
 - Keep final UI visually close to approved redesign drafts in `docs/frontend-redesign-requirements/redesign_ui_drafts/**`.
 - Treat legacy frontend implementation rules (CRA + MUI-oriented) as non-applicable to `frontend_new`.
@@ -109,7 +112,7 @@ Implementation rule:
   - Ensure icon-only actions have explicit ARIA labels.
   - Preserve keyboard behavior expectations (for example chat Enter/Shift+Enter contract).
 - Responsive behavior:
-  - Validate UI at mobile-first width (~375px) and desktop (~1920px).
+  - Validate visual alignment at 390x844 / DPR 3 as the primary Telegram phone viewport.
   - Preserve Telegram viewport/safe-area behavior under keyboard and orientation changes.
 
 ## Legacy Boundary Rules
@@ -123,7 +126,7 @@ Implementation rule:
 
 - Keep four bottom-nav destinations: Transactions, Analytics, AI Chat, Settings (stub).
 - Default landing destination is Transactions.
-- Keep persistent app header and bottom nav on mobile and desktop.
+- Keep persistent app header and bottom nav in Telegram phone viewport.
 - Bottom nav must not obstruct focused inputs when mobile keyboard is open.
 - Transactions filters must auto-apply (debounced).
 - Category and tag edits must use dedicated selector surfaces with explicit confirmation.
@@ -136,7 +139,7 @@ Implementation rule:
 
 - FR-038: transactions filtering uses single category selection in redesign scope.
 - FR-039: keep multi-currency support in transaction edit flow.
-- AI Chat integration in current phase is a backend-linked stub via `VITE_API_BASE_URL` (`/api/chat` path), with full FE/BE implementation deferred.
+- AI Chat integration is currently a backend-linked stub via `VITE_API_BASE_URL` (`/api/chat` path), with full FE/BE implementation deferred.
 
 ## Telegram Mini App Guardrails
 
@@ -171,36 +174,6 @@ Implementation rule:
 - API base URL must come from env (`VITE_API_BASE_URL`).
 - User tag options must come from backend endpoint for both filter and edit flows.
 - Backend schema can evolve for redesign needs; document required changes in `frontend_new/docs/api-evolution-plan.md`.
-
-## Suggested Project Layout
-
-```text
-frontend_new/
-  src/
-    app/
-      router/
-      providers/
-      layout/
-    pages/
-      transactions/
-      analytics/
-      ai-chat/
-      settings/
-    features/
-      transactions/
-      analytics/
-      ai-chat/
-    components/
-      ui/
-      shared/
-    hooks/
-    services/
-      api/
-      telegram/
-    types/
-    lib/
-  docs/
-```
 
 ## Failure-Prevention Protocols (Required)
 
@@ -295,7 +268,7 @@ Execution steps:
    - `curl -sf http://localhost:8000/health >/dev/null`
    - if `localhost` fails but `127.0.0.1` works (or vice versa), use the reachable host consistently in QA URLs.
 4. Run phase QA with explicit URLs matching reachable hosts:
-   - `cd frontend_new && QA_FRONTEND_URL=http://localhost:5173 QA_BACKEND_URL=http://localhost:8000 npm run qa:phase -- <phase-id>`
+   - `VITE_API_BASE_URL=http://127.0.0.1:8000 QA_FRONTEND_URL=http://127.0.0.1:4173 QA_BACKEND_URL=http://127.0.0.1:8000 npm run qa:phase -- <phase-id>`
 5. If FE fails with `listen EPERM`:
    - switch to an allowed/working port and update `QA_FRONTEND_URL`.
    - if sandbox blocks local bind, re-run startup with escalation.
@@ -337,7 +310,7 @@ Run all available commands before considering a slice complete:
 - `npm run test`
 - `npm run build`
 
-If a command does not exist yet, add it early during bootstrap and document it in `frontend_new/README.md`.
+These commands already exist in `frontend_new/package.json`. If the local environment blocks a gate, record the blocker and supporting logs.
 
 ## Never Do
 
