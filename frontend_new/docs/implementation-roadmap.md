@@ -55,6 +55,78 @@ Recommended `VF-0` output:
 | VF-5 | Analytics dashboard alignment | `analytics_with_transactions_nav/` | Analytics page layout, summary widgets, category/tag/trend sections, nav consistency aligned to draft | Phase 3 QA still passes; 390x844 analytics screenshot matches draft hierarchy |
 | VF-6 | Analytics drilldown popup alignment | `category_transactions_pop_up_with_close_button/` | Category transactions popup, header summary, list styling, explicit close placement aligned to draft | Drilldown still passes FR-022; popup screenshot matches draft structure and preserves analytics context |
 
+## Telegram-Native UX Refactor Track
+
+Status: planned. This is the next strategic UX step after the smoke-test findings in `frontend_new/bugs_reports/telegram-ios-smoke-test-2026-07-11.md` are triaged. It requires separate implementation approval; this roadmap entry does not authorize implementation.
+
+### TWA-1 — Full-page, Telegram-native navigation and input experience
+
+Product direction: match the native flow demonstrated by BotFather on Telegram iOS. Moving from one Money Track section to another must feel like entering a new page, not opening a web-dialog over the existing page. Telegram's host navigation must own return navigation; the web app must not duplicate that header/back experience.
+
+Reference material to add before implementation:
+
+- Create `frontend_new/docs/references/telegram-native-ux/` and place the supplied files there unchanged:
+  - `IMG_7775.PNG` — BotFather root/list page with host chrome only.
+  - `IMG_7776.PNG` — nested BotFather settings page with Telegram `Back`.
+  - `IMG_7777.PNG` and `IMG_7778.PNG` — focused editing fields, keyboard, viewport position, and host `Back`.
+- Keep the existing smoke-test evidence in `frontend_new/bugs_reports/` separate; it documents defects, while this folder is a native-UX reference set.
+- Use the current official references during implementation:
+  - [Telegram Mini Apps JS API](https://core.telegram.org/bots/webapps)
+  - [Telegram web events / BackButton](https://core.telegram.org/api/web-events#web-app-setup-back-button)
+  - [Telegram Mini App fullscreen and safe-area behavior](https://core.telegram.org/bots/webapps#initializing-mini-apps)
+
+#### Required UX outcomes
+
+1. Full-page route transitions
+   - Promote route-level flows currently presented as dialogs/sheets to explicit pages: transaction detail/edit, category selection, tag selection, analytics drilldown, and future complete category/tag breakdowns.
+   - Preserve short, interruptive confirmations (for example destructive delete confirmation) as dialogs only when a full page would be disproportionate.
+   - A new route must preserve the parent page's filter, scroll, and date-range context so returning is lossless.
+
+2. Telegram host back navigation
+   - Use `window.Telegram.WebApp.BackButton` for every non-root route.
+   - Show the host back button when the app has an in-app return destination; hide it at root destinations.
+   - On its click, return through the app's route history and restore parent state. Do not render a duplicate web-app back header or custom `Back` button for the same action.
+   - Clean up the `BackButton` event listener on route change/unmount. Keep browser history/back as a development-mode fallback when the Telegram object is absent.
+
+3. Remove duplicate app chrome in Telegram
+   - Remove the persistent `Money Track` web header/title frame from the Telegram-native route flow; it consumes vertical space already owned by the Telegram host.
+   - Replace the persistent custom bottom-tab shell with the approved full-page navigation model. The future slice must document how the four required destinations are entered at root and how their state is retained; it must not leave both a custom shell and Telegram host navigation competing for the same job.
+   - Evaluate `requestFullscreen()` only behind `isVersionAtLeast` with a normal-host fallback. Fullscreen is not a cosmetic default: use it only if real iOS validation shows it improves the target BotFather-like presentation without harming close/back behavior or safe areas.
+   - Keep the Telegram host's header/background colors intentional via supported WebApp APIs; never fake host controls in HTML/CSS.
+
+4. Smooth focus and keyboard behavior
+   - When an editable field receives focus, smoothly bring that field into the visible editing position near the top of the usable content area before/while the keyboard opens. Do not leave it hidden below fixed controls or behind Telegram chrome.
+   - Coordinate focus scrolling with `visualViewport`, `WebApp.viewportChanged`, `viewportHeight`, `viewportStableHeight`, safe-area events, and `contentSafeAreaInset`.
+   - Use stable viewport height for pinned controls; do not animate bottom-pinned UI from transient `viewportHeight` values.
+   - Avoid scroll loops, abrupt page jumps, and `100vh` assumptions. Preserve the user's prior scroll position when focus closes or when they navigate back.
+
+5. Safety and compatibility
+   - Call `ready()` and `expand()` as part of the existing bootstrap; version-gate `BackButton`, fullscreen, safe-area, and other newer API usage.
+   - Do not trust `initDataUnsafe`; this is an interaction refactor, not an auth exception.
+   - Test iOS Telegram first, then Android and Telegram Desktop; browser-only success is insufficient.
+
+#### Implementation order
+
+1. Write a route/state map for the four root destinations and all flows promoted from sheets/dialogs.
+2. Add one central Telegram navigation adapter: BackButton visibility, click subscription cleanup, browser fallback, and route-history policy.
+3. Refactor one vertical flow end-to-end (Transactions list → edit → category/tags → return) before changing Analytics or AI Chat.
+4. Apply the same model to analytics drilldown and future `View all` pages.
+5. Remove the duplicate shell only after root navigation and host-back behavior are proven on a physical iPhone.
+6. Add focus/keyboard coordination and validate every editable field on a real iPhone.
+
+#### Exit criteria
+
+- Root destinations are full pages with no persistent duplicate `Money Track` title frame in Telegram.
+- Every nested page shows Telegram's BackButton, returns correctly, and restores parent context.
+- No route-level edit/selector/drilldown flow relies on a popup/sheet as its primary navigation surface.
+- Focusing any editable field produces a smooth, visible editing position with the keyboard open and no controls overlapping it.
+- The four BotFather reference images and new Money Track iPhone recordings/screenshots are compared side-by-side in the implementation report.
+- The existing mobile QA matrix is extended for the route/back/focus flows, and a real Telegram iOS smoke test passes.
+
+#### Future skill/playbook update
+
+At the start of TWA-1, update the project-local `frontend_new/docs/telegram-mini-app-playbook.md` and `frontend_new/AGENTS.MD` with the validated BackButton, full-page route, focus-scroll, and fullscreen do/don't rules. Do not edit the shared `telegram-mini-app` skill in advance; propose any shared-skill change only after this project flow has been validated on real Telegram clients.
+
 ## Visual Alignment Working Rules
 
 1. Treat `screen.png` as the visual target and `code.html` as the structural starting point for each VF phase.
