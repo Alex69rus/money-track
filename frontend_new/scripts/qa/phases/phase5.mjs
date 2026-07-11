@@ -53,6 +53,7 @@ export const phase5Definition = {
     const fr = {};
     const transactionsRequestHeaders = [];
     let tagsRequestCount = 0;
+    const transactionLayout = (page.viewportSize()?.width ?? 390) < 768 ? "mobile" : "desktop";
 
     await page.route(`${backendBaseUrl}/api/categories`, async (route) => {
       const createdAt = new Date().toISOString();
@@ -93,7 +94,7 @@ export const phase5Definition = {
     });
 
     await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });
-    await page.waitForSelector('[data-testid="tx-desktop-row-98501"]', { timeout: 30000 });
+    await page.waitForSelector(`[data-testid="tx-${transactionLayout}-row-98501"]`, { timeout: 30000 });
 
     const telegramHeaderIncluded = transactionsRequestHeaders.some((headers) =>
       Object.prototype.hasOwnProperty.call(headers, "x-telegram-init-data"),
@@ -109,7 +110,7 @@ export const phase5Definition = {
       { timeout: 15000 },
     );
 
-    await page.click('[data-testid="tx-desktop-tags-98501"]');
+    await page.click(`[data-testid="tx-${transactionLayout}-tags-98501"]`);
     await page.waitForSelector('[data-testid="tx-tags-dialog"]', { timeout: 15000 });
     const tagInSelectorVisible = await page
       .locator(`[data-testid="tx-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`)
@@ -176,7 +177,7 @@ export const phase5Definition = {
     await page.waitForSelector('[data-testid="app-shell-fallback-mode"]', { timeout: 30000 });
 
     const fallbackBannerVisible = await page.locator('[data-testid="app-shell-fallback-mode"]').isVisible();
-    const renderedFallbackRows = await page.locator('[data-testid^="tx-desktop-row-"]').count();
+    const renderedFallbackRows = await page.locator(`[data-testid^="tx-${transactionLayout}-row-"]`).count();
 
     fr["FR-031"] =
       fallbackBannerVisible && renderedFallbackRows > 0

@@ -269,7 +269,7 @@ export function TransactionEditDialog({
     <>
       <Dialog onOpenChange={onOpenChange} open={open}>
         <DialogContent
-          className="top-auto right-0 bottom-0 left-0 !flex max-h-[94vh] w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-[#171923] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
+          className="mt-transaction-editor-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-[#171923] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
           data-testid="tx-edit-dialog"
           showCloseButton={false}
         >
@@ -295,7 +295,7 @@ export function TransactionEditDialog({
             <DialogDescription className="sr-only">Update details and save changes without leaving the list.</DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-8 pt-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-8 pt-3" data-testid="tx-edit-scroll">
             {error ? (
               <Alert className="border-destructive/60 bg-destructive/10 text-destructive" variant="destructive">
                 <AlertTitle>Unable to save</AlertTitle>
@@ -444,7 +444,7 @@ export function TransactionEditDialog({
             </div>
           </div>
 
-          <div className="shrink-0 px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          <div className="shrink-0 px-6 pb-[calc(var(--mt-safe-area-inset-bottom)+1rem)]">
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
               <Button
                 className="h-14 rounded-2xl bg-[#2d8cff] text-lg font-semibold text-white hover:bg-[#257de6]"

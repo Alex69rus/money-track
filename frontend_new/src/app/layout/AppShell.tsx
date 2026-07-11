@@ -30,9 +30,13 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
 
   return (
     <div
-      className="mx-auto flex w-full max-w-md flex-col bg-background text-foreground md:max-w-4xl"
+      className="mx-auto flex w-full max-w-md flex-col overflow-hidden bg-background text-foreground md:max-w-4xl"
       data-testid="app-shell-root"
-      style={{ minHeight: "var(--mt-viewport-stable-height, 100dvh)" }}
+      style={{
+        height: isKeyboardOpen
+          ? "var(--tg-viewport-height, 100dvh)"
+          : "var(--mt-viewport-stable-height, 100dvh)",
+      }}
     >
       <header className="sticky top-0 z-20 border-b border-border/80 bg-background/80 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center justify-center gap-2">
@@ -41,7 +45,12 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
         </div>
       </header>
 
-      <main className={cn("flex-1 px-4 py-4", isKeyboardOpen ? "pb-4" : "pb-24")}>
+      <main
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4",
+          isKeyboardOpen ? "pb-4" : "pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]",
+        )}
+      >
         {fallbackMode.active ? (
           <Alert className="mb-4 rounded-xl border-border/70 bg-card/70" data-testid="app-shell-fallback-mode">
             <AlertTitle>Fallback mode</AlertTitle>
@@ -62,7 +71,7 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
         )}
       >
         <div
-          className="mx-auto flex w-full max-w-md items-center justify-between gap-1 pb-[calc(env(safe-area-inset-bottom)+0.4rem)] md:max-w-4xl"
+          className="mx-auto flex w-full max-w-md items-center justify-between gap-1 pb-[calc(var(--mt-safe-area-inset-bottom)+0.4rem)] md:max-w-4xl"
           data-testid="app-shell-nav-inner"
         >
           {NAV_ITEMS.map((item) => {

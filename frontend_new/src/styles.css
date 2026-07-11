@@ -25,6 +25,10 @@
 :root {
   color-scheme: light dark;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --mt-safe-area-inset-bottom: var(
+    --tg-content-safe-area-inset-bottom,
+    var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+  );
 }
 
 * {
@@ -44,6 +48,20 @@ body {
     radial-gradient(1000px 480px at 120% -20%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 64%),
     var(--color-background);
   color: var(--color-foreground);
+}
+
+.mt-analytics-date-input {
+  -webkit-min-logical-width: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.mt-analytics-date-input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.mt-analytics-date-input::-webkit-calendar-picker-indicator {
+  margin: 0;
 }
 
 .mt-balance-card {
@@ -72,4 +90,16 @@ body {
   height: 7rem;
   background: color-mix(in srgb, #000000 14%, transparent);
   filter: blur(16px);
+}
+
+.mt-category-selector-sheet {
+  max-height: calc(var(--mt-viewport-stable-height, 100dvh) - 7rem);
+}
+
+.mt-tag-selector-sheet {
+  max-height: calc(var(--mt-viewport-stable-height, 100dvh) - 5rem);
+}
+
+.mt-transaction-editor-sheet {
+  max-height: calc(var(--mt-viewport-stable-height, 100dvh) - 2rem);
 }

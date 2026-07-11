@@ -6,6 +6,7 @@ Execution requirement:
 - At the end of each phase, run this checklist via a dedicated QA sub-agent in browser (Chrome DevTools MCP) for the FR IDs mapped to that phase.
 - Do not mark a phase complete until QA sub-agent results are recorded with pass/fail and any console/network issues.
 - Preferred deterministic fallback for local runs: `npm run qa:phase -- <phase-id>` from repo root (`phase2`-`phase5` implemented).
+- For every `frontend_new` layout, sheet, input, or viewport change, run `scripts/run_frontend_mobile_qa.sh` and retain its screenshot artifact directory in the QA report.
 
 ## A. App Shell and Navigation
 
@@ -52,6 +53,8 @@ Execution requirement:
 - [ ] Event listeners are unsubscribed on cleanup.
 - [ ] Unsupported methods are guarded with version checks.
 - [ ] App behavior is verified in Telegram iOS, Android, and Desktop clients.
+- [ ] Phone QA checks 390x844/DPR3 plus small and large phone profiles, Telegram safe-area/viewport events, keyboard state, and collision assertions.
+- [ ] Layout/input/sheet changes include a real Telegram iPhone smoke result or an explicitly recorded exception.
 
 ## F. API and Resilience
 

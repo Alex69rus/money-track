@@ -252,6 +252,21 @@ Exit criteria:
 1. Phase QA runs through shared runner.
 2. New checks are reusable and module-based.
 
+### Protocol G: Phone-First Telegram Visual Gate
+
+Trigger: any `frontend_new` change that affects layout, typography, fixed or sticky controls, dialogs/sheets, inputs, or Telegram viewport handling.
+
+Execution steps:
+1. Run `scripts/run_frontend_mobile_qa.sh` after normal quality gates.
+2. Treat its four phone profiles, Telegram WebApp lifecycle fixture, screenshots, overflow checks, and collision checks as required evidence.
+3. Review the emitted screenshot directory before declaring the slice complete.
+4. For layout/input/sheet changes, run `npm run qa:telegram-device` with a reserved test-bot domain and record the real-iPhone smoke result. If the device run is unavailable, state the concrete exception; do not imply native Telegram verification occurred.
+5. Keep Development-mode Telegram auth behavior unchanged unless a task explicitly changes it.
+
+Exit criteria:
+1. Mobile QA reports `all_pass: true` and its artifact path is recorded.
+2. Relevant native Telegram result or exception is explicit in the final QA report.
+
 ### Protocol F: Browser QA and Chrome MCP Triage
 
 Trigger: any browser-driven QA run (Chrome DevTools MCP or Playwright runner) fails or stalls.
@@ -297,7 +312,7 @@ Exit criteria:
 4. Implement UI + data wiring + loading/error states + recovery path.
 5. Validate against `frontend_new/docs/qa-acceptance-checklist.md`.
 6. Run quality gates.
-7. Run Protocol C, Protocol D, and Protocol E for end-of-phase QA and exit decisions.
+7. Run Protocol C, Protocol D, and Protocol E for end-of-phase QA and exit decisions; run Protocol G whenever its trigger applies.
 8. Call `iteration-retrospective-capture` and append concise takeaways to `frontend_new/GUARDRAILS.md`.
 9. Update `docs/tasklist.md` with meaningful progress.
 

@@ -8,6 +8,7 @@ export interface TelegramWebApp {
   };
   platform?: string;
   version?: string;
+  viewportHeight?: number;
   viewportStableHeight?: number;
   colorScheme?: "light" | "dark";
   ready: () => void;

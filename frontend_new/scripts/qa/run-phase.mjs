@@ -3,6 +3,7 @@ import { phase2Definition } from "./phases/phase2.mjs";
 import { phase3Definition } from "./phases/phase3.mjs";
 import { phase4Definition } from "./phases/phase4.mjs";
 import { phase5Definition } from "./phases/phase5.mjs";
+import { installTelegramFixture } from "./telegram-fixture.mjs";
 
 const PHASES = {
   [phase2Definition.id]: phase2Definition,
@@ -78,10 +79,24 @@ async function main() {
   let fr = {};
   let artifacts = {};
   let runError = null;
+  const viewport = {
+    height: Number.parseInt(process.env.QA_VIEWPORT_HEIGHT ?? "844", 10),
+    width: Number.parseInt(process.env.QA_VIEWPORT_WIDTH ?? "390", 10),
+  };
+  const deviceScaleFactor = Number.parseInt(process.env.QA_DEVICE_SCALE_FACTOR ?? "3", 10);
 
   try {
     browser = await launchBrowserWithFallback();
-    context = await browser.newContext({ viewport: { width: 1440, height: 1200 } });
+    context = await browser.newContext({
+      deviceScaleFactor,
+      hasTouch: true,
+      isMobile: true,
+      viewport,
+    });
+    await installTelegramFixture(context, {
+      viewportHeight: viewport.height,
+      viewportStableHeight: viewport.height,
+    });
     page = await context.newPage();
     page.__mainFrameNavigations = 0;
 
@@ -144,6 +159,10 @@ async function main() {
     console_errors: consoleErrors,
     network_errors: networkErrors,
     artifacts,
+    device: {
+      device_scale_factor: deviceScaleFactor,
+      viewport,
+    },
     error: runError,
   };
 

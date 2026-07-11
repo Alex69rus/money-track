@@ -47,11 +47,31 @@ What it does:
 1. Reuses running FE/BE if reachable.
 2. Starts missing services (backend via `uv run python -m uvicorn app.main:app`, frontend via Vite on `127.0.0.1:4173`).
 3. Runs the phase module with Playwright and prints a machine-readable FR PASS/FAIL matrix.
-4. Exits non-zero if any FR fails.
+4. Uses the primary Telegram phone profile (`390x844`, DPR 3) and a Telegram WebApp fixture.
+5. Exits non-zero if any FR fails.
 
 Important runtime note:
 
-- Export `VITE_API_BASE_URL` when running QA from repo root. Without it, Vite starts with an empty API base URL and the browser calls `/api/*` on the frontend origin, which causes false QA failures before feature assertions run.
+- The root QA launcher supplies `VITE_API_BASE_URL` automatically. When starting Vite manually, set it explicitly before running a phase command.
+
+## Mobile Visual and Telegram QA
+
+Use the canonical mobile gate after every `frontend_new` layout, sheet, input, or viewport change:
+
+```bash
+scripts/run_frontend_mobile_qa.sh
+```
+
+It owns an isolated local `frontend_new`/backend pair by default (`:4174` / `:8002`), then checks iPhone 12 Pro, iPhone 15, iPhone 15 Pro Max, and iPhone SE viewports. It simulates Telegram lifecycle/safe-area/viewport events, checks for horizontal overflow and critical-control collisions, and stores screenshots under `.codex-tmp/mobile-qa/`.
+
+For a real Telegram phone check, configure a reserved ngrok domain on the test bot once, then run:
+
+```bash
+cd frontend_new
+TELEGRAM_DEVICE_NGROK_DOMAIN=your-reserved-domain.ngrok-free.app npm run qa:telegram-device
+```
+
+This command serves `frontend_new` and `/api` through one public origin. It intentionally uses the existing Development backend mode; do not use it as an authentication test. Open the Mini App from the test bot on the physical device and complete the keyboard, bottom-nav, dialog/sheet, and scroll smoke test before stopping the command.
 
 ### QA/MCP Troubleshooting
 

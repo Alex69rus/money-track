@@ -145,7 +145,7 @@ export function TransactionTagSelectorDialog({
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
-        className="top-auto right-0 bottom-0 left-0 !flex max-h-[88vh] w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-h-[88vh] sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
+        className="mt-tag-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
         data-testid="tx-tags-dialog"
         showCloseButton={false}
       >
@@ -247,7 +247,7 @@ export function TransactionTagSelectorDialog({
             ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6" data-testid="tx-tags-scroll">
             <h3 className="mb-4 px-1 text-[0.78rem] font-semibold tracking-[0.14em] text-slate-400 uppercase">
               Available Tags
             </h3>
@@ -284,7 +284,7 @@ export function TransactionTagSelectorDialog({
           </div>
         </div>
 
-        <div className="border-t border-[#22334a]/80 bg-[#0f1b2a] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <div className="border-t border-[#22334a]/80 bg-[#0f1b2a] px-4 py-4 pb-[calc(var(--mt-safe-area-inset-bottom)+1rem)]">
           <Button
             className="h-14 w-full rounded-2xl bg-[#2d8cff] text-[1.2rem] font-semibold text-white shadow-[0_10px_24px_rgba(45,140,255,0.38)] hover:bg-[#2d8cff]/90"
             data-testid="tx-tags-update"

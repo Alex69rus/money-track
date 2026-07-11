@@ -190,3 +190,25 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: Verified Playwright viewport capture at `390x844` / `DPR 3` works deterministically when FE/BE readiness gates pass; ruled out marking QA failures from `ERR_CONNECTION_REFUSED` or browser bootstrap errors as product regressions.
 - Prevention rule: Before any VF phase exit, enforce this sequence: quality gates -> backend/ frontend readiness gate -> phase QA -> phone screenshot artifact capture.
 - Files/areas affected: `frontend_new/src/features/transactions/components/TransactionTagSelectorDialog.tsx`, `frontend_new/src/features/transactions/components/TransactionEditDialog.tsx`, `frontend_new/src/pages/TransactionsPage.tsx`, `frontend_new/docs/visual-audit/vf-4-after/tag-selector-dialog-vf4.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-05-30 - Iteration VF-5 (Analytics Dashboard Alignment)
+
+- Scope: Align `AnalyticsPage` to `analytics_with_transactions_nav` while preserving FR-018..FR-022 behavior, including date-range recompute and category drilldown context.
+- What went wrong: Initial visual pass caused summary income/expense values to overlap inside the two-column balance card.
+- Root cause: Large typography combined with long `AED` currency code strings exceeded available column width in a constrained mobile viewport.
+- Guardrail to apply next time: For two-column metric cards on mobile, size text from realistic worst-case strings (`AED 18,000.00`) first, then scale up only after screenshot verification.
+- Validated pattern to repeat: Keep FR safety during VF work by retaining existing analytics `data-testid` selectors and recompute logic while iterating only on layout and token-level styling.
+- Exploration notes: Verified `qa:phase3` still passes with forced 500 and retry flow after visual refactor; ruled out treating expected QA-forced 500 console/network entries as regressions.
+- Prevention rule: After any typography-heavy visual change, run a 390x844 screenshot before phase QA to catch overflow defects early.
+- Files/areas affected: `frontend_new/src/pages/AnalyticsPage.tsx`, `frontend_new/docs/visual-audit/vf-5-after/analytics-dashboard-vf5.png`, `docs/tasklist.md`, `frontend_new/GUARDRAILS.md`.
+
+## 2026-07-11 - Iteration Phone QA Feedback Loop
+
+- Scope: Add the canonical `frontend_new` phone QA harness, Telegram viewport fixture, transaction-sheet constraints, and real-device tunnel launcher; exclude AI Chat from this visual matrix.
+- What went wrong: Browser `vh` resolved larger than Telegram's usable viewport, and a nested flex column prevented the category list from scrolling, hiding its sticky confirmation action below the phone screen.
+- Root cause: Transaction sheets relied on browser viewport units and omitted `min-h-0` at the flex boundary that owns the scroll region.
+- Guardrail to apply next time: Size Telegram sheets from `--mt-viewport-stable-height` and put `min-h-0` on every flex ancestor above an `overflow-y-auto` sheet body.
+- Validated pattern to repeat: Run `scripts/run_frontend_mobile_qa.sh` on isolated ports before visual sign-off; review its screenshots and treat selector/edit action reachability as a release gate.
+- Exploration notes: The four-profile matrix passed after using a Telegram WebApp fixture and explicit sheet CSS classes; a real device run remains the native Telegram verification step.
+- Prevention rule: Do not use a broad Playwright route glob that can intercept Vite source modules; match only concrete `/api/...` endpoints.
+- Files/areas affected: `frontend_new/scripts/qa/**`, `scripts/run_frontend_*_qa.sh`, `scripts/run_telegram_device_qa.sh`, transaction sheet components, `frontend_new/AGENTS.MD`, `frontend_new/docs/**`, `docs/tasklist.md`.

@@ -66,10 +66,15 @@ export function TransactionsMobileList({
                   const categoryIcon = getCategoryIconName(transaction);
 
                   return (
-                    <li className="flex items-start gap-3 px-4 py-3.5" key={transaction.id}>
+                    <li
+                      className="flex items-start gap-3 px-4 py-3.5"
+                      data-testid={`tx-mobile-row-${transaction.id}`}
+                      key={transaction.id}
+                    >
                       <button
                         aria-label={`Change category for transaction ${transaction.id}`}
                         className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                        data-testid={`tx-mobile-category-${transaction.id}`}
                         onClick={() => onEditCategory(transaction)}
                         type="button"
                       >
@@ -112,6 +117,7 @@ export function TransactionsMobileList({
                           <button
                             aria-label={`Edit tags for transaction ${transaction.id}`}
                             className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
+                            data-testid={`tx-mobile-tags-${transaction.id}`}
                             onClick={() => onEditTags(transaction)}
                             type="button"
                           >
@@ -123,6 +129,7 @@ export function TransactionsMobileList({
                           <Button
                             aria-label={`Edit transaction ${transaction.id}`}
                             className="h-7 rounded-lg px-2.5"
+                            data-testid={`tx-mobile-edit-${transaction.id}`}
                             onClick={() => onEditTransaction(transaction)}
                             size="xs"
                             type="button"

@@ -51,6 +51,7 @@ export const phase2Definition = {
   async run({ page, backendBaseUrl, frontendBaseUrl }) {
     const fr = {};
     const qaNote = `__qa_phase2_${Date.now()}__`;
+    const transactionLayout = (page.viewportSize()?.width ?? 390) < 768 ? "mobile" : "desktop";
 
     const created = await createQaTransaction(backendBaseUrl, qaNote);
     const transactionId = created.id;
@@ -62,12 +63,12 @@ export const phase2Definition = {
     await page.fill("#transactions-search-text", qaNote);
     await page.waitForTimeout(1200);
 
-    const row = page.locator(`[data-testid="tx-desktop-row-${transactionId}"]`);
+    const row = page.locator(`[data-testid="tx-${transactionLayout}-row-${transactionId}"]`);
     await row.waitFor({ state: "visible", timeout: 30000 });
 
-    const categoryButton = page.locator(`[data-testid="tx-desktop-category-${transactionId}"]`);
-    const tagsButton = page.locator(`[data-testid="tx-desktop-tags-${transactionId}"]`);
-    const editButton = page.locator(`[data-testid="tx-desktop-edit-${transactionId}"]`);
+    const categoryButton = page.locator(`[data-testid="tx-${transactionLayout}-category-${transactionId}"]`);
+    const tagsButton = page.locator(`[data-testid="tx-${transactionLayout}-tags-${transactionId}"]`);
+    const editButton = page.locator(`[data-testid="tx-${transactionLayout}-edit-${transactionId}"]`);
 
     await categoryButton.click();
     await page.waitForSelector('[data-testid="tx-category-dialog"]', { timeout: 15000 });
@@ -135,7 +136,7 @@ export const phase2Definition = {
     await page.locator('[data-testid="tx-edit-save"]').click();
     await page.waitForSelector('[data-testid="tx-edit-dialog"]', { state: "hidden", timeout: 15000 });
 
-    await page.locator(`[data-testid="tx-desktop-edit-${transactionId}"]`).click();
+    await page.locator(`[data-testid="tx-${transactionLayout}-edit-${transactionId}"]`).click();
     await page.waitForSelector('[data-testid="tx-edit-dialog"]', { timeout: 15000 });
     await page.locator('[data-testid="tx-edit-delete-trigger"]').click();
     await page.waitForSelector('[data-testid="tx-edit-delete-confirm-dialog"]', { timeout: 15000 });
