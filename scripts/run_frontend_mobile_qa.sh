@@ -68,5 +68,7 @@ fi
 
 (
   cd "${ROOT_DIR}/frontend_new"
-  QA_FRONTEND_URL="${FRONTEND_URL}" npm run qa:mobile
+  QA_FRONTEND_URL="${FRONTEND_URL}" \
+    QA_MOBILE_REPORT_FILE="${TMP_DIR}/qa-mobile-report.json" \
+    npm run qa:mobile
 )

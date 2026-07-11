@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownIcon, ArrowUpIcon, CalendarDaysIcon, TrendingUpIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,9 +105,22 @@ function withAlpha(hexColor: string | null, alpha: number, fallback: string): st
 }
 
 export function AnalyticsPage(): JSX.Element {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState(getCurrentMonthDateRange);
   const [activePreset, setActivePreset] = useState<DatePreset>("current-month");
-  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const selectedCategoryKey = useMemo(() => {
+    const routeMatch = /^\/analytics\/category\/(.+)$/.exec(location.pathname);
+    if (!routeMatch?.[1]) {
+      return null;
+    }
+
+    try {
+      return decodeURIComponent(routeMatch[1]);
+    } catch {
+      return null;
+    }
+  }, [location.pathname]);
 
   const { transactions, loading, error, retry } = useAnalyticsTransactions(dateRange);
 
@@ -122,10 +136,20 @@ export function AnalyticsPage(): JSX.Element {
   );
 
   useEffect(() => {
-    if (selectedCategoryKey && !selectedCategory) {
-      setSelectedCategoryKey(null);
+    if (!loading && selectedCategoryKey && !selectedCategory) {
+      navigate("/analytics", { replace: true });
     }
-  }, [selectedCategory, selectedCategoryKey]);
+  }, [loading, navigate, selectedCategory, selectedCategoryKey]);
+
+  const closeDrilldown = (): void => {
+    const routeState = location.state as { mtReturnPath?: string } | null;
+    if (routeState?.mtReturnPath) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/analytics", { replace: true });
+  };
 
   const trendMaxValue = useMemo(() => {
     const maxSeriesValue = analytics.monthlyTrends.reduce(
@@ -149,7 +173,10 @@ export function AnalyticsPage(): JSX.Element {
   };
 
   return (
-    <section className="flex flex-col gap-5 overflow-x-hidden" data-testid="analytics-page">
+    <section
+      className="relative flex min-h-full shrink-0 flex-col gap-5 overflow-x-hidden"
+      data-testid="analytics-page"
+    >
       <div className="rounded-[1.6rem] border border-[#20344f]/80 bg-[#0f1d2f]/88 p-4 shadow-[0_14px_28px_rgba(0,0,0,0.2)]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -345,7 +372,9 @@ export function AnalyticsPage(): JSX.Element {
                         data-testid={`analytics-category-item-${categoryItem.key}`}
                         key={categoryItem.key}
                         onClick={() => {
-                          setSelectedCategoryKey(categoryItem.key);
+                          navigate(`/analytics/category/${encodeURIComponent(categoryItem.key)}`, {
+                            state: { mtReturnPath: location.pathname },
+                          });
                         }}
                         type="button"
                       >
@@ -525,9 +554,8 @@ export function AnalyticsPage(): JSX.Element {
       <CategoryDrilldownDialog
         category={selectedCategory}
         currency={currencyDisplay.currency}
-        onClose={() => {
-          setSelectedCategoryKey(null);
-        }}
+        onClose={closeDrilldown}
+        presentation="page"
         rangeLabel={formatDateRangeLabel(dateRange)}
       />
     </section>

@@ -124,10 +124,11 @@ Implementation rule:
 
 ## Functional Non-Negotiables
 
-- Keep four bottom-nav destinations: Transactions, Analytics, AI Chat, Settings (stub).
-- Default landing destination is Transactions.
-- Keep persistent app header and bottom nav in Telegram phone viewport.
-- Bottom nav must not obstruct focused inputs when mobile keyboard is open.
+- Keep exactly four product destinations: Transactions, Analytics, AI Chat, Settings (stub).
+- Telegram launch opens Transactions; direct `/transactions` navigation remains supported for development and deep links.
+- In Telegram, do not render a persistent web header. Keep the four-tab bottom navigation on primary pages and hide it for nested flows or while the keyboard is open.
+- Use Telegram BackButton for each nested route; do not add a duplicate HTML back/close control to full-page flows.
+- A focused editable field must scroll into the usable area when the mobile keyboard changes the viewport.
 - Transactions filters must auto-apply (debounced).
 - Category and tag edits must use dedicated selector surfaces with explicit confirmation.
 - Full transaction edit must validate required fields and support delete with confirmation.
@@ -148,7 +149,12 @@ Implementation rule:
 - Initialize early, call `ready()` when critical UI is mounted, call `expand()` for full-height UX.
 - Use Telegram CSS and viewport/safe-area data (`--tg-theme-*`, `--tg-viewport-*`, `--tg-safe-area-*`).
 - Use `viewportStableHeight` for bottom-pinned controls.
+- Use `contentSafeAreaInset.top` (or its CSS variable) for every primary page and fixed full-page surface; Telegram host controls must never overlap app content.
 - Register and clean up Telegram event handlers (`themeChanged`, `viewportChanged`, `safeAreaChanged`, `contentSafeAreaChanged`, `fullscreenChanged`).
+- Use one central BackButton adapter with route-aware visibility and cleanup; fall back to browser history when Telegram is absent.
+- On Bot API 7.7+, call `disableVerticalSwipes()` during bootstrap. On Bot API 8.0+, request fullscreen during bootstrap and after a host exit; version-gate both, and do not claim host launch controls can be forcibly disabled.
+- Promote route-level edit/selector/drilldown surfaces to pages. Reserve dialogs for short destructive confirmation only.
+- Add keyboard-sized trailing scroll space using stable/current viewport height values before judging focus behavior on iOS.
 - Never trust `initDataUnsafe` for auth decisions.
 - Send raw `initData` to backend for validation; backend validates hash and `auth_date`.
 - Use `isVersionAtLeast` before calling newer Telegram WebApp methods.

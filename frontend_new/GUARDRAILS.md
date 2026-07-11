@@ -212,3 +212,22 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Exploration notes: The four-profile matrix passed after using a Telegram WebApp fixture and explicit sheet CSS classes; a real device run remains the native Telegram verification step.
 - Prevention rule: Do not use a broad Playwright route glob that can intercept Vite source modules; match only concrete `/api/...` endpoints.
 - Files/areas affected: `frontend_new/scripts/qa/**`, `scripts/run_frontend_*_qa.sh`, `scripts/run_telegram_device_qa.sh`, transaction sheet components, `frontend_new/AGENTS.MD`, `frontend_new/docs/**`, `docs/tasklist.md`.
+
+## 2026-07-11 - Iteration TWA-1 Native Navigation
+
+- Scope: Replace duplicate Telegram web chrome and route-level sheets with full-page transaction/analytics flows, host BackButton return on nested routes, persistent primary navigation, and keyboard-aware focus positioning.
+- What went wrong: The first page-mode editor mounted while closed and intercepted transaction-row taps; the initial page conversion also retained duplicate in-page back/close controls.
+- Root cause: A dialog-to-page conversion needs an explicit closed render guard, and dialog navigation controls cannot be carried into a host-BackButton page unchanged.
+- Guardrail to apply next time: In page presentation mode, return no DOM when closed and remove every HTML control whose sole purpose is returning/closing; keep only domain actions such as Save, Update, and destructive confirmation.
+- Validated pattern to repeat: Keep parent route components mounted under wildcard routes, preserve their state, and overlay URL-backed full pages so history return restores filters, scroll position, and date range.
+- Exploration notes: Four-profile Telegram-fixture QA passed after simulating keyboard viewport shrink, BackButton clicks, and no-custom-nav assertions; real Telegram iPhone validation remains required before claiming client-native parity.
+- Prevention rule: Persist phase and mobile QA JSON reports to `.codex-tmp` in addition to stdout, because immediate Node process termination can drop the report in this runtime.
+- Files/areas affected: `frontend_new/src/app/**`, `frontend_new/src/pages/**`, transaction and analytics page surfaces, `frontend_new/src/services/telegram/**`, `frontend_new/scripts/qa/**`, `scripts/run_frontend_*_qa.sh`, `frontend_new/docs/**`, `docs/tasklist.md`.
+
+## 2026-07-11 - Iteration TWA-1 Navigation, Fullscreen, and Safe-Area Correction
+
+- Takeaway: Keep the four-tab navigation on Telegram primary pages; hide it only for nested full-page flows where the host BackButton owns return navigation.
+- Root cause: A root-launcher-only shell removed the expected tab control, and primary route roots with `min-h-full` were allowed to shrink, leaving lower transaction controls underneath the fixed navigation.
+- Guardrail: Add `shrink-0` to primary page roots inside the scrollable shell and verify a last-row action can scroll fully above the fixed navigation before declaring a layout change complete.
+- Exploration: Bot API 7.7+ `disableVerticalSwipes()` and Bot API 8.0+ `requestFullscreen()` are version-gated host requests; Telegram may still expose header controls or decline fullscreen, so always preserve normal-host layout.
+- Prevention rule: In the Telegram fixture, set safe-area CSS variables after `DOMContentLoaded`; then run the four-profile mobile matrix plus Phase 2, Phase 3, and Phase 5 before handoff.

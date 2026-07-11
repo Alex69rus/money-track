@@ -10,10 +10,11 @@ Execution requirement:
 
 ## A. App Shell and Navigation
 
-- [ ] Four tabs are present: Transactions, Analytics, AI Chat, Settings.
-- [ ] Default route is Transactions.
-- [ ] Top header and bottom nav are persistent across routes.
-- [ ] On mobile keyboard open, bottom nav does not block focused input.
+- [ ] Telegram launch opens Transactions; the persistent bottom navigation exposes exactly Transactions, Analytics, AI Chat, and Settings.
+- [ ] Direct section URLs remain supported for development and deep links.
+- [ ] Telegram route flow has no duplicate web header. Primary pages retain bottom navigation; nested pages hide it and use Telegram BackButton.
+- [ ] Telegram BackButton returns from every nested route and restores parent context.
+- [ ] On mobile keyboard open, a focused field is smoothly positioned in the usable editing area.
 - [ ] Settings tab opens a valid stub surface.
 
 ## B. Transactions Domain
@@ -34,8 +35,8 @@ Execution requirement:
 - [ ] Date range controls affect all widgets consistently.
 - [ ] Summary stats, category spend, tag spend, and trends are shown.
 - [ ] Loading, error-with-retry, and no-data states exist.
-- [ ] Category drilldown opens popup/list with explicit close.
-- [ ] Closing drilldown returns to analytics with context preserved.
+- [ ] Category drilldown opens a full page and returns through Telegram BackButton.
+- [ ] Returning from drilldown preserves analytics context.
 
 ## D. AI Chat Domain
 
@@ -50,6 +51,9 @@ Execution requirement:
 
 - [ ] `ready()` and `expand()` lifecycle behavior is correct.
 - [ ] Theme and safe-area variables are respected.
+- [ ] Primary pages and every fixed full-page surface start below the Telegram content-safe top inset.
+- [ ] Bot API 7.7+ clients call `disableVerticalSwipes()`; Bot API 8.0+ clients request fullscreen at launch and when fullscreen is exited.
+- [ ] Unsupported/declined fullscreen preserves a usable normal-host layout; do not claim host launch controls are forcibly disabled.
 - [ ] Event listeners are unsubscribed on cleanup.
 - [ ] Unsupported methods are guarded with version checks.
 - [ ] App behavior is verified in Telegram iOS, Android, and Desktop clients.

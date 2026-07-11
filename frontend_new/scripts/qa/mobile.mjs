@@ -1,13 +1,13 @@
-import { mkdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import { installTelegramFixture } from "./telegram-fixture.mjs";
 
 const PROFILES = [
-  { id: "iphone-12-pro", width: 390, height: 844, safeAreaBottom: 34 },
-  { id: "iphone-15", width: 393, height: 852, safeAreaBottom: 34 },
-  { id: "iphone-15-pro-max", width: 430, height: 932, safeAreaBottom: 34 },
-  { id: "iphone-se", width: 375, height: 667, safeAreaBottom: 0 },
+  { id: "iphone-12-pro", width: 390, height: 844, safeAreaBottom: 34, safeAreaTop: 48 },
+  { id: "iphone-15", width: 393, height: 852, safeAreaBottom: 34, safeAreaTop: 48 },
+  { id: "iphone-15-pro-max", width: 430, height: 932, safeAreaBottom: 34, safeAreaTop: 48 },
+  { id: "iphone-se", width: 375, height: 667, safeAreaBottom: 0, safeAreaTop: 24 },
 ];
 
 function buildFixtures() {
@@ -157,6 +157,29 @@ async function assertWithinViewport(page, selector, label) {
   }
 }
 
+async function assertBelowTelegramTopInset(page, selector, label) {
+  const [box, insets] = await Promise.all([
+    page.locator(selector).boundingBox(),
+    page.evaluate(() => {
+      const styles = window.getComputedStyle(document.documentElement);
+      const telegramContentSafeTop = styles.getPropertyValue("--tg-content-safe-area-inset-top").trim();
+      const moneyTrackSafeTop = styles.getPropertyValue("--mt-safe-area-inset-top").trim();
+
+      return {
+        moneyTrackSafeTop,
+        safeTop: Number.parseFloat(telegramContentSafeTop),
+        telegramContentSafeTop,
+      };
+    }),
+  ]);
+
+  if (!box || !Number.isFinite(insets.safeTop) || box.y < insets.safeTop) {
+    throw new Error(
+      `${label}: ${selector} is inside the Telegram service-control inset (${JSON.stringify({ box, ...insets })}).`,
+    );
+  }
+}
+
 async function assertDoesNotOverlap(page, upperSelector, lowerSelector, label) {
   const [upper, lower] = await Promise.all([
     page.locator(upperSelector).boundingBox(),
@@ -210,6 +233,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
   });
   await installTelegramFixture(context, {
     safeAreaBottom: profile.safeAreaBottom,
+    safeAreaTop: profile.safeAreaTop,
     viewportHeight: profile.height,
     viewportStableHeight: profile.height,
   });
@@ -231,38 +255,72 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
   try {
     await installApiFixtures(page);
 
-    await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="tx-mobile-row-9001"]', { timeout: 30000 });
     await assertNoHorizontalOverflow(page, "transactions");
-    await assertDoesNotOverlap(page, '[data-testid="app-shell-nav"]', '[data-testid="tx-mobile-category-9001"]', "transactions shell");
+    const customNavCount = await page.locator('[data-testid="app-shell-nav"]').count();
+    if (customNavCount !== 1) {
+      throw new Error("Telegram primary screens must render the persistent bottom navigation.");
+    }
+    await assertWithinViewport(page, '[data-testid="app-shell-nav"]', "transactions navigation");
     await screenshot(page, profileDirectory, "transactions");
 
     await page.click('[data-testid="tx-mobile-category-9001"]');
-    await page.waitForSelector('[data-testid="tx-category-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    if (await page.locator('[data-testid="app-shell-nav"]').count()) {
+      throw new Error("Nested full-page routes must use Telegram BackButton instead of the primary navigation.");
+    }
+    await assertBelowTelegramTopInset(page, '[data-testid="tx-category-search"]', "category selector");
     await assertNoHorizontalOverflow(page, "category selector");
     await assertScrollable(page, '[data-testid="tx-category-scroll"]', "category selector");
     await assertWithinViewport(page, '[data-testid="tx-category-update"]', "category selector action");
     await screenshot(page, profileDirectory, "category-selector");
-    await page.keyboard.press("Escape");
-    await page.waitForSelector('[data-testid="tx-category-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
+    if (await page.locator('[data-testid="app-shell-nav"]').count() !== 1) {
+      throw new Error("Primary bottom navigation was not restored after Telegram BackButton return.");
+    }
 
     await page.click('[data-testid="tx-mobile-tags-9001"]');
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
+    await assertBelowTelegramTopInset(page, '[data-testid="tx-tags-search"]', "tag selector");
     await assertNoHorizontalOverflow(page, "tag selector");
     await assertScrollable(page, '[data-testid="tx-tags-scroll"]', "tag selector");
     await assertWithinViewport(page, '[data-testid="tx-tags-update"]', "tag selector action");
     await screenshot(page, profileDirectory, "tag-selector");
-    await page.keyboard.press("Escape");
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     await page.click('[data-testid="tx-mobile-edit-9001"]');
-    await page.waitForSelector('[data-testid="tx-edit-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
+    await assertBelowTelegramTopInset(page, '#transaction-edit-currency', "transaction editor");
     await assertNoHorizontalOverflow(page, "transaction editor");
     await assertScrollable(page, '[data-testid="tx-edit-scroll"]', "transaction editor", false);
     await assertWithinViewport(page, '[data-testid="tx-edit-save"]', "transaction editor action");
+    await page.locator('#transaction-edit-note').focus();
+    const keyboardViewportHeight = Math.max(420, profile.height - 320);
+    await page.setViewportSize({ width: profile.width, height: keyboardViewportHeight });
+    await page.evaluate((viewportHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: window.__qaTelegram.getState().viewportStableHeight });
+    }, keyboardViewportHeight);
+    await page.waitForTimeout(250);
+    const focusPosition = await page.locator('#transaction-edit-note').evaluate((element) => {
+      const scrollContainer = element.closest('[data-focus-scroll-container]');
+      return {
+        top: element.getBoundingClientRect().top,
+        scrollTop: scrollContainer?.scrollTop ?? 0,
+      };
+    });
+    if (focusPosition.scrollTop <= 0 || focusPosition.top > 180) {
+      throw new Error(`transaction editor focus positioning failed: ${JSON.stringify(focusPosition)}.`);
+    }
+    await page.setViewportSize({ width: profile.width, height: profile.height });
+    await page.evaluate((viewportHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: viewportHeight });
+    }, profile.height);
     await screenshot(page, profileDirectory, "transaction-editor");
-    await page.keyboard.press("Escape");
-    await page.waitForSelector('[data-testid="tx-edit-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { state: "hidden", timeout: 15000 });
 
     await page.goto(`${frontendBaseUrl}/analytics`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
@@ -270,10 +328,12 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await screenshot(page, profileDirectory, "analytics");
 
     await page.click('[data-testid^="analytics-category-item-"]');
-    await page.waitForSelector('[data-testid="analytics-drilldown-dialog"]', { timeout: 15000 });
-    await assertWithinViewport(page, '[data-testid="analytics-drilldown-close"]', "analytics drilldown close action");
+    await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+    if (await page.locator('[data-testid="app-shell-nav"]').count()) {
+      throw new Error("Analytics drilldown must hide primary navigation while Telegram BackButton is active.");
+    }
     await screenshot(page, profileDirectory, "analytics-drilldown");
-    await page.keyboard.press("Escape");
+    await page.evaluate(() => window.__qaTelegram.pressBack());
 
     await page.evaluate(() => {
       ["viewportChanged", "safeAreaChanged", "contentSafeAreaChanged", "fullscreenChanged"].forEach((event) => {
@@ -283,7 +343,14 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     const telegramState = await page.evaluate(() => window.__qaTelegram.getState());
     const requiredEvents = ["contentSafeAreaChanged", "fullscreenChanged", "safeAreaChanged", "viewportChanged"];
     const hasViewportSubscriptions = requiredEvents.every((event) => telegramState.registeredEvents.includes(event));
-    if (telegramState.readyCalls < 1 || telegramState.expandCalls < 1 || !hasViewportSubscriptions) {
+    if (
+      telegramState.readyCalls < 1 ||
+      telegramState.expandCalls < 1 ||
+      !hasViewportSubscriptions ||
+      telegramState.backButtonShowCalls < 1 ||
+      telegramState.disableVerticalSwipesCalls < 1 ||
+      telegramState.fullscreenRequests < 1
+    ) {
       throw new Error(
         `Telegram fixture did not observe the expected lifecycle and viewport subscriptions: ${JSON.stringify(telegramState)}.`,
       );
@@ -337,8 +404,13 @@ async function main() {
     frontend_url: frontendBaseUrl,
     profiles: Object.fromEntries(profiles.map((profile, index) => [profile.id, results[index]])),
   };
+  const reportFile = process.env.QA_MOBILE_REPORT_FILE;
+  if (reportFile) {
+    mkdirSync(dirname(reportFile), { recursive: true });
+    writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  }
   console.log(JSON.stringify(report, null, 2));
-  process.exit(report.all_pass ? 0 : 1);
+  process.exitCode = report.all_pass ? 0 : 1;
 }
 
 await main();

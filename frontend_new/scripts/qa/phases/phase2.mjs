@@ -58,7 +58,7 @@ export const phase2Definition = {
 
     await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector("#transactions-search-text", { timeout: 30000 });
-    const baselineNavigations = page.__mainFrameNavigations;
+    const documentNavigationCount = await page.evaluate(() => performance.getEntriesByType("navigation").length);
 
     await page.fill("#transactions-search-text", qaNote);
     await page.waitForTimeout(1200);
@@ -71,8 +71,8 @@ export const phase2Definition = {
     const editButton = page.locator(`[data-testid="tx-${transactionLayout}-edit-${transactionId}"]`);
 
     await categoryButton.click();
-    await page.waitForSelector('[data-testid="tx-category-dialog"]', { timeout: 15000 });
-    fr["FR-010"] = pass("Category action in transaction row opens dedicated category selector.");
+    await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    fr["FR-010"] = pass("Category action in transaction row opens a dedicated full-page category selector.");
 
     const categorySearchVisible = await page.locator('[data-testid="tx-category-search"]').isVisible();
     const categoryUpdateVisible = await page.locator('[data-testid="tx-category-update"]').isVisible();
@@ -93,15 +93,15 @@ export const phase2Definition = {
       break;
     }
     await page.locator('[data-testid="tx-category-update"]').click();
-    await page.waitForSelector('[data-testid="tx-category-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
 
     await tagsButton.click();
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
     const tagsSearchVisible = await page.locator('[data-testid="tx-tags-search"]').isVisible();
     const tagsUpdateVisible = await page.locator('[data-testid="tx-tags-update"]').isVisible();
     fr["FR-012"] =
       tagsSearchVisible && tagsUpdateVisible
-        ? pass("Tag selector opens as a dedicated surface with explicit Update confirmation.")
+        ? pass("Tag selector opens as a dedicated full-page surface with explicit Update confirmation.")
         : fail("Tag selector is missing dedicated search or explicit Update confirmation.");
 
     const newTag = `qa-tag-${Date.now().toString().slice(-6)}`;
@@ -112,16 +112,16 @@ export const phase2Definition = {
       await page.locator('[data-testid="tx-tags-add-from-search"]').click();
     }
     await page.locator('[data-testid="tx-tags-update"]').click();
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     await editButton.click();
-    await page.waitForSelector('[data-testid="tx-edit-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
     const amountValue = await page.locator("#transaction-edit-amount").inputValue();
     const currencyValue = await page.locator("#transaction-edit-currency").inputValue();
     const dateValue = await page.locator("#transaction-edit-date").inputValue();
     fr["FR-013"] =
       amountValue && currencyValue && dateValue
-        ? pass("Full transaction edit dialog opens with prefilled values.")
+        ? pass("Full transaction edit page opens with prefilled values.")
         : fail("Edit dialog opened but one or more required prefilled fields were empty.");
 
     await page.fill("#transaction-edit-amount", "0");
@@ -134,10 +134,10 @@ export const phase2Definition = {
     await page.fill("#transaction-edit-amount", "2.34");
     await page.fill("#transaction-edit-note", `${qaNote}-updated`);
     await page.locator('[data-testid="tx-edit-save"]').click();
-    await page.waitForSelector('[data-testid="tx-edit-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { state: "hidden", timeout: 15000 });
 
     await page.locator(`[data-testid="tx-${transactionLayout}-edit-${transactionId}"]`).click();
-    await page.waitForSelector('[data-testid="tx-edit-dialog"]', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
     await page.locator('[data-testid="tx-edit-delete-trigger"]').click();
     await page.waitForSelector('[data-testid="tx-edit-delete-confirm-dialog"]', { timeout: 15000 });
     fr["FR-015"] = pass("Delete flow uses explicit confirmation dialog before destructive action.");
@@ -162,13 +162,16 @@ export const phase2Definition = {
 
     const stillVisible = await row.isVisible().catch(() => false);
     const unchangedPath = page.url().includes("/transactions");
-    const noFullReload = page.__mainFrameNavigations === baselineNavigations;
+    const finalDocumentNavigationCount = await page.evaluate(
+      () => performance.getEntriesByType("navigation").length,
+    );
+    const noDocumentReload = finalDocumentNavigationCount === documentNavigationCount;
 
     fr["FR-016"] =
-      !stillVisible && unchangedPath && noFullReload
-        ? pass("Update/delete mutations apply in-place in the list without a full page reload.")
+      !stillVisible && unchangedPath && noDocumentReload
+        ? pass("Update/delete mutations apply in-place and return through app routes without a document reload.")
         : fail(
-            `In-place update/delete check failed (rowVisible=${stillVisible}, unchangedPath=${unchangedPath}, navigations=${page.__mainFrameNavigations}, baseline=${baselineNavigations}).`,
+            `In-place update/delete check failed (rowVisible=${stillVisible}, unchangedPath=${unchangedPath}, documentNavigations=${finalDocumentNavigationCount}, baseline=${documentNavigationCount}).`,
           );
 
     return {

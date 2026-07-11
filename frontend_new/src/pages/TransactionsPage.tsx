@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoaderCircleIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -166,7 +167,71 @@ function buildUpdatePayload(
   };
 }
 
+interface TransactionRouteState {
+  mtReturnPath?: string;
+  transaction?: Transaction;
+}
+
+function readRouteTransaction(
+  transactionId: number | undefined,
+  transactions: Transaction[],
+  state: unknown,
+): Transaction | null {
+  if (!transactionId) {
+    return null;
+  }
+
+  const loadedTransaction = transactions.find((transaction) => transaction.id === transactionId);
+  if (loadedTransaction) {
+    return loadedTransaction;
+  }
+
+  if (typeof state === "object" && state !== null && "transaction" in state) {
+    const routeTransaction = (state as TransactionRouteState).transaction;
+    if (routeTransaction?.id === transactionId) {
+      return routeTransaction;
+    }
+  }
+
+  return null;
+}
+
+function parseTransactionRoute(pathname: string): {
+  editTransactionId?: number;
+  editSubpage: "none" | "category" | "tags";
+  quickCategoryTransactionId?: number;
+  quickTagTransactionId?: number;
+} {
+  const editMatch = /^\/transactions\/(\d+)\/edit(?:\/(category|tags))?$/.exec(pathname);
+  if (editMatch) {
+    return {
+      editTransactionId: Number(editMatch[1]),
+      editSubpage: editMatch[2] === "category" || editMatch[2] === "tags" ? editMatch[2] : "none",
+    };
+  }
+
+  const quickCategoryMatch = /^\/transactions\/(\d+)\/category$/.exec(pathname);
+  if (quickCategoryMatch) {
+    return {
+      quickCategoryTransactionId: Number(quickCategoryMatch[1]),
+      editSubpage: "none",
+    };
+  }
+
+  const quickTagMatch = /^\/transactions\/(\d+)\/tags$/.exec(pathname);
+  if (quickTagMatch) {
+    return {
+      quickTagTransactionId: Number(quickTagMatch[1]),
+      editSubpage: "none",
+    };
+  }
+
+  return { editSubpage: "none" };
+}
+
 export function TransactionsPage(): JSX.Element {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [filtersDraft, setFiltersDraft] = useState<TransactionFilterDraft>(DEFAULT_FILTERS);
   const [categorySearch, setCategorySearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
@@ -177,9 +242,6 @@ export function TransactionsPage(): JSX.Element {
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [optionsRetryIndex, setOptionsRetryIndex] = useState(0);
-  const [categorySelectorTransaction, setCategorySelectorTransaction] = useState<Transaction | null>(null);
-  const [tagSelectorTransaction, setTagSelectorTransaction] = useState<Transaction | null>(null);
-  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
   const [categoryUpdatePending, setCategoryUpdatePending] = useState(false);
   const [tagUpdatePending, setTagUpdatePending] = useState(false);
   const [categoryUpdateError, setCategoryUpdateError] = useState<string | null>(null);
@@ -284,25 +346,64 @@ export function TransactionsPage(): JSX.Element {
     setOptionsRetryIndex((current) => current + 1);
   }, []);
 
+  const transactionRoute = useMemo(() => parseTransactionRoute(location.pathname), [location.pathname]);
+  const quickCategoryTransaction = readRouteTransaction(
+    transactionRoute.quickCategoryTransactionId,
+    transactions,
+    location.state,
+  );
+  const quickTagTransaction = readRouteTransaction(
+    transactionRoute.quickTagTransactionId,
+    transactions,
+    location.state,
+  );
+  const editTransaction = readRouteTransaction(
+    transactionRoute.editTransactionId,
+    transactions,
+    location.state,
+  );
+
+  const navigateBack = useCallback(() => {
+    const routeState = location.state as TransactionRouteState | null;
+    if (routeState?.mtReturnPath) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/transactions", { replace: true });
+  }, [location.state, navigate]);
+
+  const openTransactionRoute = useCallback(
+    (path: string, transaction: Transaction): void => {
+      navigate(path, {
+        state: {
+          mtReturnPath: location.pathname,
+          transaction,
+        } satisfies TransactionRouteState,
+      });
+    },
+    [location.pathname, navigate],
+  );
+
   const closeCategorySelector = useCallback(() => {
-    setCategorySelectorTransaction(null);
     setCategoryUpdateError(null);
     setCategoryUpdatePending(false);
-  }, []);
+    navigateBack();
+  }, [navigateBack]);
 
   const closeTagSelector = useCallback(() => {
-    setTagSelectorTransaction(null);
     setTagUpdateError(null);
     setTagUpdatePending(false);
-  }, []);
+    navigateBack();
+  }, [navigateBack]);
 
   const handleQuickCategoryConfirm = useCallback(
     async (nextCategoryId: number | null): Promise<void> => {
-      if (!categorySelectorTransaction || categoryUpdatePending) {
+      if (!quickCategoryTransaction || categoryUpdatePending) {
         return;
       }
 
-      if (categorySelectorTransaction.categoryId === nextCategoryId) {
+      if (quickCategoryTransaction.categoryId === nextCategoryId) {
         closeCategorySelector();
         return;
       }
@@ -312,8 +413,8 @@ export function TransactionsPage(): JSX.Element {
 
       try {
         const updatedTransaction = await updateTransaction(
-          categorySelectorTransaction.id,
-          buildUpdatePayload(categorySelectorTransaction, {
+          quickCategoryTransaction.id,
+          buildUpdatePayload(quickCategoryTransaction, {
             categoryId: nextCategoryId,
           }),
         );
@@ -326,16 +427,16 @@ export function TransactionsPage(): JSX.Element {
         setCategoryUpdatePending(false);
       }
     },
-    [categorySelectorTransaction, categoryUpdatePending, closeCategorySelector, replaceTransaction],
+    [categoryUpdatePending, closeCategorySelector, quickCategoryTransaction, replaceTransaction],
   );
 
   const handleQuickTagsConfirm = useCallback(
     async (nextTags: string[]): Promise<void> => {
-      if (!tagSelectorTransaction || tagUpdatePending) {
+      if (!quickTagTransaction || tagUpdatePending) {
         return;
       }
 
-      if (areTagsEqual(tagSelectorTransaction.tags, nextTags)) {
+      if (areTagsEqual(quickTagTransaction.tags, nextTags)) {
         closeTagSelector();
         return;
       }
@@ -345,8 +446,8 @@ export function TransactionsPage(): JSX.Element {
 
       try {
         const updatedTransaction = await updateTransaction(
-          tagSelectorTransaction.id,
-          buildUpdatePayload(tagSelectorTransaction, {
+          quickTagTransaction.id,
+          buildUpdatePayload(quickTagTransaction, {
             tags: nextTags,
           }),
         );
@@ -359,7 +460,7 @@ export function TransactionsPage(): JSX.Element {
         setTagUpdatePending(false);
       }
     },
-    [closeTagSelector, replaceTransaction, tagSelectorTransaction, tagUpdatePending],
+    [closeTagSelector, quickTagTransaction, replaceTransaction, tagUpdatePending],
   );
 
   const hasEmptyState = !loading && !error && transactions.length === 0;
@@ -389,7 +490,7 @@ export function TransactionsPage(): JSX.Element {
   }, [displayCurrency]);
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="relative flex min-h-full shrink-0 flex-col gap-4">
       <Card className="mt-balance-card overflow-hidden border-0 py-0 text-primary-foreground">
         <CardContent className="relative flex flex-col gap-5 p-5">
           <div className="mt-balance-glow mt-balance-glow-top" />
@@ -471,26 +572,30 @@ export function TransactionsPage(): JSX.Element {
         <>
           <TransactionsMobileList
             onEditCategory={(transaction) => {
-              setCategorySelectorTransaction(transaction);
               setCategoryUpdateError(null);
+              openTransactionRoute(`/transactions/${transaction.id}/category`, transaction);
             }}
             onEditTags={(transaction) => {
-              setTagSelectorTransaction(transaction);
               setTagUpdateError(null);
+              openTransactionRoute(`/transactions/${transaction.id}/tags`, transaction);
             }}
-            onEditTransaction={setEditTransaction}
+            onEditTransaction={(transaction) => {
+              openTransactionRoute(`/transactions/${transaction.id}/edit`, transaction);
+            }}
             transactions={transactions}
           />
           <TransactionsDesktopTable
             onEditCategory={(transaction) => {
-              setCategorySelectorTransaction(transaction);
               setCategoryUpdateError(null);
+              openTransactionRoute(`/transactions/${transaction.id}/category`, transaction);
             }}
             onEditTags={(transaction) => {
-              setTagSelectorTransaction(transaction);
               setTagUpdateError(null);
+              openTransactionRoute(`/transactions/${transaction.id}/tags`, transaction);
             }}
-            onEditTransaction={setEditTransaction}
+            onEditTransaction={(transaction) => {
+              openTransactionRoute(`/transactions/${transaction.id}/edit`, transaction);
+            }}
             transactions={transactions}
           />
         </>
@@ -519,7 +624,7 @@ export function TransactionsPage(): JSX.Element {
 
       <TransactionCategorySelectorDialog
         categories={categories}
-        currentCategoryId={categorySelectorTransaction?.categoryId ?? null}
+        currentCategoryId={quickCategoryTransaction?.categoryId ?? null}
         description="Choose a category for your transaction"
         error={categoryUpdateError}
         onConfirm={handleQuickCategoryConfirm}
@@ -528,8 +633,9 @@ export function TransactionsPage(): JSX.Element {
             closeCategorySelector();
           }
         }}
-        open={categorySelectorTransaction !== null}
+        open={quickCategoryTransaction !== null}
         pending={categoryUpdatePending}
+        presentation="page"
         title="Select Category"
       />
 
@@ -537,15 +643,16 @@ export function TransactionsPage(): JSX.Element {
         availableTags={tags}
         description="Choose tags for your transaction"
         error={tagUpdateError}
-        initialTags={tagSelectorTransaction?.tags ?? []}
+        initialTags={quickTagTransaction?.tags ?? []}
         onConfirm={handleQuickTagsConfirm}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             closeTagSelector();
           }
         }}
-        open={tagSelectorTransaction !== null}
+        open={quickTagTransaction !== null}
         pending={tagUpdatePending}
+        presentation="page"
         title="Add tags"
       />
 
@@ -554,18 +661,28 @@ export function TransactionsPage(): JSX.Element {
         categories={categories}
         onDeleted={(transactionId) => {
           removeTransaction(transactionId);
-          setEditTransaction(null);
         }}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
-            setEditTransaction(null);
+            navigateBack();
           }
         }}
         onSaved={(updatedTransaction) => {
           replaceTransaction(updatedTransaction);
-          setEditTransaction(null);
+        }}
+        activeSubpage={transactionRoute.editSubpage}
+        onOpenCategoryPage={() => {
+          if (editTransaction) {
+            openTransactionRoute(`/transactions/${editTransaction.id}/edit/category`, editTransaction);
+          }
+        }}
+        onOpenTagsPage={() => {
+          if (editTransaction) {
+            openTransactionRoute(`/transactions/${editTransaction.id}/edit/tags`, editTransaction);
+          }
         }}
         open={editTransaction !== null}
+        presentation="page"
         transaction={editTransaction}
       />
     </section>

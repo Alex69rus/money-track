@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { chromium } from "playwright";
 import { phase2Definition } from "./phases/phase2.mjs";
 import { phase3Definition } from "./phases/phase3.mjs";
@@ -166,8 +168,14 @@ async function main() {
     error: runError,
   };
 
+  const reportFile = process.env.QA_REPORT_FILE;
+  if (reportFile) {
+    mkdirSync(dirname(reportFile), { recursive: true });
+    writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  }
+
   console.log(JSON.stringify(report, null, 2));
-  process.exit(allPass ? 0 : 1);
+  process.exitCode = allPass ? 0 : 1;
 }
 
 await main();

@@ -44,6 +44,10 @@ interface TransactionEditDialogProps {
   onOpenChange: (open: boolean) => void;
   onSaved: (transaction: Transaction) => void;
   onDeleted: (transactionId: number) => void;
+  presentation?: "dialog" | "page";
+  activeSubpage?: "none" | "category" | "tags";
+  onOpenCategoryPage?: () => void;
+  onOpenTagsPage?: () => void;
 }
 
 function toErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -114,6 +118,10 @@ export function TransactionEditDialog({
   onOpenChange,
   onSaved,
   onDeleted,
+  presentation = "dialog",
+  activeSubpage = "none",
+  onOpenCategoryPage,
+  onOpenTagsPage,
 }: TransactionEditDialogProps): JSX.Element {
   const [amount, setAmount] = useState("");
   const [transactionDate, setTransactionDate] = useState("");
@@ -265,19 +273,26 @@ export function TransactionEditDialog({
     element.click();
   };
 
-  return (
-    <>
-      <Dialog onOpenChange={onOpenChange} open={open}>
-        <DialogContent
-          className="mt-transaction-editor-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-[#171923] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
-          data-testid="tx-edit-dialog"
-          showCloseButton={false}
-        >
-          <div className="flex h-8 items-center justify-center pt-2">
-            <div className="h-1.5 w-12 rounded-full bg-white/25" />
-          </div>
+  if (presentation === "page" && !open) {
+    return <></>;
+  }
 
-          <DialogHeader className="px-6 pb-2 text-left">
+  const editorBody = (
+    <>
+      {presentation === "page" ? null : (
+        <div className="flex h-8 items-center justify-center pt-2">
+            <div className="h-1.5 w-12 rounded-full bg-white/25" />
+        </div>
+      )}
+
+      {presentation === "page" ? (
+        <header className="px-6 pt-3 pb-2 text-left">
+          <h1 className="text-center text-[1.75rem] font-semibold tracking-tight text-slate-50">
+            Edit Transaction
+          </h1>
+        </header>
+      ) : (
+        <DialogHeader className="px-6 pb-2 text-left">
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
               <button
                 aria-label="Cancel editing transaction"
@@ -293,9 +308,14 @@ export function TransactionEditDialog({
               <span aria-hidden className="w-14" />
             </div>
             <DialogDescription className="sr-only">Update details and save changes without leaving the list.</DialogDescription>
-          </DialogHeader>
+        </DialogHeader>
+      )}
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-8 pt-3" data-testid="tx-edit-scroll">
+          <div
+            className="mt-keyboard-scroll-space flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-8 pt-3"
+            data-focus-scroll-container
+            data-testid="tx-edit-scroll"
+          >
             {error ? (
               <Alert className="border-destructive/60 bg-destructive/10 text-destructive" variant="destructive">
                 <AlertTitle>Unable to save</AlertTitle>
@@ -344,7 +364,13 @@ export function TransactionEditDialog({
               aria-label="Open category selector"
               className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/6 px-4 py-3.5 text-left transition-colors hover:bg-white/12"
               data-testid="tx-edit-open-category"
-              onClick={() => setCategorySelectorOpen(true)}
+              onClick={() => {
+                if (presentation === "page" && onOpenCategoryPage) {
+                  onOpenCategoryPage();
+                  return;
+                }
+                setCategorySelectorOpen(true);
+              }}
               type="button"
             >
               <div className="flex items-center gap-3">
@@ -397,7 +423,13 @@ export function TransactionEditDialog({
               aria-label="Open tag selector"
               className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3.5 text-left transition-colors hover:bg-white/12"
               data-testid="tx-edit-open-tags"
-              onClick={() => setTagSelectorOpen(true)}
+              onClick={() => {
+                if (presentation === "page" && onOpenTagsPage) {
+                  onOpenTagsPage();
+                  return;
+                }
+                setTagSelectorOpen(true);
+              }}
               type="button"
             >
               <div className="mb-3 flex items-center justify-between">
@@ -476,8 +508,32 @@ export function TransactionEditDialog({
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+    </>
+  );
+
+  const isPageCategorySelectorOpen = presentation === "page" && activeSubpage === "category";
+  const isPageTagSelectorOpen = presentation === "page" && activeSubpage === "tags";
+
+  return (
+    <>
+      {presentation === "page" ? (
+        <section
+          className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#171923] text-slate-100"
+          data-testid="tx-edit-page"
+        >
+          {editorBody}
+        </section>
+      ) : (
+        <Dialog onOpenChange={onOpenChange} open={open}>
+          <DialogContent
+            className="mt-transaction-editor-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-[#171923] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
+            data-testid="tx-edit-dialog"
+            showCloseButton={false}
+          >
+            {editorBody}
+          </DialogContent>
+        </Dialog>
+      )}
 
       <AlertDialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
         <AlertDialogContent data-testid="tx-edit-delete-confirm-dialog">
@@ -512,11 +568,24 @@ export function TransactionEditDialog({
         instantApply
         onConfirm={(nextCategoryId) => {
           setCategoryId(nextCategoryId);
+          if (presentation === "page") {
+            onOpenChange(false);
+            return;
+          }
           setCategorySelectorOpen(false);
         }}
-        onOpenChange={setCategorySelectorOpen}
-        open={categorySelectorOpen}
+        onOpenChange={(nextOpen) => {
+          if (presentation === "page") {
+            if (!nextOpen) {
+              onOpenChange(false);
+            }
+            return;
+          }
+          setCategorySelectorOpen(nextOpen);
+        }}
+        open={isPageCategorySelectorOpen || categorySelectorOpen}
         pending={false}
+        presentation={presentation === "page" ? "page" : "dialog"}
         title="Select Category"
       />
 
@@ -527,11 +596,24 @@ export function TransactionEditDialog({
         initialTags={tags}
         onConfirm={(nextTags) => {
           setTags(nextTags);
+          if (presentation === "page") {
+            onOpenChange(false);
+            return;
+          }
           setTagSelectorOpen(false);
         }}
-        onOpenChange={setTagSelectorOpen}
-        open={tagSelectorOpen}
+        onOpenChange={(nextOpen) => {
+          if (presentation === "page") {
+            if (!nextOpen) {
+              onOpenChange(false);
+            }
+            return;
+          }
+          setTagSelectorOpen(nextOpen);
+        }}
+        open={isPageTagSelectorOpen || tagSelectorOpen}
         pending={false}
+        presentation={presentation === "page" ? "page" : "dialog"}
         title="Add tags"
       />
     </>

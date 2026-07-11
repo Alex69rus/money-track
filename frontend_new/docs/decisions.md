@@ -26,3 +26,14 @@ AI Chat is a backend-linked stub for now.
 - Do not introduce dedicated chat webhook env in `frontend_new`.
 - Full FE/BE chat implementation is deferred to a later slice.
 
+## Dec-004 (TWA-1 Native Telegram Navigation)
+
+Date: 2026-07-11
+
+- Telegram launch redirects to Transactions and keeps the four approved primary destinations—Transactions, Analytics, AI Chat, and Settings—in the persistent bottom navigation.
+- In Telegram, do not render the persistent `Money Track` web header. Keep primary bottom navigation, but hide it when a nested full-page flow is active or while the keyboard is open.
+- Treat transaction edit, category selection, tag selection, and analytics drilldown as nested full-page routes. `window.Telegram.WebApp.BackButton` returns from those pages; it stays hidden on primary destinations.
+- Transaction edit, category selection, tag selection, and analytics category drilldown are full-page routes. Keep only destructive confirmations as dialogs.
+- Editable fields scroll inside the correct page scroll container after focus and after Telegram viewport changes. Use stable/current viewport values to reserve keyboard scroll space.
+- Apply Telegram's content-safe top inset to primary pages and every fixed full-page surface so host controls never overlap app content.
+- On Bot API 7.7+, call `disableVerticalSwipes()`. On Bot API 8.0+, request fullscreen at startup and after a fullscreen exit. Both behaviors are version-gated requests: Telegram can still expose host controls or decline fullscreen.

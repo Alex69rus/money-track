@@ -22,6 +22,7 @@ interface TransactionTagSelectorDialogProps {
   error: string | null;
   title: string;
   description: string;
+  presentation?: "dialog" | "page";
   onOpenChange: (open: boolean) => void;
   onConfirm: (tags: string[]) => Promise<void> | void;
 }
@@ -64,6 +65,7 @@ export function TransactionTagSelectorDialog({
   error,
   title,
   description,
+  presentation = "dialog",
   onOpenChange,
   onConfirm,
 }: TransactionTagSelectorDialogProps): JSX.Element {
@@ -142,13 +144,30 @@ export function TransactionTagSelectorDialog({
     return "Update Tags";
   }, [pending, selectedTags.length]);
 
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent
-        className="mt-tag-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
-        data-testid="tx-tags-dialog"
-        showCloseButton={false}
-      >
+  if (presentation === "page" && !open) {
+    return <></>;
+  }
+
+  const selectorBody = (
+    <>
+      {presentation === "page" ? (
+        <header className="border-b border-[#22334a]/80 bg-[#0f1b2a] px-4 py-3 text-left">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-[2rem] font-semibold tracking-tight text-slate-100">{title}</h1>
+            <Button
+              aria-label="Confirm selected tags"
+              className="h-10 min-w-0 px-2 text-base font-semibold text-[#2d8cff] hover:bg-white/10 hover:text-[#2d8cff]"
+              disabled={!hasChanges || pending}
+              onClick={() => void handleConfirm()}
+              type="button"
+              variant="ghost"
+            >
+              Done
+            </Button>
+          </div>
+          <p className="sr-only">{description}</p>
+        </header>
+      ) : (
         <DialogHeader className="border-b border-[#22334a]/80 bg-[#0f1b2a] px-4 py-3 text-left">
           <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
             <Button
@@ -182,6 +201,7 @@ export function TransactionTagSelectorDialog({
           </div>
           <DialogDescription className="sr-only">{description}</DialogDescription>
         </DialogHeader>
+      )}
 
         <div className="flex min-h-0 flex-1 flex-col bg-[#0b1624]">
           {error ? (
@@ -247,7 +267,11 @@ export function TransactionTagSelectorDialog({
             ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6" data-testid="tx-tags-scroll">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6"
+            data-focus-scroll-container
+            data-testid="tx-tags-scroll"
+          >
             <h3 className="mb-4 px-1 text-[0.78rem] font-semibold tracking-[0.14em] text-slate-400 uppercase">
               Available Tags
             </h3>
@@ -295,6 +319,28 @@ export function TransactionTagSelectorDialog({
             {updateLabel}
           </Button>
         </div>
+    </>
+  );
+
+  if (presentation === "page") {
+    return (
+      <section
+        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#0e1a2a] text-slate-100"
+        data-testid="tx-tags-page"
+      >
+        {selectorBody}
+      </section>
+    );
+  }
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent
+        className="mt-tag-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
+        data-testid="tx-tags-dialog"
+        showCloseButton={false}
+      >
+        {selectorBody}
       </DialogContent>
     </Dialog>
   );

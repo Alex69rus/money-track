@@ -61,7 +61,12 @@ else
   echo "[qa:${PHASE_ID}] Starting backend (log: ${BACKEND_LOG})"
   (
     cd "${ROOT_DIR}/backend_new"
-    CORS_ALLOW_ORIGINS="${FRONTEND_URL}" uv run python -m uvicorn app.main:app --host 127.0.0.1 --port "${BACKEND_PORT}"
+    ENVIRONMENT=Development \
+      TELEGRAM_BOT_TOKEN=test-token \
+      TELEGRAM_WEBHOOK_URL= \
+      TELEGRAM_WEBHOOK_SECRET= \
+      CORS_ALLOW_ORIGINS="${FRONTEND_URL}" \
+      uv run python -m uvicorn app.main:app --host 127.0.0.1 --port "${BACKEND_PORT}"
   ) >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!
   STARTED_BACKEND=1
@@ -84,5 +89,8 @@ fi
 echo "[qa:${PHASE_ID}] Running phase checks"
 (
   cd "${ROOT_DIR}/frontend_new"
-  QA_FRONTEND_URL="${FRONTEND_URL}" QA_BACKEND_URL="${BACKEND_URL}" npm run qa:phase -- "${PHASE_ID}"
+  QA_FRONTEND_URL="${FRONTEND_URL}" \
+    QA_BACKEND_URL="${BACKEND_URL}" \
+    QA_REPORT_FILE="${TMP_DIR}/qa-${PHASE_ID}-report.json" \
+    npm run qa:phase -- "${PHASE_ID}"
 )

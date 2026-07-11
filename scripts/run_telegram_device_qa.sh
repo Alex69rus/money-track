@@ -86,7 +86,7 @@ docker compose -f "${ROOT_DIR}/compose.dev.yml" up -d nginx
 wait_up "nginx proxy" "http://127.0.0.1:8080/health"
 
 echo "Telegram device QA is ready at ${PUBLIC_URL}"
-echo "Open the Mini App from the test bot on a physical phone, then check keyboard, bottom nav, sheets, and sticky actions."
+echo "Open the Mini App from the test bot on a physical phone, then check host Back navigation, full-page edit/select flows, focus/keyboard positioning, and sticky actions."
 echo "Press Ctrl+C when the device check is complete."
 
 ngrok http 8080 --url "${NGROK_DOMAIN}" >"${TMP_DIR}/telegram-device-ngrok.log" 2>&1 &

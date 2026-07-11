@@ -10,12 +10,22 @@ export interface TelegramWebApp {
   version?: string;
   viewportHeight?: number;
   viewportStableHeight?: number;
+  isFullscreen?: boolean;
   colorScheme?: "light" | "dark";
   ready: () => void;
   expand: () => void;
+  disableVerticalSwipes?: () => void;
+  requestFullscreen?: () => void;
   isVersionAtLeast?: (version: string) => boolean;
   onEvent?: (event: string, handler: () => void) => void;
   offEvent?: (event: string, handler: () => void) => void;
+  BackButton?: {
+    isVisible?: boolean;
+    show: () => void;
+    hide: () => void;
+    onClick: (handler: () => void) => void;
+    offClick: (handler: () => void) => void;
+  };
 }
 
 const TELEGRAM_VIEWPORT_EVENTS = [
@@ -24,6 +34,9 @@ const TELEGRAM_VIEWPORT_EVENTS = [
   "contentSafeAreaChanged",
   "fullscreenChanged",
 ] as const;
+
+const DISABLE_VERTICAL_SWIPES_MIN_VERSION = "7.7";
+const FULLSCREEN_MIN_VERSION = "8.0";
 
 interface WindowWithTelegram extends Window {
   Telegram?: {
@@ -42,6 +55,30 @@ export function getTelegramWebApp(): TelegramWebApp | undefined {
   return getWindow()?.Telegram?.WebApp;
 }
 
+export function isTelegramWebAppAvailable(): boolean {
+  return getTelegramWebApp() !== undefined;
+}
+
+export function supportsTelegramWebAppVersion(webApp: TelegramWebApp, version: string): boolean {
+  return webApp.isVersionAtLeast ? webApp.isVersionAtLeast(version) : true;
+}
+
+function requestTelegramFullscreen(webApp: TelegramWebApp): void {
+  if (
+    webApp.isFullscreen === true ||
+    !webApp.requestFullscreen ||
+    !supportsTelegramWebAppVersion(webApp, FULLSCREEN_MIN_VERSION)
+  ) {
+    return;
+  }
+
+  try {
+    webApp.requestFullscreen();
+  } catch {
+    // Some Telegram clients can reject this host request despite reporting a compatible version.
+  }
+}
+
 function setRootCssVariable(name: string, value: string): void {
   if (typeof document === "undefined") {
     return;
@@ -53,10 +90,17 @@ function setRootCssVariable(name: string, value: string): void {
 function syncStableViewportHeightCssVar(webApp: TelegramWebApp | undefined): void {
   if (!webApp?.viewportStableHeight || webApp.viewportStableHeight <= 0) {
     setRootCssVariable("--mt-viewport-stable-height", "100dvh");
+    setRootCssVariable("--mt-viewport-current-height", "100dvh");
     return;
   }
 
   setRootCssVariable("--mt-viewport-stable-height", `${Math.round(webApp.viewportStableHeight)}px`);
+  setRootCssVariable(
+    "--mt-viewport-current-height",
+    webApp.viewportHeight && webApp.viewportHeight > 0
+      ? `${Math.round(webApp.viewportHeight)}px`
+      : `${Math.round(webApp.viewportStableHeight)}px`,
+  );
 }
 
 export function initializeTelegramWebApp(): void {
@@ -69,6 +113,16 @@ export function initializeTelegramWebApp(): void {
 
   webApp.ready();
   webApp.expand();
+
+  if (webApp.disableVerticalSwipes && supportsTelegramWebAppVersion(webApp, DISABLE_VERTICAL_SWIPES_MIN_VERSION)) {
+    try {
+      webApp.disableVerticalSwipes();
+    } catch {
+      // Preserve normal app launch when a client does not honor the optional host API.
+    }
+  }
+
+  requestTelegramFullscreen(webApp);
 }
 
 export function getTelegramInitData(): string {
@@ -96,5 +150,33 @@ export function subscribeTelegramViewportChanges(onChange: () => void): () => vo
     TELEGRAM_VIEWPORT_EVENTS.forEach((event) => {
       webApp.offEvent?.(event, handler);
     });
+  };
+}
+
+/**
+ * Re-requests fullscreen if the host exits it while the app is active. The
+ * request remains version-gated and harmless in browser development mode.
+ */
+export function subscribeTelegramFullscreenLock(): () => void {
+  const webApp = getTelegramWebApp();
+  if (
+    !webApp?.onEvent ||
+    !webApp.offEvent ||
+    !webApp.requestFullscreen ||
+    !supportsTelegramWebAppVersion(webApp, FULLSCREEN_MIN_VERSION)
+  ) {
+    return () => undefined;
+  }
+
+  const handler = (): void => {
+    if (webApp.isFullscreen === false) {
+      requestTelegramFullscreen(webApp);
+    }
+  };
+
+  webApp.onEvent("fullscreenChanged", handler);
+
+  return () => {
+    webApp.offEvent?.("fullscreenChanged", handler);
   };
 }

@@ -110,14 +110,57 @@ export const phase5Definition = {
       { timeout: 15000 },
     );
 
-    await page.click(`[data-testid="tx-${transactionLayout}-tags-98501"]`);
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { timeout: 15000 });
+    const tagEditor = page.locator(`[data-testid="tx-${transactionLayout}-tags-98501"]`);
+    await tagEditor.scrollIntoViewIfNeeded();
+    const [tagEditorBounds, primaryNavigationBounds] = await Promise.all([
+      tagEditor.boundingBox(),
+      page.locator('[data-testid="app-shell-nav"]').boundingBox(),
+    ]);
+    const tagEditorReachable =
+      tagEditorBounds !== null &&
+      primaryNavigationBounds !== null &&
+      tagEditorBounds.y + tagEditorBounds.height <= primaryNavigationBounds.y;
+    if (!tagEditorReachable) {
+      const navigationDiagnostics = await page.evaluate(() => {
+        const main = document.querySelector('[data-testid="app-shell-main"]');
+        const row = document.querySelector('[data-testid="tx-mobile-row-98501"]');
+        const section = main?.querySelector(":scope > section");
+        const styles = main ? window.getComputedStyle(main) : null;
+        const sectionStyles = section ? window.getComputedStyle(section) : null;
+
+        return {
+          main: main
+            ? {
+                clientHeight: main.clientHeight,
+                rect: main.getBoundingClientRect().toJSON(),
+                scrollHeight: main.scrollHeight,
+                scrollPaddingBottom: styles?.scrollPaddingBottom ?? null,
+                scrollTop: main.scrollTop,
+              }
+            : null,
+          row: row?.getBoundingClientRect().toJSON() ?? null,
+          section: section
+            ? {
+                className: section.className,
+                paddingBottom: sectionStyles?.paddingBottom ?? null,
+                rect: section.getBoundingClientRect().toJSON(),
+              }
+            : null,
+        };
+      });
+      throw new Error(
+        `Tag editor remains behind persistent navigation: ${JSON.stringify({ navigationDiagnostics, primaryNavigationBounds, tagEditorBounds })}.`,
+      );
+    }
+
+    await tagEditor.click();
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
     const tagInSelectorVisible = await page
       .locator(`[data-testid="tx-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`)
       .isVisible()
       .catch(() => false);
-    await page.keyboard.press("Escape");
-    await page.waitForSelector('[data-testid="tx-tags-dialog"]', { state: "hidden", timeout: 15000 });
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     const tagInFiltersVisible = await page
       .locator(`[data-testid="tx-filter-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`)
@@ -131,15 +174,18 @@ export const phase5Definition = {
             `Tag integration check failed (tagsRequestCount=${tagsRequestCount}, filterTagVisible=${tagInFiltersVisible}, selectorTagVisible=${tagInSelectorVisible}).`,
           );
 
-    const navLabels = await page.locator('[data-testid^="app-shell-nav-link-"]').allTextContents();
-    const navCount = navLabels.length;
+    await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    const navDestinations = await page
+      .locator('[data-testid^="app-shell-nav-link-"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute("data-testid")?.replace("app-shell-nav-link-", "") ?? ""));
+    const navCount = navDestinations.length;
     const hasApprovedNavOnly =
       navCount === 4 &&
-      ["Transactions", "Analytics", "AI Chat", "Settings"].every((label) => navLabels.includes(label));
+      ["transactions", "analytics", "chat", "settings"].every((destination) => navDestinations.includes(destination));
 
     fr["FR-040"] = hasApprovedNavOnly
-      ? pass("Navigation scope is limited to approved tabs: Transactions, Analytics, AI Chat, Settings.")
-      : fail(`Unexpected navigation scope detected (count=${navCount}, labels=${navLabels.join(", ")}).`);
+      ? pass("Telegram bottom navigation is limited to Transactions, Analytics, AI Chat, and Settings.")
+      : fail(`Unexpected navigation scope detected (count=${navCount}, destinations=${navDestinations.join(", ")}).`);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${frontendBaseUrl}/chat`, { waitUntil: "domcontentloaded", timeout: 120000 });
@@ -149,20 +195,20 @@ export const phase5Definition = {
     const shellStyle = await page.locator('[data-testid="app-shell-root"]').getAttribute("style");
     const usesStableViewportVar = shellStyle?.includes("--mt-viewport-stable-height") ?? false;
 
-    const navPaddingBottom = await page.locator('[data-testid="app-shell-nav-inner"]').evaluate((element) => {
-      return Number.parseFloat(window.getComputedStyle(element).paddingBottom || "0");
-    });
-
     const sendBounds = await page.locator('[data-testid="ai-chat-send"]').boundingBox();
+    const viewportHeight = await page.evaluate(() => window.innerHeight);
+    const customNavigationCount = await page.locator('[data-testid="app-shell-nav"]').count();
     const navBounds = await page.locator('[data-testid="app-shell-nav"]').boundingBox();
     const sendControlReachable =
-      sendBounds !== null && navBounds !== null ? sendBounds.y + sendBounds.height <= navBounds.y : false;
+      sendBounds !== null && navBounds !== null
+        ? sendBounds.y + sendBounds.height <= navBounds.y && navBounds.y + navBounds.height <= viewportHeight
+        : false;
 
     fr["FR-033"] =
-      usesStableViewportVar && navPaddingBottom > 0 && sendControlReachable
-        ? pass("Critical controls remain reachable with mobile viewport and safe-area-aware shell layout.")
+      usesStableViewportVar && customNavigationCount === 1 && sendControlReachable
+        ? pass("Critical controls remain reachable above persistent Telegram bottom navigation.")
         : fail(
-            `Viewport reachability check failed (stableVar=${usesStableViewportVar}, navPaddingBottom=${navPaddingBottom}, sendReachable=${sendControlReachable}).`,
+            `Viewport reachability check failed (stableVar=${usesStableViewportVar}, customNavigationCount=${customNavigationCount}, sendReachable=${sendControlReachable}).`,
           );
 
     await page.unroute(`${backendBaseUrl}/api/transactions*`);

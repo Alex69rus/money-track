@@ -22,6 +22,7 @@ interface TransactionCategorySelectorDialogProps {
   title: string;
   description: string;
   instantApply?: boolean;
+  presentation?: "dialog" | "page";
   onOpenChange: (open: boolean) => void;
   onConfirm: (categoryId: number | null) => Promise<void> | void;
 }
@@ -107,6 +108,7 @@ export function TransactionCategorySelectorDialog({
   title,
   description,
   instantApply = false,
+  presentation = "dialog",
   onOpenChange,
   onConfirm,
 }: TransactionCategorySelectorDialogProps): JSX.Element {
@@ -210,13 +212,18 @@ export function TransactionCategorySelectorDialog({
     await onConfirm(nextCategoryId);
   };
 
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent
-        className="mt-category-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0f1b2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
-        data-testid="tx-category-dialog"
-        showCloseButton={false}
-      >
+  if (presentation === "page" && !open) {
+    return <></>;
+  }
+
+  const selectorBody = (
+    <>
+      {presentation === "page" ? (
+        <header className="px-4 pt-3 pb-2 text-left">
+          <h1 className="text-center text-[1.95rem] font-bold tracking-tight text-slate-100">{title}</h1>
+          <p className="pt-1 text-center text-base text-slate-400">{description}</p>
+        </header>
+      ) : (
         <DialogHeader className="px-4 pt-6 pb-2 text-left">
           <div className="relative flex items-center justify-center">
             <Button
@@ -232,6 +239,7 @@ export function TransactionCategorySelectorDialog({
           </div>
           <DialogDescription className="pt-1 text-center text-base text-slate-400">{description}</DialogDescription>
         </DialogHeader>
+      )}
 
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-0">
           {error ? (
@@ -254,7 +262,11 @@ export function TransactionCategorySelectorDialog({
             />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pb-6" data-testid="tx-category-scroll">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto pb-6"
+            data-focus-scroll-container
+            data-testid="tx-category-scroll"
+          >
             <div className="flex flex-col border-b border-[#22334a]/80">
               <button
                 aria-label="Remove category"
@@ -395,6 +407,28 @@ export function TransactionCategorySelectorDialog({
             </Button>
           </div>
         )}
+    </>
+  );
+
+  if (presentation === "page") {
+    return (
+      <section
+        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#0f1b2a] text-slate-100"
+        data-testid="tx-category-page"
+      >
+        {selectorBody}
+      </section>
+    );
+  }
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent
+        className="mt-category-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0f1b2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
+        data-testid="tx-category-dialog"
+        showCloseButton={false}
+      >
+        {selectorBody}
       </DialogContent>
     </Dialog>
   );

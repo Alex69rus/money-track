@@ -2,16 +2,16 @@
 
 ## 1. Navigation and Layout
 ### FR-001
-The app MUST expose four primary destinations in bottom navigation: Transactions, Analytics, AI Chat, Settings.
+The app MUST expose exactly four primary destinations: Transactions, Analytics, AI Chat, and Settings. These destinations MUST remain available through persistent bottom navigation on primary screens.
 
 ### FR-002
-The default landing destination MUST be Transactions.
+Telegram launch MUST open Transactions. Direct `/transactions` navigation remains supported for development and deep links.
 
 ### FR-003
-A persistent top-level app header and bottom navigation MUST exist on mobile and desktop layouts.
+Browser-development mode MUST retain a persistent top-level app header and bottom navigation. Telegram mode MUST not render a duplicate web header, but MUST retain the primary bottom navigation. Telegram `BackButton` owns return navigation only for nested pages, where the bottom navigation is hidden.
 
 ### FR-004
-On mobile keyboard open, bottom navigation MUST not obstruct focused inputs.
+On mobile keyboard open, focused inputs MUST remain visible in the usable editing area without obstruction.
 
 ### FR-005
 `Settings` destination MUST exist as a stub surface even if detailed settings functionality is out of current scope.
@@ -44,7 +44,7 @@ Category selection MUST use a dedicated selector surface with searchable grouped
 Tag editing MUST use a dedicated selector surface and explicit confirmation action (`Done` / `Update` equivalent) before submit.
 
 ### FR-013
-The UI MUST provide full transaction edit in a dedicated interaction surface (modal/sheet/page) with prefilled values.
+The UI MUST provide full transaction edit as a dedicated full-page route with prefilled values in Telegram; browser fallback may use an equivalent dedicated surface.
 
 ### FR-014
 The full edit flow MUST validate required fields before submit.
@@ -76,7 +76,7 @@ Analytics MUST provide loading, error-with-retry, and no-data states.
 Date-range updates in analytics MUST recompute all shown analytics widgets consistently.
 
 ### FR-022
-Analytics MUST support category drilldown interaction that opens a category-filtered transactions popup/list with explicit close action.
+Analytics MUST support category drilldown interaction that opens a category-filtered transactions page and returns through Telegram BackButton while preserving parent context.
 
 ## 4. AI Chat Domain
 ### FR-023
@@ -112,7 +112,7 @@ When backend is unreachable in development/testing contexts, frontend SHOULD sup
 Transactions UI MUST provide responsive representations for small and large viewports.
 
 ### FR-033
-Critical interaction controls MUST remain reachable in Telegram Web App viewport constraints.
+Critical interaction controls MUST remain reachable in Telegram Web App viewport constraints and below Telegram's content-safe top/bottom insets.
 
 ### FR-034
 Search/select controls for categories and tags MUST support fast lookup over large option sets.
@@ -136,3 +136,9 @@ Transaction edit flow MUST keep multi-currency support across UI and API payload
 
 ### FR-040
 Any new tabs/screens beyond approved scope (Transactions, Analytics, AI Chat, Settings stub) MUST NOT be assumed in implementation without approved product scope extension.
+
+### FR-041
+On Telegram Bot API 7.7+ clients, the app MUST disable vertical swipes for the app surface. The implementation MUST retain normal behavior on unsupported clients and acknowledge that Telegram may still allow minimization/close from its own header.
+
+### FR-042
+On Telegram Bot API 8.0+ clients, the app MUST request fullscreen at startup and after a host fullscreen exit. The implementation MUST remain version-gated and safe when Telegram declines the request; client-controlled launch modes cannot be forcibly removed by web-app code.

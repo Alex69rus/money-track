@@ -29,6 +29,10 @@
     --tg-content-safe-area-inset-bottom,
     var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
   );
+  --mt-safe-area-inset-top: var(
+    --tg-content-safe-area-inset-top,
+    var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px))
+  );
 }
 
 * {
@@ -102,4 +106,28 @@ body {
 
 .mt-transaction-editor-sheet {
   max-height: calc(var(--mt-viewport-stable-height, 100dvh) - 2rem);
+}
+
+.mt-keyboard-scroll-space {
+  padding-bottom: max(
+    2rem,
+    calc(
+      var(--mt-viewport-stable-height, 100dvh) - var(--mt-viewport-current-height, 100dvh) +
+        2rem
+    )
+  );
+}
+
+.mt-twa-page-safe-top {
+  padding-top: calc(var(--mt-safe-area-inset-top) + 0.5rem);
+}
+
+.mt-scroll-primary {
+  scroll-padding-block: calc(var(--mt-safe-area-inset-top) + 1rem)
+    calc(var(--mt-safe-area-inset-bottom) + 6rem);
+}
+
+.mt-scroll-nested {
+  scroll-padding-block: calc(var(--mt-safe-area-inset-top) + 1rem)
+    calc(var(--mt-safe-area-inset-bottom) + 1rem);
 }

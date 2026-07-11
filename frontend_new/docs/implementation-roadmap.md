@@ -57,7 +57,7 @@ Recommended `VF-0` output:
 
 ## Telegram-Native UX Refactor Track
 
-Status: planned. This is the next strategic UX step after the smoke-test findings in `frontend_new/bugs_reports/telegram-ios-smoke-test-2026-07-11.md` are triaged. It requires separate implementation approval; this roadmap entry does not authorize implementation.
+Status: implemented in browser/Telegram-fixture QA on 2026-07-11; real Telegram iOS confirmation is still required before declaring the client-specific UX complete.
 
 ### TWA-1 — Full-page, Telegram-native navigation and input experience
 
@@ -90,8 +90,9 @@ Reference material to add before implementation:
 
 3. Remove duplicate app chrome in Telegram
    - Remove the persistent `Money Track` web header/title frame from the Telegram-native route flow; it consumes vertical space already owned by the Telegram host.
-   - Replace the persistent custom bottom-tab shell with the approved full-page navigation model. The future slice must document how the four required destinations are entered at root and how their state is retained; it must not leave both a custom shell and Telegram host navigation competing for the same job.
-   - Evaluate `requestFullscreen()` only behind `isVersionAtLeast` with a normal-host fallback. Fullscreen is not a cosmetic default: use it only if real iOS validation shows it improves the target BotFather-like presentation without harming close/back behavior or safe areas.
+   - Keep the four-destination bottom navigation on primary pages. Hide it only for nested full-page flows, where Telegram's BackButton owns return navigation, and while the keyboard is open.
+   - On Bot API 7.7+, call `disableVerticalSwipes()` to prevent content-surface swipe-to-minimize. On Bot API 8.0+, request fullscreen at startup and after a host exit. Both calls must be version-gated with a normal-host fallback; Telegram can still decline fullscreen or keep its own header controls.
+   - Apply `contentSafeAreaInset.top` to all primary content and fixed full-page surfaces so Telegram service controls never overlap the app.
    - Keep the Telegram host's header/background colors intentional via supported WebApp APIs; never fake host controls in HTML/CSS.
 
 4. Smooth focus and keyboard behavior
@@ -111,17 +112,29 @@ Reference material to add before implementation:
 2. Add one central Telegram navigation adapter: BackButton visibility, click subscription cleanup, browser fallback, and route-history policy.
 3. Refactor one vertical flow end-to-end (Transactions list → edit → category/tags → return) before changing Analytics or AI Chat.
 4. Apply the same model to analytics drilldown and future `View all` pages.
-5. Remove the duplicate shell only after root navigation and host-back behavior are proven on a physical iPhone.
+5. Remove only the duplicate title header after primary navigation and host-back behavior are proven on a physical iPhone; retain the approved primary bottom navigation.
 6. Add focus/keyboard coordination and validate every editable field on a real iPhone.
 
 #### Exit criteria
 
-- Root destinations are full pages with no persistent duplicate `Money Track` title frame in Telegram.
+- Telegram launches to Transactions and the four primary destinations retain bottom navigation, with no persistent duplicate `Money Track` title frame.
 - Every nested page shows Telegram's BackButton, returns correctly, and restores parent context.
+- Vertical swipes are disabled where the Bot API supports it; fullscreen is requested where supported, with an explicit normal-host fallback if Telegram declines it.
+- All primary and fixed full-page surfaces stay below Telegram's content-safe top inset.
 - No route-level edit/selector/drilldown flow relies on a popup/sheet as its primary navigation surface.
 - Focusing any editable field produces a smooth, visible editing position with the keyboard open and no controls overlapping it.
 - The four BotFather reference images and new Money Track iPhone recordings/screenshots are compared side-by-side in the implementation report.
 - The existing mobile QA matrix is extended for the route/back/focus flows, and a real Telegram iOS smoke test passes.
+
+#### Implementation record (2026-07-11)
+
+- Restored Transactions-first launch and the four-destination bottom navigation on Telegram primary pages; browser-development mode keeps its header as a local-development fallback.
+- Added central Telegram BackButton lifecycle management and URL-backed page flows for transaction edit, category selection, tag selection, and analytics category drilldown.
+- Removed duplicate in-page back/close actions from those Telegram page flows. Explicit save/update/delete confirmation actions remain.
+- Added focused-field positioning for `visualViewport` and Telegram `viewportChanged`, including keyboard-sized trailing scroll space.
+- Added version-gated vertical-swipe suppression (Bot API 7.7+) and fullscreen requests/re-requests (Bot API 8.0+), with normal-host fallback when Telegram declines the host request.
+- Applied the content-safe top inset to primary and fixed full-page surfaces, and extended the mobile fixture/QA matrix with safe-top, primary-nav, BackButton, fullscreen, swipe, route-return, and simulated keyboard-resize checks.
+- Remaining exit item: validate this exact flow in Telegram on a real iPhone with the configured test bot/domain.
 
 #### Future skill/playbook update
 

@@ -2,6 +2,7 @@ const DEFAULT_PROFILE = {
   platform: "ios",
   viewportHeight: 844,
   viewportStableHeight: 844,
+  safeAreaTop: 48,
   safeAreaBottom: 34,
 };
 
@@ -23,11 +24,17 @@ export async function installTelegramFixture(context, profile = {}) {
 
   await context.addInitScript((initialSettings) => {
     const handlers = new Map();
+    const backButtonHandlers = new Set();
     const state = {
+      backButtonHideCalls: 0,
+      backButtonShowCalls: 0,
+      disableVerticalSwipesCalls: 0,
       events: [],
       expandCalls: 0,
+      fullscreenRequests: 0,
       readyCalls: 0,
       safeAreaBottom: initialSettings.safeAreaBottom,
+      safeAreaTop: initialSettings.safeAreaTop,
       viewportHeight: initialSettings.viewportHeight,
       viewportStableHeight: initialSettings.viewportStableHeight,
     };
@@ -42,6 +49,8 @@ export async function installTelegramFixture(context, profile = {}) {
       root.style.setProperty("--tg-viewport-stable-height", `${state.viewportStableHeight}px`);
       root.style.setProperty("--tg-safe-area-inset-bottom", `${state.safeAreaBottom}px`);
       root.style.setProperty("--tg-content-safe-area-inset-bottom", `${state.safeAreaBottom}px`);
+      root.style.setProperty("--tg-safe-area-inset-top", `${state.safeAreaTop}px`);
+      root.style.setProperty("--tg-content-safe-area-inset-top", `${state.safeAreaTop}px`);
     };
 
     const emit = (event) => {
@@ -57,10 +66,28 @@ export async function installTelegramFixture(context, profile = {}) {
       initDataUnsafe: { user: { id: 123456789, username: "qa_telegram" } },
       platform: initialSettings.platform,
       version: "8.0",
+      isFullscreen: false,
       viewportHeight: state.viewportHeight,
       viewportStableHeight: state.viewportStableHeight,
+      BackButton: {
+        hide: () => {
+          state.backButtonHideCalls += 1;
+        },
+        offClick: (handler) => {
+          backButtonHandlers.delete(handler);
+        },
+        onClick: (handler) => {
+          backButtonHandlers.add(handler);
+        },
+        show: () => {
+          state.backButtonShowCalls += 1;
+        },
+      },
       expand: () => {
         state.expandCalls += 1;
+      },
+      disableVerticalSwipes: () => {
+        state.disableVerticalSwipesCalls += 1;
       },
       isVersionAtLeast: () => true,
       offEvent: (event, handler) => {
@@ -74,6 +101,10 @@ export async function installTelegramFixture(context, profile = {}) {
       ready: () => {
         state.readyCalls += 1;
       },
+      requestFullscreen: () => {
+        state.fullscreenRequests += 1;
+        webApp.isFullscreen = true;
+      },
     };
 
     window.Telegram = { WebApp: webApp };
@@ -81,11 +112,15 @@ export async function installTelegramFixture(context, profile = {}) {
       emit,
       getState: () => ({
         ...state,
+        backButtonListenerCount: backButtonHandlers.size,
         registeredEvents: [...handlers.keys()].sort(),
       }),
-      setViewport: ({ safeAreaBottom, viewportHeight, viewportStableHeight }) => {
+      setViewport: ({ safeAreaBottom, safeAreaTop, viewportHeight, viewportStableHeight }) => {
         if (typeof safeAreaBottom === "number") {
           state.safeAreaBottom = safeAreaBottom;
+        }
+        if (typeof safeAreaTop === "number") {
+          state.safeAreaTop = safeAreaTop;
         }
         if (typeof viewportHeight === "number") {
           state.viewportHeight = viewportHeight;
@@ -98,8 +133,21 @@ export async function installTelegramFixture(context, profile = {}) {
         applyCssVariables();
         emit("viewportChanged");
       },
+      pressBack: () => {
+        for (const handler of backButtonHandlers) {
+          handler();
+        }
+      },
+      exitFullscreen: () => {
+        webApp.isFullscreen = false;
+        emit("fullscreenChanged");
+      },
     };
 
-    applyCssVariables();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", applyCssVariables, { once: true });
+    } else {
+      applyCssVariables();
+    }
   }, settings);
 }

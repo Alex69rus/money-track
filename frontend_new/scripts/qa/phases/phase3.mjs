@@ -273,16 +273,15 @@ export const phase3Definition = {
       const fromBeforeDrilldown = await page.inputValue('[data-testid="analytics-from-date"]');
       const categoryButton = page.locator('[data-testid^="analytics-category-item-"]').first();
       await categoryButton.click();
-      await page.waitForSelector('[data-testid="analytics-drilldown-dialog"]', { timeout: 15000 });
-      const drilldownVisible = await page.locator('[data-testid="analytics-drilldown-dialog"]').isVisible();
-      const drilldownCloseVisible = await page
-        .locator('[data-testid="analytics-drilldown-close"]')
-        .isVisible()
-        .catch(() => false);
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+      const drilldownVisible = await page.locator('[data-testid="analytics-drilldown-page"]').isVisible();
+      const hostBackListenerActive = await page.evaluate(
+        () => window.__qaTelegram.getState().backButtonListenerCount === 1,
+      );
       const drilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
 
-      await page.click('[data-testid="analytics-drilldown-close"]');
-      await page.waitForSelector('[data-testid="analytics-drilldown-dialog"]', {
+      await page.evaluate(() => window.__qaTelegram.pressBack());
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', {
         state: "hidden",
         timeout: 15000,
       });
@@ -291,11 +290,11 @@ export const phase3Definition = {
       const contextPreserved = fromBeforeDrilldown === fromAfterDrilldown;
 
       fr["FR-022"] =
-        drilldownVisible && drilldownCloseVisible && drilldownListCount > 0 && contextPreserved
-          ? pass("Category drilldown opens as popup/list, closes explicitly, and preserves analytics context.")
-          : fail(
-              `Drilldown behavior failed (open=${drilldownVisible}, closeVisible=${drilldownCloseVisible}, listCount=${drilldownListCount}, contextPreserved=${contextPreserved}).`,
-            );
+        drilldownVisible && hostBackListenerActive && drilldownListCount > 0 && contextPreserved
+          ? pass("Category drilldown opens as a full page, returns through Telegram host back, and preserves analytics context.")
+        : fail(
+              `Drilldown behavior failed (open=${drilldownVisible}, hostBack=${hostBackListenerActive}, listCount=${drilldownListCount}, contextPreserved=${contextPreserved}).`,
+          );
 
       return {
         fr,

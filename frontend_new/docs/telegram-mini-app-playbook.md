@@ -16,8 +16,12 @@ Current redesign should assume menu/direct-link style launch for daily usage.
 2. Create a typed helper to access `window.Telegram?.WebApp`.
 3. On app startup:
    - call `ready()` after critical UI is rendered,
-   - call `expand()` for full-height UX.
+   - call `expand()` for full-height UX,
+   - on Bot API 7.7+, call `disableVerticalSwipes()` to prevent vertical content gestures from minimizing the Mini App,
+   - on Bot API 8.0+, request fullscreen.
 4. Initialize listeners and cleanup on unmount.
+
+Fullscreen is a Telegram host request, not an irreversible app setting. Re-request it after `fullscreenChanged` only when `isFullscreen` is `false`; keep a usable normal-host layout when it fails or is unsupported. Telegram may still expose its own header controls, and disabling vertical swipes does not remove the header swipe gesture.
 
 ## Theme, Viewport, and Safe Area
 
@@ -28,12 +32,29 @@ Current redesign should assume menu/direct-link style launch for daily usage.
   - `--tg-safe-area-*`
   - `--tg-content-safe-area-*`
 - Base bottom-pinned controls on stable viewport height.
+- Apply `contentSafeAreaInset.top` to the primary app surface and every fixed full-page overlay. Apply the bottom inset to persistent navigation and sticky actions.
 - Recompute layout on:
   - `themeChanged`
   - `viewportChanged`
   - `safeAreaChanged`
   - `contentSafeAreaChanged`
   - `fullscreenChanged`
+- Keep both stable and current viewport heights available to page content. Use their difference to add temporary trailing scroll space for focused lower fields while the keyboard is open.
+
+## Native Route and Back Contract
+
+- Use one central adapter for `window.Telegram.WebApp.BackButton`; show it only on nested routes and always remove the click listener on route change/unmount.
+- Telegram opens Transactions. Keep the four primary destinations in persistent bottom navigation; hide it for nested routes and while the keyboard is open.
+- Full-page routes own transaction edit, category/tag selection, and analytics drilldown. Do not use an HTML back/close control for the same action in Telegram.
+- Preserve a browser-history fallback when `window.Telegram.WebApp` is absent. The browser-only shell retains its header and bottom navigation for local development.
+- Treat short destructive confirmations as dialogs, not route-level navigation.
+- Request fullscreen by default only on Bot API 8.0+ and validate the exact host behavior on real iOS before claiming client-native parity.
+
+## Focus and Keyboard Contract
+
+- On `focusin` for a text input, textarea, select, or contenteditable control, smoothly scroll its nearest declared scroll container toward the top editing position.
+- Repeat the positioning after `visualViewport.resize` and Telegram `viewportChanged`; do not scroll the page back on blur.
+- Mark page-local scroll containers explicitly so a fixed full-page surface, not the hidden parent route, receives the focus scroll adjustment.
 
 ## Method Safety
 
@@ -58,8 +79,11 @@ Current redesign should assume menu/direct-link style launch for daily usage.
 ## Test Matrix (Minimum)
 
 1. Telegram iOS client:
-   - keyboard open/close with bottom nav,
-   - modal/sheet stability during input.
+   - host BackButton on every full-page return route,
+   - keyboard open/close and focused lower-field position,
+   - no duplicate web header or in-page back control; primary bottom navigation remains visible,
+   - fullscreen and vertical-swipe behavior, including the normal-host fallback,
+   - content starts below the Telegram service-control inset.
 2. Telegram Android client:
    - viewport changes,
    - scroll behavior with sticky actions.

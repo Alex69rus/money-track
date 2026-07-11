@@ -22,6 +22,7 @@ interface CategoryDrilldownDialogProps {
   currency: string;
   rangeLabel: string;
   onClose: () => void;
+  presentation?: "dialog" | "page";
 }
 
 function transactionTitle(note: string | null): string {
@@ -34,21 +35,32 @@ export function CategoryDrilldownDialog({
   currency,
   rangeLabel,
   onClose,
+  presentation = "dialog",
 }: CategoryDrilldownDialogProps): JSX.Element {
-  return (
-    <Dialog
-      onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          onClose();
-        }
-      }}
-      open={category !== null}
-    >
-      <DialogContent
-        className="max-h-[92dvh] max-w-[calc(100%-1rem)] gap-0 overflow-hidden p-0 sm:max-w-2xl"
-        data-testid="analytics-drilldown-dialog"
-        showCloseButton={false}
-      >
+  if (presentation === "page" && category === null) {
+    return <></>;
+  }
+
+  const drilldownBody = (
+    <>
+      {presentation === "page" ? (
+        <header className="flex flex-col gap-3 border-b px-4 py-4 text-left sm:px-6">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-lg font-semibold">{category?.categoryName ?? "Category"}</h1>
+            <p className="text-sm text-muted-foreground">{rangeLabel}</p>
+          </div>
+
+          <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+            <p className="text-base font-semibold text-foreground">
+              {formatMoney(category?.amount ?? 0, currency)}
+            </p>
+            <p>
+              {(category?.transactionCount ?? 0).toString()} transaction
+              {(category?.transactionCount ?? 0) === 1 ? "" : "s"}
+            </p>
+          </div>
+        </header>
+      ) : (
         <DialogHeader className="gap-3 border-b px-4 py-4 text-left sm:px-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
@@ -77,6 +89,7 @@ export function CategoryDrilldownDialog({
             </p>
           </div>
         </DialogHeader>
+      )}
 
         <div className="flex max-h-[62dvh] flex-col overflow-y-auto px-4 py-4 sm:px-6">
           {category && category.transactions.length > 0 ? (
@@ -117,11 +130,42 @@ export function CategoryDrilldownDialog({
           )}
         </div>
 
+      {presentation === "page" ? null : (
         <div className="border-t px-4 py-3 sm:px-6">
           <Button className="w-full" onClick={onClose} type="button" variant="outline">
             Close
           </Button>
         </div>
+      )}
+    </>
+  );
+
+  if (presentation === "page") {
+    return (
+      <section
+        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-background"
+        data-testid="analytics-drilldown-page"
+      >
+        {drilldownBody}
+      </section>
+    );
+  }
+
+  return (
+    <Dialog
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onClose();
+        }
+      }}
+      open={category !== null}
+    >
+      <DialogContent
+        className="max-h-[92dvh] max-w-[calc(100%-1rem)] gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        data-testid="analytics-drilldown-dialog"
+        showCloseButton={false}
+      >
+        {drilldownBody}
       </DialogContent>
     </Dialog>
   );
