@@ -35,6 +35,12 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Exploration: Phase-5 passed all five requirements after its stale pre-BFX selector was replaced; no application tag behavior changed.
 - Prevention rule: Run the matching root-owned phase gate after any component test-hook or bounded-list contract change.
 
+## Analytics editor and native date fields — 2026-07-12
+
+- Takeaway: Initialize an editor draft once per opened transaction ID; do not reset it when the same ID is refreshed into the list.
+- Exploration: Verify Analytics drilldown → editor save/delete → host-back return in Phase-3, not only the route transition.
+- Prevention rule: Mark transparent native date inputs to skip keyboard-focus scrolling and keep their clear action above the picker overlay; cover both with phone-fixture QA.
+
 ## Test-harness layout — 2026-07-12
 
 - Takeaway: Keep browser QA modules under `tests/qa/` with the unit-test suite, not under a separate frontend scripts tree.

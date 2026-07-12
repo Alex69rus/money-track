@@ -79,6 +79,26 @@ export function getLastDaysDateRange(days: number): AnalyticsDateRange {
 }
 
 export function formatDateRangeLabel(range: AnalyticsDateRange): string {
+  if (!range.fromDate && !range.toDate) {
+    return "All time";
+  }
+
+  if (!range.fromDate) {
+    return `Until ${new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(`${range.toDate}T00:00:00`))}`;
+  }
+
+  if (!range.toDate) {
+    return `From ${new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(`${range.fromDate}T00:00:00`))}`;
+  }
+
   const from = new Date(`${range.fromDate}T00:00:00`);
   const to = new Date(`${range.toDate}T00:00:00`);
 

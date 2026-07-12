@@ -137,12 +137,19 @@ export function TransactionEditDialog({
   const [tagSelectorOpen, setTagSelectorOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const initializedTransactionIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open || !transaction) {
+      initializedTransactionIdRef.current = null;
       return;
     }
 
+    if (initializedTransactionIdRef.current === transaction.id) {
+      return;
+    }
+
+    initializedTransactionIdRef.current = transaction.id;
     setAmount(String(transaction.amount));
     setTransactionDate(toDateTimeLocalValue(transaction.transactionDate));
     setCurrency(transaction.currency);
@@ -519,6 +526,7 @@ export function TransactionEditDialog({
       {presentation === "page" ? (
         <section
           className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#171923] text-slate-100"
+          data-transaction-id={transaction?.id}
           data-testid="tx-edit-page"
         >
           {editorBody}

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import type { Category, Transaction } from "@/types/transactions";
@@ -38,6 +38,17 @@ vi.mock("@/features/analytics/hooks/useAnalyticsTransactions", () => ({
     transactions,
   }),
 }));
+
+function TransactionEditorRouteProbe(): JSX.Element {
+  const location = useLocation();
+  const state = location.state as { mtReturnPath?: string; transaction?: Transaction } | null;
+
+  return (
+    <output data-testid="transaction-editor-route">
+      {`${location.pathname}|${state?.mtReturnPath ?? ""}|${state?.transaction?.id ?? ""}`}
+    </output>
+  );
+}
 
 describe("AnalyticsPage", () => {
   it("keeps overview widgets to five rows and exposes every item through full-page breakdowns", () => {
@@ -93,8 +104,40 @@ describe("AnalyticsPage", () => {
     expect(screen.getByTestId("analytics-to-date-display")).toHaveTextContent("Jul 31, 2026");
     expect(screen.getByTestId("analytics-from-date")).toHaveClass("opacity-0");
     expect(screen.getByTestId("analytics-to-date")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("analytics-from-date")).toHaveAttribute("data-skip-focus-position", "true");
+    expect(screen.getByTestId("analytics-to-date")).toHaveAttribute("data-skip-focus-position", "true");
 
     fireEvent.change(screen.getByTestId("analytics-from-date"), { target: { value: "2026-07-02" } });
     expect(screen.getByTestId("analytics-from-date-display")).toHaveTextContent("Jul 2, 2026");
+  });
+
+  it("clears one Analytics date without changing its companion date", () => {
+    render(
+      <MemoryRouter initialEntries={["/analytics"]}>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear Analytics from date" }));
+    expect(screen.getByTestId("analytics-from-date-display")).toHaveTextContent("Select date");
+    expect(screen.getByTestId("analytics-to-date-display")).toHaveTextContent("Jul 31, 2026");
+  });
+
+  it("opens the existing transaction editor from a category drilldown with return context", () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{ pathname: "/analytics/category/category-2", state: { mtReturnPath: "/analytics" } }]}
+      >
+        <Routes>
+          <Route element={<AnalyticsPage />} path="/analytics/*" />
+          <Route element={<TransactionEditorRouteProbe />} path="/transactions/:id/edit" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("analytics-drilldown-edit-2"));
+    expect(screen.getByTestId("transaction-editor-route")).toHaveTextContent(
+      "/transactions/2/edit|/analytics/category/category-2|2",
+    );
   });
 });

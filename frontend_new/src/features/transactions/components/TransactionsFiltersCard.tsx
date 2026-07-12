@@ -231,6 +231,7 @@ export function TransactionsFiltersCard({
                 id="transactions-from-date"
                 inputTestId="transactions-from-date"
                 onChange={(event) => onFieldChange("fromDate", event.target.value)}
+                onClear={() => onFieldChange("fromDate", "")}
                 value={draft.fromDate}
               />
             </div>
@@ -244,6 +245,7 @@ export function TransactionsFiltersCard({
                 id="transactions-to-date"
                 inputTestId="transactions-to-date"
                 onChange={(event) => onFieldChange("toDate", event.target.value)}
+                onClear={() => onFieldChange("toDate", "")}
                 value={draft.toDate}
               />
             </div>

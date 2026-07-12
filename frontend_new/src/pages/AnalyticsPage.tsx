@@ -10,6 +10,7 @@ import { CategoryDrilldownDialog } from "@/features/analytics/components/Categor
 import { AnalyticsLoadingState } from "@/features/analytics/components/AnalyticsLoadingState";
 import { useAnalyticsTransactions } from "@/features/analytics/hooks/useAnalyticsTransactions";
 import type { AnalyticsDrilldownItem } from "@/features/analytics/types";
+import type { Transaction } from "@/types/transactions";
 import {
   buildAnalyticsModel,
   formatDateRangeLabel,
@@ -22,6 +23,12 @@ import {
 } from "@/features/analytics/utils";
 
 type DatePreset = "current-month" | "last-7-days" | "last-30-days" | "custom";
+
+interface AnalyticsRouteState {
+  analyticsDateRange?: { fromDate: string; toDate: string };
+  analyticsPreset?: DatePreset;
+  mtReturnPath?: string;
+}
 
 const DATE_PRESET_DEFINITIONS: Array<{
   id: Exclude<DatePreset, "custom">;
@@ -46,6 +53,10 @@ const DATE_PRESET_DEFINITIONS: Array<{
 ];
 
 function updateFromDate(currentToDate: string, nextFromDate: string): { fromDate: string; toDate: string } {
+  if (!nextFromDate) {
+    return { fromDate: "", toDate: currentToDate };
+  }
+
   if (nextFromDate > currentToDate) {
     return {
       fromDate: nextFromDate,
@@ -60,6 +71,10 @@ function updateFromDate(currentToDate: string, nextFromDate: string): { fromDate
 }
 
 function updateToDate(currentFromDate: string, nextToDate: string): { fromDate: string; toDate: string } {
+  if (!nextToDate) {
+    return { fromDate: currentFromDate, toDate: "" };
+  }
+
   if (nextToDate < currentFromDate) {
     return {
       fromDate: nextToDate,
@@ -122,8 +137,13 @@ function withAlpha(hexColor: string | null, alpha: number, fallback: string): st
 export function AnalyticsPage(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState(getCurrentMonthDateRange);
-  const [activePreset, setActivePreset] = useState<DatePreset>("current-month");
+  const initialRouteState = location.state as AnalyticsRouteState | null;
+  const [dateRange, setDateRange] = useState(
+    () => initialRouteState?.analyticsDateRange ?? getCurrentMonthDateRange(),
+  );
+  const [activePreset, setActivePreset] = useState<DatePreset>(
+    () => initialRouteState?.analyticsPreset ?? "current-month",
+  );
   const [selectedTrendKey, setSelectedTrendKey] = useState<string | null>(null);
   const drilldownRoute = useMemo(() => {
     const routeMatch = /^\/analytics\/(category|tag)\/(.+)$/.exec(location.pathname);
@@ -225,6 +245,21 @@ export function AnalyticsPage(): JSX.Element {
     setActivePreset(preset);
   };
 
+  const analyticsRouteState = (mtReturnPath: string): AnalyticsRouteState => ({
+    analyticsDateRange: dateRange,
+    analyticsPreset: activePreset,
+    mtReturnPath,
+  });
+
+  const openTransactionEditor = (transaction: Transaction): void => {
+    navigate(`/transactions/${transaction.id}/edit`, {
+      state: {
+        mtReturnPath: location.pathname,
+        transaction,
+      },
+    });
+  };
+
   return (
     <section
       className="relative flex min-h-full shrink-0 flex-col gap-5 overflow-x-hidden"
@@ -293,6 +328,10 @@ export function AnalyticsPage(): JSX.Element {
                 setDateRange((current) => updateFromDate(current.toDate, event.target.value));
                 setActivePreset("custom");
               }}
+              onClear={() => {
+                setDateRange((current) => ({ ...current, fromDate: "" }));
+                setActivePreset("custom");
+              }}
               value={dateRange.fromDate}
             />
           </div>
@@ -307,6 +346,10 @@ export function AnalyticsPage(): JSX.Element {
               inputTestId="analytics-to-date"
               onChange={(event) => {
                 setDateRange((current) => updateToDate(current.fromDate, event.target.value));
+                setActivePreset("custom");
+              }}
+              onClear={() => {
+                setDateRange((current) => ({ ...current, toDate: "" }));
                 setActivePreset("custom");
               }}
               value={dateRange.toDate}
@@ -435,7 +478,7 @@ export function AnalyticsPage(): JSX.Element {
                         key={categoryItem.key}
                         onClick={() => {
                           navigate(`/analytics/category/${encodeURIComponent(categoryItem.key)}`, {
-                            state: { mtReturnPath: location.pathname },
+                            state: analyticsRouteState(location.pathname),
                           });
                         }}
                         type="button"
@@ -515,8 +558,8 @@ export function AnalyticsPage(): JSX.Element {
                       data-testid={`analytics-tag-item-${toTestIdSegment(tagItem.key)}`}
                       key={tagItem.key}
                       onClick={() => {
-                        navigate(`/analytics/tag/${encodeURIComponent(tagItem.key)}`, {
-                          state: { mtReturnPath: location.pathname },
+                          navigate(`/analytics/tag/${encodeURIComponent(tagItem.key)}`, {
+                            state: analyticsRouteState(location.pathname),
                         });
                       }}
                       type="button"
@@ -659,6 +702,7 @@ export function AnalyticsPage(): JSX.Element {
         currency={currencyDisplay.currency}
         drilldown={selectedDrilldown}
         onClose={closeDrilldown}
+        onEditTransaction={openTransactionEditor}
         presentation="page"
         rangeLabel={formatDateRangeLabel(dateRange)}
       />
@@ -671,7 +715,7 @@ export function AnalyticsPage(): JSX.Element {
           onClose={closeDrilldown}
           onSelect={(categoryItem) => {
             navigate(`/analytics/category/${encodeURIComponent(categoryItem.key)}`, {
-              state: { mtReturnPath: location.pathname },
+              state: analyticsRouteState(location.pathname),
             });
           }}
           rangeLabel={formatDateRangeLabel(dateRange)}
@@ -686,7 +730,7 @@ export function AnalyticsPage(): JSX.Element {
           onClose={closeDrilldown}
           onSelect={(tagItem) => {
             navigate(`/analytics/tag/${encodeURIComponent(tagItem.key)}`, {
-              state: { mtReturnPath: location.pathname },
+              state: analyticsRouteState(location.pathname),
             });
           }}
           rangeLabel={formatDateRangeLabel(dateRange)}

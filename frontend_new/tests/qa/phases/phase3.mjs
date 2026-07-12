@@ -407,6 +407,48 @@ export const phase3Definition = {
         page.locator('[data-testid="analytics-drilldown-scroll"]').isVisible(),
       ]).then((checks) => checks.every(Boolean));
       const categoryRowAffordanceCount = await page.locator('[data-testid^="analytics-drilldown-transaction-category-"]').count();
+      const categoryEditAction = page.locator('[data-testid^="analytics-drilldown-edit-"]').first();
+      const categoryEditActionCount = await page.locator('[data-testid^="analytics-drilldown-edit-"]').count();
+      const categoryTransactionId = (await categoryEditAction.getAttribute("data-testid"))?.replace(
+        "analytics-drilldown-edit-",
+        "",
+      );
+
+      await categoryEditAction.click();
+      await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
+      const editorTransactionId = await page.locator('[data-testid="tx-edit-page"]').getAttribute("data-transaction-id");
+      const editorAmount = await page.locator("#transaction-edit-amount").inputValue();
+      const editedNote = `${runId}_analytics_edit`;
+      await page.fill("#transaction-edit-note", editedNote);
+      await page.click('[data-testid="tx-edit-save"]');
+      await page.waitForSelector('[data-testid="tx-edit-page"]', { state: "hidden", timeout: 15000 });
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+      const drilldownReturnedFromEditor = await page.locator('[data-testid="analytics-drilldown-page"]').isVisible();
+      const editedRowVisible = await page
+        .waitForFunction(
+          ({ note, transactionId }) =>
+            document.querySelector(`[data-testid="analytics-drilldown-item-${transactionId}"]`)?.textContent?.includes(note) ?? false,
+          { note: editedNote, transactionId: categoryTransactionId },
+          { timeout: 15000 },
+        )
+        .then(() => true)
+        .catch(() => false);
+
+      await page.click(`[data-testid="analytics-drilldown-edit-${categoryTransactionId}"]`);
+      await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
+      await page.click('[data-testid="tx-edit-delete-trigger"]');
+      await page.waitForSelector('[data-testid="tx-edit-delete-confirm-dialog"]', { timeout: 15000 });
+      await page.click('[data-testid="tx-edit-delete-confirm"]');
+      await page.waitForSelector('[data-testid="tx-edit-page"]', { state: "hidden", timeout: 15000 });
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+      const deletedRowRemoved = await page
+        .waitForFunction(
+          (transactionId) => !document.querySelector(`[data-testid="analytics-drilldown-item-${transactionId}"]`),
+          categoryTransactionId,
+          { timeout: 15000 },
+        )
+        .then(() => true)
+        .catch(() => false);
 
       await page.evaluate(() => window.__qaTelegram.pressBack());
       await page.waitForSelector('[data-testid="analytics-drilldown-page"]', {
@@ -440,15 +482,21 @@ export const phase3Definition = {
         drilldownListCount > 0 &&
         drilldownVisualStructure &&
         categoryRowAffordanceCount === drilldownListCount &&
+        categoryEditActionCount === drilldownListCount &&
+        categoryTransactionId === editorTransactionId &&
+        editorAmount !== "" &&
+        drilldownReturnedFromEditor &&
+        editedRowVisible &&
+        deletedRowRemoved &&
         tagDrilldownVisible &&
         tagDrilldownLabel?.trim() === "Spendings by Tag" &&
         tagDrilldownSubject?.trim() === `#${oldTag}` &&
         tagDrilldownListCount > 0 &&
         tagRowAffordanceCount === tagDrilldownListCount &&
         contextPreserved
-          ? pass("Category and tag drilldowns render category-aware rows, return through Telegram host back, and preserve analytics context.")
+          ? pass("Category and tag drilldowns render category-aware editable rows, refresh after save/delete, and preserve Analytics context.")
           : fail(
-              `Drilldown behavior failed (categoryOpen=${drilldownVisible}, hostBack=${hostBackListenerActive}, categoryListCount=${drilldownListCount}, categoryAffordances=${categoryRowAffordanceCount}, structure=${drilldownVisualStructure}, tagOpen=${tagDrilldownVisible}, tagLabel=${tagDrilldownLabel}, tagSubject=${tagDrilldownSubject}, tagListCount=${tagDrilldownListCount}, tagAffordances=${tagRowAffordanceCount}, contextPreserved=${contextPreserved}).`,
+              `Drilldown behavior failed (categoryOpen=${drilldownVisible}, hostBack=${hostBackListenerActive}, categoryListCount=${drilldownListCount}, categoryAffordances=${categoryRowAffordanceCount}, categoryEditActions=${categoryEditActionCount}, categoryTransactionId=${categoryTransactionId}, editorTransactionId=${editorTransactionId}, editorAmount=${editorAmount}, returnedFromEditor=${drilldownReturnedFromEditor}, editedRowVisible=${editedRowVisible}, deletedRowRemoved=${deletedRowRemoved}, structure=${drilldownVisualStructure}, tagOpen=${tagDrilldownVisible}, tagLabel=${tagDrilldownLabel}, tagSubject=${tagDrilldownSubject}, tagListCount=${tagDrilldownListCount}, tagAffordances=${tagRowAffordanceCount}, contextPreserved=${contextPreserved}).`,
           );
 
       return {

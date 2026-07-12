@@ -206,6 +206,39 @@ async function assertNativeDateControlContained(page, selector, label) {
   }
 }
 
+async function assertDateFocusDoesNotMovePage(page, selector, label) {
+  const initialPosition = await page.evaluate(() => {
+    const main = document.querySelector('[data-testid="app-shell-main"]');
+    if (!(main instanceof HTMLElement)) {
+      throw new Error("Application scroll container is not available.");
+    }
+
+    main.scrollTop = 0;
+    window.scrollTo(0, 0);
+    return {
+      documentScrollTop: document.scrollingElement?.scrollTop ?? 0,
+      mainScrollTop: main.scrollTop,
+    };
+  });
+
+  await page.locator(selector).evaluate((input) => input.focus({ preventScroll: true }));
+  await page.waitForTimeout(250);
+
+  const positionAfterFocus = await page.evaluate(() => ({
+    documentScrollTop: document.scrollingElement?.scrollTop ?? 0,
+    mainScrollTop: document.querySelector('[data-testid="app-shell-main"]')?.scrollTop ?? null,
+  }));
+  if (
+    initialPosition.documentScrollTop !== 0 ||
+    initialPosition.mainScrollTop !== 0 ||
+    positionAfterFocus.documentScrollTop > 1 ||
+    positionAfterFocus.mainScrollTop === null ||
+    positionAfterFocus.mainScrollTop > 1
+  ) {
+    throw new Error(`${label}: focusing a native date control moved the page: ${JSON.stringify({ initialPosition, positionAfterFocus })}.`);
+  }
+}
+
 async function assertWithinViewport(page, selector, label) {
   const box = await page.locator(selector).boundingBox();
   const viewport = await page.evaluate(() => ({ height: window.innerHeight, width: window.innerWidth }));
@@ -349,6 +382,11 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await page.click('[data-testid="transactions-filters-toggle"]');
     await assertNativeDateControlContained(page, "#transactions-from-date", "transactions from-date control");
     await assertNativeDateControlContained(page, "#transactions-to-date", "transactions to-date control");
+    await page.fill('#transactions-from-date', '2026-07-01');
+    await page.click('[data-testid="transactions-from-date-clear"]');
+    if (await page.inputValue('#transactions-from-date')) {
+      throw new Error("Transactions date clear action must reset its own date field.");
+    }
     if ((await page.locator('[data-testid^="tx-filter-suggested-tag-"]').count()) !== 5) {
       throw new Error("Transactions filter must render exactly five suggested tags from a large catalogue.");
     }
@@ -430,6 +468,27 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await assertNoHorizontalOverflow(page, "analytics");
     await assertNativeDateControlContained(page, "#analytics-from-date", "analytics from-date control");
     await assertNativeDateControlContained(page, "#analytics-to-date", "analytics to-date control");
+    await assertDateFocusDoesNotMovePage(page, "#analytics-from-date", "analytics native date picker");
+    const analyticsToDateBeforeClear = await page.inputValue("#analytics-to-date");
+    await page.click('[data-testid="analytics-from-date-clear"]');
+    const [analyticsFromDateAfterClear, analyticsToDateAfterClear] = await Promise.all([
+      page.inputValue("#analytics-from-date"),
+      page.inputValue("#analytics-to-date"),
+    ]);
+    if (analyticsFromDateAfterClear || analyticsToDateAfterClear !== analyticsToDateBeforeClear) {
+      throw new Error(
+        `Analytics date clear action must only reset its own field: ${JSON.stringify({ analyticsFromDateAfterClear, analyticsToDateAfterClear, analyticsToDateBeforeClear })}.`,
+      );
+    }
+    await page.click('[data-testid="analytics-preset-current-month"]');
+    await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
+    await page.evaluate(() => {
+      const main = document.querySelector('[data-testid="app-shell-main"]');
+      if (main instanceof HTMLElement) {
+        main.scrollTop = 0;
+      }
+      window.scrollTo(0, 0);
+    });
     await assertBelowTelegramTopInset(page, '[data-testid="analytics-page"] > div:first-child', "analytics primary page");
     const analyticsOverview = await page.evaluate(() => {
       const metrics = (selector) => {
@@ -487,6 +546,14 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
       throw new Error("Analytics drilldown must hide primary navigation while Telegram BackButton is active.");
     }
     await screenshot(page, profileDirectory, "analytics-drilldown");
+    const analyticsDrilldownEdit = page.locator('[data-testid^="analytics-drilldown-edit-"]').first();
+    await analyticsDrilldownEdit.click();
+    await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
+    if (await page.locator('[data-testid="app-shell-nav"]').count()) {
+      throw new Error("Analytics transaction editor must use Telegram BackButton instead of the primary navigation.");
+    }
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { state: "hidden", timeout: 15000 });
 

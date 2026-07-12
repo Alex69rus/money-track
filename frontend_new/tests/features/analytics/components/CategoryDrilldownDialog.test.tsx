@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { CategoryDrilldownDialog } from "@/features/analytics/components/CategoryDrilldownDialog";
 import type { AnalyticsDrilldownItem } from "@/features/analytics/types";
 
@@ -105,5 +105,23 @@ describe("CategoryDrilldownDialog", () => {
     expect(screen.getByTestId("analytics-drilldown-label")).toHaveTextContent("Spendings by Tag");
     expect(screen.getByTestId("analytics-drilldown-subject")).toHaveTextContent("#coffee");
     expect(screen.getByTestId("analytics-drilldown-transaction-category-91")).toHaveAccessibleName("Category Food & Drinks");
+  });
+
+  it("exposes an explicit edit action for each drilldown transaction", () => {
+    const onEditTransaction = vi.fn();
+
+    render(
+      <CategoryDrilldownDialog
+        currency="AED"
+        drilldown={category}
+        onClose={() => undefined}
+        onEditTransaction={onEditTransaction}
+        presentation="page"
+        rangeLabel="Jul 1 - Jul 31, 2026"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("analytics-drilldown-edit-91"));
+    expect(onEditTransaction).toHaveBeenCalledWith(category.item.transactions[0]);
   });
 });

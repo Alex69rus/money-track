@@ -1,4 +1,4 @@
-import { XIcon } from "lucide-react";
+import { PencilIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ interface CategoryDrilldownDialogProps {
   currency: string;
   rangeLabel: string;
   onClose: () => void;
+  onEditTransaction?: (transaction: Transaction) => void;
   presentation?: "dialog" | "page";
 }
 
@@ -104,6 +105,7 @@ export function CategoryDrilldownDialog({
   currency,
   rangeLabel,
   onClose,
+  onEditTransaction,
   presentation = "dialog",
 }: CategoryDrilldownDialogProps): JSX.Element {
   if (presentation === "page" && drilldown === null) {
@@ -195,7 +197,7 @@ export function CategoryDrilldownDialog({
             <div key={transaction.id}>
               {index > 0 ? <Separator className="bg-[#1d2b42]" /> : null}
               <article
-                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 px-0 py-5"
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-start gap-x-3 px-0 py-5"
                 data-testid={`analytics-drilldown-item-${transaction.id}`}
               >
                 <TransactionCategoryAffordance transaction={transaction} />
@@ -226,6 +228,19 @@ export function CategoryDrilldownDialog({
                 <p className="shrink-0 whitespace-nowrap text-[1.1rem] leading-tight font-bold tracking-tight text-slate-100 tabular-nums">
                   {formatSignedMoney(transaction.amount, transaction.currency || currency)}
                 </p>
+                {onEditTransaction ? (
+                  <Button
+                    aria-label={`Edit transaction ${transaction.id}`}
+                    className="-mr-1 -mt-1 shrink-0 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-100"
+                    data-testid={`analytics-drilldown-edit-${transaction.id}`}
+                    onClick={() => onEditTransaction(transaction)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <PencilIcon aria-hidden data-icon="inline-start" />
+                  </Button>
+                ) : null}
               </article>
             </div>
           ))}

@@ -91,8 +91,40 @@ describe("TransactionsFiltersCard", () => {
     expect(screen.getByTestId("transactions-to-date-display")).toHaveTextContent("Select date");
     expect(screen.getByLabelText("From date")).toHaveClass("opacity-0");
     expect(screen.getByLabelText("To date")).toHaveClass("opacity-0");
+    expect(screen.getByLabelText("From date")).toHaveAttribute("data-skip-focus-position", "true");
+    expect(screen.getByLabelText("To date")).toHaveAttribute("data-skip-focus-position", "true");
 
     fireEvent.change(screen.getByLabelText("From date"), { target: { value: "2026-07-03" } });
     expect(onDraftChange).toHaveBeenCalledWith({ ...draft, fromDate: "2026-07-03" });
+  });
+
+  it("clears each populated date independently through an app-owned control", () => {
+    const onDraftChange = vi.fn();
+    const populatedDraft = { ...draft, fromDate: "2026-07-01", toDate: "2026-07-31" };
+
+    render(
+      <TransactionsFiltersCard
+        activeFiltersCount={2}
+        categories={[]}
+        categorySearch=""
+        draft={populatedDraft}
+        expanded
+        isDebouncing={false}
+        onCategorySearchChange={vi.fn()}
+        onDraftChange={onDraftChange}
+        onOpenTagSelector={vi.fn()}
+        onRetryOptions={vi.fn()}
+        onSetExpanded={vi.fn()}
+        optionsError={null}
+        optionsLoading={false}
+        tags={tags}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear From date" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear To date" }));
+
+    expect(onDraftChange).toHaveBeenCalledWith({ ...populatedDraft, fromDate: "" });
+    expect(onDraftChange).toHaveBeenCalledWith({ ...populatedDraft, toDate: "" });
   });
 });

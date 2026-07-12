@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
-import { CalendarDaysIcon } from "lucide-react";
+import { CalendarDaysIcon, XIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ interface NativeDateFieldProps {
   id: string;
   inputTestId: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onClear?: () => void;
   value: string;
 }
 
@@ -39,6 +41,7 @@ export function NativeDateField({
   id,
   inputTestId,
   onChange,
+  onClear,
   value,
 }: NativeDateFieldProps): JSX.Element {
   return (
@@ -53,10 +56,25 @@ export function NativeDateField({
       <span aria-hidden className="min-w-0 truncate" data-testid={`${inputTestId}-display`}>
         {formatDateValue(value)}
       </span>
-      <CalendarDaysIcon aria-hidden className="size-4 shrink-0" />
+      {value && onClear ? (
+        <Button
+          aria-label={`Clear ${ariaLabel}`}
+          className="relative z-20 shrink-0 rounded-full"
+          data-testid={`${inputTestId}-clear`}
+          onClick={onClear}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <XIcon aria-hidden data-icon="inline-start" />
+        </Button>
+      ) : (
+        <CalendarDaysIcon aria-hidden className="size-4 shrink-0" />
+      )}
       <Input
         aria-label={ariaLabel}
         className="absolute inset-0 z-10 h-full w-full max-w-full cursor-pointer opacity-0"
+        data-skip-focus-position="true"
         data-testid={inputTestId}
         id={id}
         onChange={onChange}

@@ -7,8 +7,8 @@
 | ID | Source / evidence | Priority | State | Summary |
 | --- | --- | --- | --- | --- |
 | TWA-1 | Telegram phone-fixture QA and iPhone feedback | P1 | Fixed — verification pending | Telegram-native route/navigation implementation needs a real iPhone smoke test. |
-| FE-004 | User request, pending issue 4 | P2 | Pending | Open the existing transaction editor from an Analytics drilldown row. |
-| FE-005 | User report, pending issue 5 | P2 | Deferred | Repair the datepicker scroll/focus and reset behavior when explicitly resumed. |
+| FE-004 | User request, pending issue 4 | P2 | Fixed — verification pending | Open the existing transaction editor from an Analytics drilldown row. |
+| BR-007 | `frontend_new/bugs_reports/native-date-control-findings-2026-07-12.md` | P2 | Fixed — verification pending | Keep datepicker opening stable and add a reliable per-field clear action. |
 | BFX-1 | TEMP-001..003, BR-004 | P2 | Fixed — verification pending | Transaction-card edit interaction and category affordances. |
 | BFX-2 | TEMP-004, TEMP-005 | P2 | Fixed — verification pending | Analytics category/tag drilldown parity. |
 | BFX-3 | TEMP-006, BR-001..003 | P2 | Fixed — verification pending | Bounded Analytics widgets and functional View all routes. |
@@ -66,15 +66,31 @@ Analytics category and tag drilldowns show read-only transaction rows. A user mu
 - Existing transaction edit route state in `frontend_new/src/pages/TransactionsPage.tsx` or a shared route-state adapter
 - Phase-2/Phase-3 and mobile QA modules
 
-## FE-005 — Datepicker scroll and reset follow-up
+### Acceptance and delivery record
+
+Each category and tag drilldown row now has an accessible edit action that opens the existing full-page transaction editor with the selected transaction. Analytics route state carries its active date range through the editor and host BackButton return. The editor now initializes once per transaction ID, so an in-flight list refresh cannot discard an edit made immediately after opening from Analytics. Phase-3 verifies editor identity, save-and-return with the changed row visible, delete-and-return with the row removed, and preserved date context; Phase-2 verifies the shared editor's standard mutation paths. The 27-test unit suite, lint, typecheck, build, and all four phone-fixture profiles passed. Physical Telegram confirmation remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
+## BR-007 — Native datepicker scroll and reset
 
 ### Problem
 
 Opening the datepicker can scroll the screen far from its field, and its reset control does not work as expected.
 
-### State and next action
+### Required behavior
 
-This task is explicitly deferred by the user. Preserve the existing date implementation and revisit only with explicit approval, including a real Telegram iPhone reproduction before changing behavior.
+- Native date-picker focus must not invoke the shared keyboard-focus scroll adjustment.
+- A populated date field must expose a clear action that is reachable above the transparent native picker overlay.
+- Clearing a date changes only that field and updates the visible app-rendered value immediately.
+
+### Acceptance criteria
+
+- Text and date-time editing fields keep their existing focus positioning behavior.
+- Transactions and Analytics clear controls update their own query state without altering the companion date.
+- Component tests and phone QA cover scroll stability, clear interaction, and constrained date-field layout.
+
+### Acceptance and delivery record
+
+Native date inputs opt out of the shared editable-field focus positioning, while text, date-time, textarea, and select behavior remains unchanged. Populated Transactions and Analytics date surfaces expose their own visible clear button above the transparent native-picker overlay; clearing one value preserves the companion date and updates the rendered label. Unit, Phase-2, and four-profile phone-fixture checks cover the editor/filter paths, direct date-focus scroll stability, clear actions, containment, and Analytics drilldown reachability. Lint, typecheck, build, and all 27 unit tests passed. Physical Telegram confirmation remains pending because `npm run qa:telegram-device` correctly stops until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured.
 
 ## BFX-1 — Transaction-card edit interaction and category affordances
 

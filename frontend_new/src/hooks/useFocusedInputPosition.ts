@@ -9,6 +9,10 @@ function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     return false;
   }
 
+  if (target.dataset.skipFocusPosition === "true") {
+    return false;
+  }
+
   return target.matches("input:not([type='hidden']), textarea, select, [contenteditable='true']");
 }
 
