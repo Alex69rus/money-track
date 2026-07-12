@@ -248,3 +248,9 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Takeaway: Promote reusable Telegram navigation, viewport, and fixture lessons into `.agents/skills/telegram-mini-app/`; keep device-specific spacing values in the consuming project.
 - Exploration: Confirmed Bot API 7.7 introduces vertical-swipe control and Bot API 8.0 introduces fullscreen, safe-area fields, and fullscreen events; validated the edited skill with `quick_validate.py`.
 - Prevention rule: Treat content-safe insets as a minimum, measure the host-control reserve on a real target client, and keep the reserve configurable rather than copying a prior product's pixels.
+
+## 2026-07-12 - Iteration VF-6 Analytics Drilldown Alignment
+
+- Takeaway: Preserve the newer Telegram full-page route/host BackButton contract when aligning an older popup draft; port the draft's visual hierarchy, not its obsolete navigation chrome.
+- Exploration: The dark category hero, signed category total, compact tags/date metadata, separators, and chevrons passed the component test, Phase-3 FR matrix, and all four mobile fixture profiles. The real-device command correctly stopped because `TELEGRAM_DEVICE_NGROK_DOMAIN` is unset.
+- Prevention rule: If a phase runner reuses a local service and reports CORS failures, classify it as runtime ownership first; rerun on fresh isolated ports with the runner's explicit `CORS_ALLOW_ORIGINS` contract before changing product code.

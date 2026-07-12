@@ -279,6 +279,12 @@ export const phase3Definition = {
         () => window.__qaTelegram.getState().backButtonListenerCount === 1,
       );
       const drilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
+      const drilldownVisualStructure = await Promise.all([
+        page.locator('[data-testid="analytics-drilldown-category-icon"]').isVisible(),
+        page.locator('[data-testid="analytics-drilldown-total"]').isVisible(),
+        page.locator('[data-testid="analytics-drilldown-range"]').isVisible(),
+        page.locator('[data-testid="analytics-drilldown-scroll"]').isVisible(),
+      ]).then((checks) => checks.every(Boolean));
 
       await page.evaluate(() => window.__qaTelegram.pressBack());
       await page.waitForSelector('[data-testid="analytics-drilldown-page"]', {
@@ -290,10 +296,10 @@ export const phase3Definition = {
       const contextPreserved = fromBeforeDrilldown === fromAfterDrilldown;
 
       fr["FR-022"] =
-        drilldownVisible && hostBackListenerActive && drilldownListCount > 0 && contextPreserved
-          ? pass("Category drilldown opens as a full page, returns through Telegram host back, and preserves analytics context.")
+        drilldownVisible && hostBackListenerActive && drilldownListCount > 0 && drilldownVisualStructure && contextPreserved
+          ? pass("Category drilldown renders its category summary/list, returns through Telegram host back, and preserves analytics context.")
         : fail(
-              `Drilldown behavior failed (open=${drilldownVisible}, hostBack=${hostBackListenerActive}, listCount=${drilldownListCount}, contextPreserved=${contextPreserved}).`,
+              `Drilldown behavior failed (open=${drilldownVisible}, hostBack=${hostBackListenerActive}, listCount=${drilldownListCount}, structure=${drilldownVisualStructure}, contextPreserved=${contextPreserved}).`,
           );
 
       return {

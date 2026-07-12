@@ -7,7 +7,7 @@ This folder contains the redesigned frontend implementation and execution docs f
 ## Current Handoff State
 
 - Functional redesign phases 0-5 are implemented in `src/**`.
-- The frontend does not yet visually match the approved `redesign_ui_drafts`. The next work is the Visual Alignment Track in `frontend_new/docs/implementation-roadmap.md`, starting with `VF-0`.
+- Visual Alignment phases `VF-0` through `VF-6` are complete. The remaining Telegram-native completion gate is the real iPhone smoke test; consult `docs/tasklist.md` before selecting an approved next slice.
 - This is a Telegram Web App and is expected to be used almost entirely on phones. Treat the phone screen as the primary product surface.
 - Use 390x844 / DPR 3 device emulation as the primary browser viewport unless a task names another phone device.
 - Do not restart from bootstrap. The app already exists; preserve existing behavior while aligning the UI to the drafts.
@@ -16,7 +16,7 @@ This folder contains the redesigned frontend implementation and execution docs f
 ## Start Here
 
 1. Read `docs/frontend-redesign-requirements/README.md` and linked requirement docs.
-2. Use `frontend_new/docs/implementation-roadmap.md` to pick the next vertical slice. Current next slice is `VF-0`.
+2. Use `frontend_new/docs/implementation-roadmap.md` and `docs/tasklist.md` to select the next approved vertical slice.
 3. Open matching assets in `docs/frontend-redesign-requirements/redesign_ui_drafts/**` (`screen.png` + `code.html`) and keep implementation visually close.
 
 ## Bootstrap Checklist
