@@ -42,18 +42,18 @@ Evidence: `<filename>`; <optional user report or log reference>.
 - <non-regression requirement>
 ```
 
-## Tracker Row Template
+## Task-list Row Template
 
 ```markdown
-| ID | Source | Priority | State | Iteration | Summary |
-| --- | --- | --- | --- | --- | --- |
-| BR-### | `<dated-report>.md` | P1 | Reported | — | <one-sentence user-visible defect> |
+| ID | Source | Priority | State | Acceptance / verification |
+| --- | --- | --- | --- | --- |
+| BR-### | `<dated-report>.md` | P1 | Reported | <one-sentence user-visible defect and planned check> |
 ```
 
-## Iteration Template
+## Task Detail Template
 
 ```markdown
-## BFX-# — <outcome-oriented name>
+## BR-### — <outcome-oriented name>
 
 Source bugs: BR-###, BR-###.
 

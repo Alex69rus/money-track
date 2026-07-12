@@ -12,12 +12,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:run": "vitest run",
-    "qa:phase": "node scripts/qa/run-phase.mjs",
-    "qa:phase2": "node scripts/qa/run-phase.mjs phase2",
-    "qa:phase3": "node scripts/qa/run-phase.mjs phase3",
-    "qa:phase4": "node scripts/qa/run-phase.mjs phase4",
-    "qa:phase5": "node scripts/qa/run-phase.mjs phase5",
-    "qa:mobile": "node scripts/qa/mobile.mjs",
+    "qa:phase": "node tests/qa/run-phase.mjs",
+    "qa:phase2": "node tests/qa/run-phase.mjs phase2",
+    "qa:phase3": "node tests/qa/run-phase.mjs phase3",
+    "qa:phase4": "node tests/qa/run-phase.mjs phase4",
+    "qa:phase5": "node tests/qa/run-phase.mjs phase5",
+    "qa:mobile": "node tests/qa/mobile.mjs",
     "qa:telegram-device": "../scripts/run_telegram_device_qa.sh"
   },
   "dependencies": {

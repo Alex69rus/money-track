@@ -10,6 +10,10 @@ function normalizeToTestIdSegment(value) {
     .replace(/-+$/, "");
 }
 
+function filterTagButton(page, tag) {
+  return page.getByRole("button", { name: `Add ${tag} filter tag` });
+}
+
 function buildTransactionsResponse() {
   const createdAt = new Date().toISOString();
 
@@ -105,10 +109,8 @@ export const phase5Definition = {
       : fail("Did not capture X-Telegram-Init-Data header on transactions requests.");
 
     await page.click('button[aria-label="Show filters"]');
-    await page.waitForSelector(
-      `[data-testid="tx-filter-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`,
-      { timeout: 15000 },
-    );
+    const backendFilterTag = filterTagButton(page, "phase5backendtag");
+    await backendFilterTag.waitFor({ state: "visible", timeout: 15000 });
 
     const tagEditor = page.locator(`[data-testid="tx-${transactionLayout}-tags-98501"]`);
     await tagEditor.scrollIntoViewIfNeeded();
@@ -162,10 +164,7 @@ export const phase5Definition = {
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
-    const tagInFiltersVisible = await page
-      .locator(`[data-testid="tx-filter-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`)
-      .isVisible()
-      .catch(() => false);
+    const tagInFiltersVisible = await backendFilterTag.isVisible().catch(() => false);
 
     fr["FR-030"] =
       tagsRequestCount > 0 && tagInFiltersVisible && tagInSelectorVisible

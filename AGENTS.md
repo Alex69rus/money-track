@@ -57,8 +57,6 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 - **Database**: Uses real PostgreSQL data, full API functionality available for testing
 - **Verification**: Use `/health` and API integration tests in `backend_new/tests/**`
 
-For frontend redesign setup and testing commands, use `frontend_new/AGENTS.MD`.
-
 ## Code Conventions
 
 Follow `docs/conventions.md` strictly.

@@ -67,7 +67,7 @@ async function readCategories(backendBaseUrl) {
 
   const categories = await response.json();
   if (!Array.isArray(categories) || categories.length < 6) {
-    throw new Error(`BFX-3 QA requires at least six categories, received ${JSON.stringify(categories)}.`);
+    throw new Error(`Phase-3 QA requires at least six categories, received ${JSON.stringify(categories)}.`);
   }
 
   return categories.slice(0, 6);

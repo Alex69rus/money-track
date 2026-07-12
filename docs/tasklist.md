@@ -1,73 +1,181 @@
 # Development Task List
 
-## Progress Report
+`docs/tasklist.md` is the repository's single task and status register. Keep raw screenshots, logs, and observation-only reports in their area-specific `bugs_reports/` directory; do not create a parallel roadmap, tracker, or TODO file.
 
-Legend: Pending | In Progress | Complete | Blocked
+## Task register
 
-## Completed Delivery Checkpoints
+| ID | Source / evidence | Priority | State | Summary |
+| --- | --- | --- | --- | --- |
+| TWA-1 | Telegram phone-fixture QA and iPhone feedback | P1 | Fixed — verification pending | Telegram-native route/navigation implementation needs a real iPhone smoke test. |
+| FE-004 | User request, pending issue 4 | P2 | Pending | Open the existing transaction editor from an Analytics drilldown row. |
+| FE-005 | User report, pending issue 5 | P2 | Deferred | Repair the datepicker scroll/focus and reset behavior when explicitly resumed. |
+| BFX-1 | TEMP-001..003, BR-004 | P2 | Fixed — verification pending | Transaction-card edit interaction and category affordances. |
+| BFX-2 | TEMP-004, TEMP-005 | P2 | Fixed — verification pending | Analytics category/tag drilldown parity. |
+| BFX-3 | TEMP-006, BR-001..003 | P2 | Fixed — verification pending | Bounded Analytics widgets and functional View all routes. |
+| BFX-4 | TEMP-007 | P2 | Fixed — verification pending | Monthly Trends exact-value disclosure. |
+| BFX-5 | BR-005 | P2 | Fixed — verification pending | Bounded Transactions tag filtering. |
+| BFX-6 | FUP-001..004 | P2 | Fixed — verification pending | Follow-up filter, date-surface, and analytics sizing clarity. |
+| BFX-7 / BR-006 | `frontend_new/bugs_reports/phase-qa-findings-2026-07-12.md` | P2 | Verified | Repair the stale Phase-5 tag integration gate. |
+| TST-1 | Pending issue 1 | P3 | Verified | Move frontend tests to `frontend_new/tests/`. |
+| DOC-1 | Pending issues 2–3 | P3 | Verified | Complete the redesign audit and consolidate the frontend harness. |
 
-| Step | Scope | Status | Date | Notes |
-|------|-------|--------|------|-------|
-| Backend Foundation | Production-ready Python backend skeleton (`backend_new`) | Complete | 2026-02-18 | Config, lifecycle, error handling, logging baseline |
-| Auth + Read Endpoints | Telegram auth semantics + categories/tags read behavior | Complete | 2026-02-19 | Integration coverage added and validated |
-| Transactions Read/Write | List/create/update/delete transaction behaviors and ownership checks | Complete | 2026-02-20 | Core CRUD coverage complete |
-| Data Integrity | Constraint and migration hardening | Complete | 2026-02-21 | Unique/FK integrity and migration reproducibility verified |
-| Release Readiness | Final quality gates and cutover verification | Complete | 2026-02-22 | Lint/type/test gates and deployment-readiness checks passed |
-| Query Efficiency | SQL-based count optimization for transaction listings | Complete | 2026-02-22 | `totalCount` moved to DB aggregate query |
-| Auth Gate Activation | Local dual-mode integration run for production auth checks | Complete | 2026-02-22 | Dev+prod auth scenarios validated in one flow |
-| Telegram Flow Migration | `SavingTransactions` flow moved from n8n to FastAPI + PTB webhook ingestion | Complete | 2026-03-20 | Added `/api/telegram/webhook`, PTB runtime, OpenAI parsing, and Telegram ingestion tests |
-| Telegram Reply Formatting | Telegram save confirmation now renders amounts with two decimal places | Complete | 2026-03-23 | Normalized reply text to fixed `.2f` amount formatting for saved transactions |
-| Auto Category Suggestion PRD | Product requirements and rollout definition for two-step LLM category assignment in Telegram ingestion | Complete | 2026-04-03 | Added PRD covering retrieval, LLM ranking, auto-apply, and Telegram remove-category action |
-| Auto Category Suggestion Implementation | Two-step Telegram category suggestion, inline callback actions, signed callback payloads, and real-LLM Telegram e2e coverage | Complete | 2026-04-03 | Added business services, callback handling, observability logs, and gated integration e2e validating auto-assign/override/remove |
-| Frontend Redesign Requirements Pack | Current UX baseline, user flows, and functional requirements for FE redesign handoff | Complete | 2026-04-04 | Added `docs/frontend-redesign-requirements/` with as-is UX, flow mapping, and MUST-level behavior contract |
-| Frontend Requirements Alignment (Draft Refresh) | Align FE requirement docs with refreshed redesign screenshots and approved UX decisions | Complete | 2026-04-04 | Updated nav to include Settings stub, explicit category/tag confirmation flows, category-icon trigger, and analytics category drilldown popup requirements |
-| Frontend New Agent Scaffolding | `frontend_new` agent guide and execution docs for Tailwind v4 + shadcn + Telegram Mini App redesign | Complete | 2026-04-04 | Added `frontend_new/AGENTS.MD`, roadmap, API evolution plan, Telegram/shadcn playbooks, QA checklist, and root guide routing update |
-| Frontend New Phase-0 Bootstrap | Runnable `frontend_new` scaffold with Vite/TS/Tailwind v4, Telegram bootstrap, nav shell, chat backend stub, and CI quality workflow | Complete | 2026-04-04 | Added app skeleton, env template (`VITE_API_BASE_URL` only), locked redesign decisions, and frontend-new CI pipeline |
-| Frontend Redesign Decision Freeze | Lock FR-038/FR-039 and AI chat stub scope for autonomous agent execution | Complete | 2026-04-04 | Updated functional requirements to single-category filtering + multi-currency edit, and documented backend-based `/api/chat` stub scope |
-| Frontend New Phase-1 Transactions Slice | Transactions list and filter UX with debounced auto-apply, resilient loading/error states, and incremental loading | Complete | 2026-04-04 | Implemented typed transactions/categories/tags API adapters, responsive mobile+desktop list surfaces, infinite scroll, retry paths, and full frontend quality gates |
-| Frontend New Phase-2 Transaction Edit Surfaces | Dedicated category/tag selector flows, full transaction edit dialog with validation, delete confirmation, and in-place list mutation updates | Complete | 2026-04-04 | Implemented FR-010..FR-016 and FR-035 with category icon trigger, explicit selector confirmations, save/delete mutations, and full frontend quality gates |
-| Frontend New Phase-3 Analytics Slice | Analytics widgets, date-range recompute behavior, resilient loading/error/no-data states, and category drilldown popup with explicit close | Complete | 2026-04-05 | Implemented FR-018..FR-022 with typed analytics adapters/hooks, drilldown dialog context preservation, and automated `qa:phase3` FR verification |
-| Frontend New Phase-4 AI Chat Slice | AI chat timeline, keyboard/send behavior, pending state, reset confirmation, and failure fallback handling | Complete | 2026-04-05 | Implemented FR-023..FR-027 with `/api/chat` adapter wiring, explicit reset confirmation, `qa:phase4` module coverage, and RTL behavior tests (local Playwright run blocked by browser runtime constraints) |
-| Frontend New Phase-5 Integration Hardening | API adapter hardening, dev/test fallback mode, Telegram viewport reachability safeguards, and scope guard QA | Complete | 2026-04-05 | Implemented FR-028, FR-030, FR-031, FR-033, FR-040 with controlled fallback banner/data adapters, Phase-5 QA module, and navigation scope + header coverage |
-| Frontend Phase-5 QA Runtime Bootstrap Fix | Stabilize shared phase runner backend startup across local environments where `uvicorn` executable lookup fails | Complete | 2026-05-07 | Updated QA bootstrap script to use `uv run python -m uvicorn app.main:app`; reran `qa:phase5` with full FR PASS matrix |
-| Frontend Phase QA Automation | Reusable phase QA runner, runtime bootstrap script, and deterministic FR matrix output for future redesign phases | Complete | 2026-04-04 | Added generic `qa:phase` pipeline, phase module structure, stable test IDs for phase-critical controls, and documented usage in frontend docs |
-| Frontend New Phone QA Feedback Loop | Phone-first `frontend_new` QA with Telegram viewport simulation, selector/editor scroll checks, screenshot artifacts, and real-device tunnel launcher | Complete | 2026-07-11 | Added isolated FE/BE QA launchers, four iPhone profiles, Telegram lifecycle fixture, collision/overflow assertions, stable-viewport transaction sheets, and test-bot device command; AI Chat is intentionally excluded from the mobile visual matrix. |
-| Repository Bug Management Skill | Consistent evidence reports, triage, bug-fix iteration planning, test-first fixes, and verification states | Complete | 2026-07-12 | Added `.agents/skills/bug-management/` with the established report/iteration templates and made it mandatory for future user-reported bugs through `AGENTS.md`. |
-| Frontend Native Date-Control Containment Regression | Prevent native iOS date fields on Transactions and Analytics from overflowing to the right | Complete | 2026-07-12 | Replaced visible native date rendering with a shared app-rendered field and a direct-touch transparent native overlay. The red baseline tests proved both screens lacked this presentation boundary; the final suite passed on all four phone-fixture profiles, Phase-2/Phase-3, and 22 frontend tests. The actual Telegram iPhone runner is blocked until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured. |
-| Frontend Test Suite Layout | Relocate frontend unit tests into a dedicated mirrored `frontend_new/tests/` tree | Complete | 2026-07-12 | Moved all 12 Vitest files and shared setup out of `src/`; preserved alias imports, updated Vitest setup discovery and TypeScript typechecking, and passed lint, typecheck, 22 tests, and production build. |
-| Frontend Phase-3 QA Scaffold | Analytics phase QA skeleton with TODO FR assertions and reusable script wiring for future phase onboarding | Complete | 2026-04-04 | Added `phase3.mjs`, shared scaffold utils, and `qa:phase3` scripts so next phases only fill assertion bodies |
-| Frontend Visual Alignment Planning | Post-functional visual-fidelity track for matching approved `redesign_ui_drafts` | Complete | 2026-05-26 | Added VF-0..VF-6 roadmap phases covering audit, transactions shell, edit popup, category selector, tag selector, analytics, and drilldown visual alignment |
-| Frontend Redesign Handoff Docs | Compact current-state handoff for the next agent | Complete | 2026-05-26 | Updated `frontend_new/README.md` and roadmap with implemented status, QA commands, visual-fidelity gap, next slice (`VF-0`), and deferred contracts |
-| Frontend Agent Guide Current-State Cleanup | Remove bootstrap-era and desktop-first guidance from `frontend_new/AGENTS.MD` | Complete | 2026-05-26 | Updated scope to continue existing implementation, made VF-0 the active work, documented phone-first Telegram Web App usage, set 390x844/DPR 3 as primary viewport, and removed stale suggested project layout |
-| Frontend VF-0 Visual Audit | Draft-vs-current visual gap inventory with phone-baseline screenshots and reusable token extraction | Complete | 2026-05-26 | Added `frontend_new/docs/vf-0-visual-audit.md` and 390x844/DPR3 captures under `frontend_new/docs/visual-audit/vf-0-current/`; defined VF-1 exact first implementation slice and approval-needed deviations |
-| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions home visuals to `home_screen_with_transactions_nav` while preserving existing behavior and QA coverage | Complete | 2026-05-26 | Refactored app header/nav and transactions visual hierarchy in `frontend_new/src/**`, wired category icons from backend data on mobile rows, passed `lint/typecheck/test/build`, and passed `qa:phase2`; captured post-change phone screenshot in `frontend_new/docs/visual-audit/vf-1-after/transactions-home-vf1.png` |
-| Frontend VF-2 Transaction Detail Visual Alignment | Align transaction edit popup to `transaction_detail_pop_up` while preserving Phase-2 behavior and QA coverage | Complete | 2026-05-26 | Refactored `TransactionEditDialog` into draft-aligned bottom-sheet composition (header, amount hero, grouped cards, footer actions), reused backend category icons in popup, passed `lint/typecheck/test/build`, passed `VITE_API_BASE_URL=http://127.0.0.1:8000 npm run qa:phase2`, and captured phone screenshot at `frontend_new/docs/visual-audit/vf-2-after/transaction-edit-dialog-vf2.png` |
-| Frontend VF-3 Category Selector Visual Alignment | Align category selector dialog to `category_selector_expandable_groups` while preserving quick-edit confirmation behavior and Phase-2 coverage | Complete | 2026-05-26 | Refactored `TransactionCategorySelectorDialog` to draft-style header/search/group hierarchy, switched icons to backend-provided category icons/colors with fallback, kept edit-flow instant apply + quick-flow explicit confirmation, passed `qa:phase2`, and captured phone screenshot at `frontend_new/docs/visual-audit/vf-3-after/category-selector-dialog-vf3.png` |
-| Frontend VF-4 Tag Selector Visual Alignment | Align tag selector dialog to `tag_selector_chip_grid_layout` while preserving explicit confirmation behavior and Phase-2 coverage | Complete | 2026-05-26 | Refactored `TransactionTagSelectorDialog` to draft-aligned header/search/chip-grid/sticky action composition, updated tag-selector titles to `Add tags`, passed `lint/typecheck/test/build`, passed `qa:phase2` with backend-bound `VITE_API_BASE_URL`, and captured phone screenshot at `frontend_new/docs/visual-audit/vf-4-after/tag-selector-dialog-vf4.png` |
-| Frontend VF-5 Analytics Dashboard Visual Alignment | Align analytics dashboard to `analytics_with_transactions_nav` while preserving Phase-3 behavior and drilldown context | Complete | 2026-05-30 | Refactored `AnalyticsPage` into draft-aligned mobile composition (header/presets/date controls, dark summary/category/tag/trend cards, category icon/color treatment), kept FR test hooks and data recompute flows, passed `lint/typecheck/test/build`, passed `qa:phase3`, and captured phone screenshot at `frontend_new/docs/visual-audit/vf-5-after/analytics-dashboard-vf5.png` |
-| Frontend VF-6 Analytics Drilldown Visual Alignment | Align category drilldown to `category_transactions_pop_up_with_close_button` while preserving TWA full-page BackButton flow | Complete | 2026-07-12 | Refactored `CategoryDrilldownDialog` into a draft-aligned dark category hero and dense transaction list, retained dialog close fallback but uses host BackButton in Telegram, added component/FR-022 structure coverage, passed `lint/typecheck/test/build`, isolated `qa:phase3`, and four-profile mobile QA. Final screenshots: `frontend_new/.codex-tmp/mobile-qa/2026-07-12T05-51-22-503Z/`. Real iPhone check blocked because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured. |
+## TWA-1 — Telegram-native route and viewport validation
 
-## Upcoming Delivery Checkpoints
+### Problem
 
-| Step | Scope | Status | Notes |
-|------|-------|--------|-------|
-| Frontend TWA-1 Native Navigation | Transactions-first Telegram launch, persistent primary bottom navigation, host BackButton for nested full-page flows, fullscreen/swipe integration, top safe-area protection, and keyboard-aware focus position | In Progress | Earlier browser, phase, and four-profile Telegram-fixture QA passed on 2026-07-11. The current correction adds version-gated vertical-swipe suppression/fullscreen requests and a 5rem host-controls reserve plus 1rem content gutter across Transactions, Analytics, Settings, AI Chat, and fixed full-page surfaces. Reusable lessons are captured in `.agents/skills/telegram-mini-app/`; rerun the mobile/phase QA suites and complete a real Telegram iPhone smoke test with the configured test bot/domain before closing TWA-1. |
-| Frontend BFX-1 Transaction Card Interaction and Category Affordances | Remove misleading leaf-category arrows, make mobile transaction cards open edit, preserve nested quick category/tag actions, clarify uncategorized state, and keep signed amounts intact | Complete | Implemented 2026-07-12. Passed lint, typecheck, 16 unit tests, isolated Phase-2 QA, and all four Telegram phone-fixture profiles; real-device smoke remains pending until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured. Source bugs TEMP-001..003 and BR-004 are `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend BFX-2 Analytics Category and Tag Drilldown Parity | Add tag drilldown and make both drilldowns use consistent category-aware transaction rows | Complete | Implemented 2026-07-12. Passed lint, typecheck, 17 unit tests, isolated Phase-3 QA, and all four Telegram phone-fixture profiles; real-device smoke remains pending until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured. Source bugs TEMP-004 and TEMP-005 are `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend BFX-3 Analytics Overview Containment and View All | Limit overview category/tag widgets to top five, hide preset scrollbar, prevent widget clipping, and add full-list exploration routes | Complete | Implemented 2026-07-12. Passed lint, typecheck, 18 unit tests, isolated Phase-3 QA with six categories/tags, and the four-profile Telegram phone fixture run; real-device smoke remains pending until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured. Source bugs TEMP-006 and BR-001..003 are `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend BFX-4 Monthly Trends Value Disclosure | Make month bars selectable and reveal exact income/expense values | Complete | Implemented 2026-07-12. Passed lint, typecheck, 20 unit tests, production build, isolated Phase-3 QA, and all four Telegram phone-fixture profiles; real-device smoke awaits `TELEGRAM_DEVICE_NGROK_DOMAIN`. Source bug TEMP-007 is `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend BFX-5 Bounded Transactions Tag Filter | Replace unbounded inline tag catalogue with compact suggestions and searchable full selector | Complete | Implemented 2026-07-12. Passed lint, typecheck, 20 unit tests, production build, isolated Phase-2 QA, and all four Telegram phone-fixture profiles using a 121-tag fixture; real-device smoke awaits `TELEGRAM_DEVICE_NGROK_DOMAIN`. Source bug BR-005 is `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend BFX-6 Follow-Up UI Clarity and Natural Analytics Sizing | Simplify Transactions filter copy, render date controls safely on Transactions and Analytics, remove excess card height, and clarify selected month context | Complete | Implemented 2026-07-12. Passed lint, typecheck, 22 unit tests, production build, isolated Phase-2/Phase-3 QA, and all four Telegram phone-fixture profiles; a later regression hardening replaced native date rendering with an app-rendered field plus transparent native picker overlay on both screens. Real-device smoke awaits `TELEGRAM_DEVICE_NGROK_DOMAIN`. Source bugs FUP-001..004 are `Implemented` in `frontend_new/docs/bug-fix-iterations.md`. |
-| Frontend VF-0 Visual Audit | Compare current `frontend_new` screens against every approved redesign draft and extract shared visual tokens/layout rules | Complete | Completed in `frontend_new/docs/vf-0-visual-audit.md` with artifact screenshots and VF-1 start scope |
-| Frontend VF-1 Transactions Visual Alignment | Align app shell and transactions surface to `home_screen_with_transactions_nav` while preserving Phase 1/2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-2 next |
-| Frontend VF-2 Transaction Detail Visual Alignment | Align transaction edit popup to `transaction_detail_pop_up` while preserving Phase-2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-3 next |
-| Frontend VF-3 Category Selector Visual Alignment | Align category selector to `category_selector_expandable_groups` while preserving Phase-2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-4 next |
-| Frontend VF-4 Tag Selector Visual Alignment | Align tag selector to `tag_selector_chip_grid_layout` while preserving Phase-2 behavior | Complete | Implemented and validated with `qa:phase2`; continue with VF-5 next |
-| Frontend VF-5 Analytics Dashboard Visual Alignment | Align analytics dashboard to `analytics_with_transactions_nav` while preserving Phase-3 behavior | Complete | Implemented and validated with `qa:phase3`; continue with VF-6 next |
-| Frontend VF-6 Analytics Drilldown Visual Alignment | Align category drilldown to `category_transactions_pop_up_with_close_button` while preserving TWA full-page BackButton behavior | Complete | Completed 2026-07-12: draft-aligned dark category summary/list, host BackButton route return, FR-022 structure assertion, Phase-3 PASS matrix, and four-profile mobile screenshots. |
+Browser and Telegram-fixture checks passed, but client-specific behavior still needs physical Telegram iPhone confirmation.
 
-## Working Rules
+### Required behavior
 
-- Keep slices small and verifiable.
-- Prefer behavior-preserving changes unless explicitly requested.
-- Keep `docs/` aligned with the current runtime architecture.
+- Telegram opens Transactions and retains the four primary destinations in bottom navigation.
+- Nested edit, selector, and drilldown routes use host BackButton and return without losing parent state.
+- Safe-area, host-control clearance, keyboard positioning, vertical-swipe suppression, and fullscreen fallback remain usable in the native client.
+
+### Acceptance criteria
+
+- A real Telegram iPhone smoke test is recorded using the configured test bot and `TELEGRAM_DEVICE_NGROK_DOMAIN`.
+- The result identifies any device-only exception; passing browser emulation alone does not close this task.
+
+### Verification status
+
+Four phone-fixture profiles and the browser phase suites passed. The task is blocked only on the missing reserved Telegram test-bot domain.
+
+## FE-004 — Edit transactions from Analytics drilldowns
+
+### Problem
+
+Analytics category and tag drilldowns show read-only transaction rows. A user must leave the drilldown and find the transaction again to edit it.
+
+### Required behavior
+
+- Provide a clear, accessible edit action from each transaction row in category and tag drilldowns.
+- Open the existing transaction edit route with the selected transaction prefilled; do not duplicate the editor or transaction mutation logic.
+- Return to the same drilldown and Analytics date context after save, delete, or cancel through the established Telegram BackButton/browser-history contract.
+
+### Acceptance criteria
+
+- Category and tag drilldown rows open the correct transaction editor.
+- Save and delete reflect in the drilldown and preserved Analytics context without a full document reload.
+- Read-only row semantics remain clear until the explicit edit action is used.
+- Phase-2 and Phase-3 coverage protects the edit handoff, return state, and mutation result; mobile QA confirms controls remain reachable.
+
+### Likely boundaries
+
+- `frontend_new/src/features/analytics/components/CategoryDrilldownDialog.tsx`
+- `frontend_new/src/pages/AnalyticsPage.tsx`
+- Existing transaction edit route state in `frontend_new/src/pages/TransactionsPage.tsx` or a shared route-state adapter
+- Phase-2/Phase-3 and mobile QA modules
+
+## FE-005 — Datepicker scroll and reset follow-up
+
+### Problem
+
+Opening the datepicker can scroll the screen far from its field, and its reset control does not work as expected.
+
+### State and next action
+
+This task is explicitly deferred by the user. Preserve the existing date implementation and revisit only with explicit approval, including a real Telegram iPhone reproduction before changing behavior.
+
+## BFX-1 — Transaction-card edit interaction and category affordances
+
+Source bugs: TEMP-001, TEMP-002, TEMP-003, BR-004.
+
+### Problem and required behavior
+
+Leaf categories showed a misleading chevron; mobile transaction cards needed an Edit button; uncategorized rows resembled real categories; and signed amounts could split on narrow phones. Leaf categories must be directly selectable, card tapping must open full edit without swallowing category/tag quick actions, the unassigned state must be explicit, and amounts must remain non-wrapping.
+
+### Acceptance and delivery record
+
+Leaf rows no longer expose a false expand affordance; card, category, and tag actions are independently reachable; the mobile Edit button is absent; and large signed amounts remain intact. Unit tests, Phase-2 QA, and all four phone-fixture profiles passed. Real-device verification remains pending under TWA-1.
+
+## BFX-2 — Analytics category and tag drilldown parity
+
+Source bugs: TEMP-004, TEMP-005.
+
+### Problem and required behavior
+
+Tag spending lacked a drilldown, while category drilldown rows lacked the category icon/color treatment used elsewhere. Both category and tag items must open a shared full-page, date-context-preserving drilldown with consistent read-only transaction rows.
+
+### Acceptance and delivery record
+
+Both drilldowns render filtered transactions, category-aware rows, aggregate context, and Telegram BackButton return. Unit tests, Phase-3 QA, and four phone-fixture profiles passed. Real-device verification remains pending under TWA-1.
+
+## BFX-3 — Bounded Analytics widgets and View all
+
+Source bugs: TEMP-006, BR-001, BR-002, BR-003.
+
+### Problem and required behavior
+
+Category/tag widgets could grow unbounded or scroll internally, their View all controls were inert, the preset row exposed a scrollbar, and summary/trend cards could clip. Overview widgets must show only five items, page scrolling must own overflow, and full lists must be route-backed and preserve the active range.
+
+### Acceptance and delivery record
+
+Six-item fixtures show five overview rows, every item is reachable through View all, the preset scrollbar is hidden, and cards retain visible body content. Phase-3 and four-profile phone-fixture QA passed. Real-device verification remains pending under TWA-1.
+
+## BFX-4 — Monthly Trends value disclosure
+
+Source bug: TEMP-007.
+
+### Problem and required behavior
+
+Bar height alone did not expose exact monthly income and expenses. Every month must be selectable by touch and keyboard, with a persistent selected-month value summary.
+
+### Acceptance and delivery record
+
+The newest month selects by default, selection is retained or predictably replaced after recomputation, and exact values remain in normal card flow. Unit tests, Phase-3 QA, and four phone-fixture profiles passed. Real-device verification remains pending under TWA-1.
+
+## BFX-5 — Bounded Transactions tag filtering
+
+Source bug: BR-005.
+
+### Problem and required behavior
+
+Rendering the whole tag catalogue inline could make filters unusable. The compact filter must show at most five suggestions, preserve selected tags, handle long labels, and provide a searchable full-page selector for the entire catalogue.
+
+### Acceptance and delivery record
+
+Large-catalogue tests verify the five-chip bound, selected-count recovery, searchable full selector, disabled filter-tag creation, and no horizontal overflow. Unit tests, Phase-2 QA, and four phone-fixture profiles passed. Real-device verification remains pending under TWA-1.
+
+## BFX-6 — Follow-up UI clarity and natural Analytics sizing
+
+Source bugs: FUP-001, FUP-002, FUP-003, FUP-004.
+
+### Problem and required behavior
+
+The Transactions filter repeated its purpose, date surfaces needed phone containment, Analytics cards carried excess empty space, and selected-month context was ambiguous. The delivered behavior uses concise filter copy, safe rendered date surfaces, natural card height, and a clear full month/year selection label.
+
+### Acceptance and delivery record
+
+Lint, typecheck, 22 unit tests, build, Phase-2/Phase-3 QA, and four phone-fixture profiles passed. Real-device verification remains pending under TWA-1.
+
+## BFX-7 / BR-006 — Phase-5 tag integration regression gate
+
+### Problem
+
+Phase-5 QA still waited for a retired filter-tag test hook after BFX-5, preventing its requirement matrix from running.
+
+### Required behavior
+
+The gate must test the current accessible filter-tag control and confirm `/api/tags` options are available to both filter and transaction-edit selectors.
+
+### Acceptance and delivery record
+
+The retired hook was replaced with the `Add <tag> filter tag` accessible name. Lint, typecheck, 22 unit tests, build, and the complete Phase-5 matrix passed at 390×844 / DPR 3. This harness task is verified.
+
+## TST-1 — Frontend test-suite layout
+
+### Delivery record
+
+All twelve frontend tests and shared setup moved from `src/` into the mirrored `frontend_new/tests/` tree. The browser QA runner, fixture, mobile matrix, and phase modules now live under `frontend_new/tests/qa/`; package commands and evidence references were updated. Lint, typecheck, 22 tests, build, and the complete Phase-5 matrix passed at 390×844 / DPR 3. The sandboxed backend bootstrap panicked in `uv`'s macOS system-configuration dependency; the unchanged escalated runner passed, classifying it as an environment-only exception.
+
+## DOC-1 — Redesign audit and harness consolidation
+
+### Delivery record
+
+The redesign audit found no missing planned frontend feature. Historical visual drafts, comparison captures, duplicate task files, and stale guidance were removed. Current functional requirements and user flows are the product contract; `docs/tasklist.md` is the sole task register.
+
+## Operating rules
+
+- Keep each approved slice small, evidence-backed, and represented by one row plus one detail section in this file.
+- Update this file when work is planned, completed, blocked, or materially re-scoped.
+- Keep raw evidence in `frontend_new/bugs_reports/`; record source ID, priority, state, acceptance summary, delivery result, and verification exception here.
