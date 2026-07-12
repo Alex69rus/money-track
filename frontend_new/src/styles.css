@@ -55,24 +55,6 @@ body {
   color: var(--color-foreground);
 }
 
-.mt-analytics-date-input {
-  box-sizing: border-box;
-  display: block;
-  inline-size: 100%;
-  -webkit-min-logical-width: 0;
-  max-width: 100%;
-  min-width: 0;
-  width: 100%;
-}
-
-.mt-analytics-date-input::-webkit-date-and-time-value {
-  text-align: left;
-}
-
-.mt-analytics-date-input::-webkit-calendar-picker-indicator {
-  margin: 0;
-}
-
 .mt-balance-card {
   background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 82%, #2563eb 18%));
 }

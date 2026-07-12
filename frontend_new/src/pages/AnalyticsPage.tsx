@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { NativeDateField } from "@/components/ui/native-date-field";
 import { AnalyticsBreakdownPage } from "@/features/analytics/components/AnalyticsBreakdownPage";
 import { CategoryDrilldownDialog } from "@/features/analytics/components/CategoryDrilldownDialog";
 import { AnalyticsLoadingState } from "@/features/analytics/components/AnalyticsLoadingState";
@@ -284,16 +284,15 @@ export function AnalyticsPage(): JSX.Element {
             <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-slate-400 uppercase" htmlFor="analytics-from-date">
               From
             </label>
-            <Input
-              aria-label="Analytics from date"
-              className="mt-analytics-date-input block max-w-full h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
-              data-testid="analytics-from-date"
+            <NativeDateField
+              ariaLabel="Analytics from date"
+              className="rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-within:border-[#2d8cff] focus-within:ring-1 focus-within:ring-[#2d8cff]/55"
               id="analytics-from-date"
+              inputTestId="analytics-from-date"
               onChange={(event) => {
                 setDateRange((current) => updateFromDate(current.toDate, event.target.value));
                 setActivePreset("custom");
               }}
-              type="date"
               value={dateRange.fromDate}
             />
           </div>
@@ -301,16 +300,15 @@ export function AnalyticsPage(): JSX.Element {
             <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-slate-400 uppercase" htmlFor="analytics-to-date">
               To
             </label>
-            <Input
-              aria-label="Analytics to date"
-              className="mt-analytics-date-input block max-w-full h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
-              data-testid="analytics-to-date"
+            <NativeDateField
+              ariaLabel="Analytics to date"
+              className="rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-within:border-[#2d8cff] focus-within:ring-1 focus-within:ring-[#2d8cff]/55"
               id="analytics-to-date"
+              inputTestId="analytics-to-date"
               onChange={(event) => {
                 setDateRange((current) => updateToDate(current.fromDate, event.target.value));
                 setActivePreset("custom");
               }}
-              type="date"
               value={dateRange.toDate}
             />
           </div>

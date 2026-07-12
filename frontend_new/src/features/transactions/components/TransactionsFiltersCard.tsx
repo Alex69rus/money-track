@@ -3,6 +3,7 @@ import { SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NativeDateField } from "@/components/ui/native-date-field";
 import {
   Card,
   CardContent,
@@ -225,10 +226,11 @@ export function TransactionsFiltersCard({
               <label className="text-sm font-medium" htmlFor="transactions-from-date">
                 From date
               </label>
-              <Input
+              <NativeDateField
+                ariaLabel="From date"
                 id="transactions-from-date"
+                inputTestId="transactions-from-date"
                 onChange={(event) => onFieldChange("fromDate", event.target.value)}
-                type="date"
                 value={draft.fromDate}
               />
             </div>
@@ -237,10 +239,11 @@ export function TransactionsFiltersCard({
               <label className="text-sm font-medium" htmlFor="transactions-to-date">
                 To date
               </label>
-              <Input
+              <NativeDateField
+                ariaLabel="To date"
                 id="transactions-to-date"
+                inputTestId="transactions-to-date"
                 onChange={(event) => onFieldChange("toDate", event.target.value)}
-                type="date"
                 value={draft.toDate}
               />
             </div>

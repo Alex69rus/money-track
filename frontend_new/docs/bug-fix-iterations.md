@@ -253,9 +253,10 @@ Source bugs: FUP-001, FUP-002, FUP-003, FUP-004.
 
 - Replaced the misleading `Any date` filter-toggle label with `Filters` and removed the duplicate `Filters` heading plus the obvious debounce explanation. The live status remains available to assistive technology.
 - Contained Analytics date inputs to their card with a phone-safe single-column layout below the normal `sm` breakpoint and native-date width constraints (`inline-size`/`max-width`/`box-sizing`).
+- Replaced the visible browser-native date renderer on both Analytics and Transactions with a shared app-rendered date field. A full-size transparent native `input[type="date"]` remains the direct touch target, so the iOS picker still opens while WebKit can no longer determine the visible border/text width.
 - Removed the fixed minimum heights added in BFX-3. Balance Snapshot now uses natural content height with a compact inline average, and Monthly Trends uses shorter chart columns instead of dashboard-size empty space.
 - Clarified the trends disclosure as `Selected month` and renders the full month/year (for example, `Jul 2026`); the formerly strange `Jul 26` was a display ambiguity, not an incorrect date calculation.
-- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (20 tests), `npm run build`, isolated Phase-2 and Phase-3 QA, plus all four Telegram phone-fixture profiles. Phone QA asserts date-input containment, natural Analytics card sizing, trend selection semantics, and no horizontal overflow. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (22 tests), `npm run build`, isolated Phase-2 and Phase-3 QA, plus all four Telegram phone-fixture profiles. Phone QA asserts the app-rendered date surface, transparent native overlay, natural Analytics card sizing, trend selection semantics, and no horizontal overflow. The real-device runner was attempted but remains blocked because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## Shared Regression Rules
 

@@ -72,4 +72,29 @@ describe("AnalyticsPage", () => {
     expect(screen.getByTestId("analytics-tag-breakdown-page")).toBeInTheDocument();
     expect(screen.getAllByTestId(/^analytics-breakdown-item-tag-/)).toHaveLength(7);
   });
+
+  it("wraps each native date input in its own containment owner", () => {
+    render(
+      <MemoryRouter initialEntries={["/analytics"]}>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    const fromDateControl = screen.getByTestId("analytics-from-date-control");
+    const toDateControl = screen.getByTestId("analytics-to-date-control");
+
+    expect(fromDateControl).toHaveAttribute("data-native-date-control");
+    expect(toDateControl).toHaveAttribute("data-native-date-control");
+    expect(fromDateControl).toHaveClass("relative");
+    expect(toDateControl).toHaveClass("relative");
+    expect(fromDateControl).toContainElement(screen.getByTestId("analytics-from-date"));
+    expect(toDateControl).toContainElement(screen.getByTestId("analytics-to-date"));
+    expect(screen.getByTestId("analytics-from-date-display")).toHaveTextContent("Jul 1, 2026");
+    expect(screen.getByTestId("analytics-to-date-display")).toHaveTextContent("Jul 31, 2026");
+    expect(screen.getByTestId("analytics-from-date")).toHaveClass("opacity-0");
+    expect(screen.getByTestId("analytics-to-date")).toHaveClass("opacity-0");
+
+    fireEvent.change(screen.getByTestId("analytics-from-date"), { target: { value: "2026-07-02" } });
+    expect(screen.getByTestId("analytics-from-date-display")).toHaveTextContent("Jul 2, 2026");
+  });
 });

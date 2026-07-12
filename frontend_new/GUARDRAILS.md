@@ -296,5 +296,11 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 ## 2026-07-12 - Iteration BFX-6 UI Clarity and Natural Analytics Sizing
 
 - Takeaway: Use natural card height and compact content composition for mobile analytics; a fixed minimum height prevents clipping but can create a worse empty-space regression.
-- Exploration: Phase-3 and all four phone profiles confirmed native date inputs remain inside their control card after applying `inline-size`, `max-width`, `box-sizing`, and a phone-safe single-column layout.
+- Exploration: Phase-3 and all four phone profiles confirmed the date-control card layout is sound; the initial visible-native-input approach was later replaced after a real Telegram iPhone showed that WebKit still lost the right edge.
 - Prevention rule: Prevent header-only cards by asserting visible body content, not a fixed pixel minimum; label selected chart values explicitly with a full month/year so an abbreviated date cannot be mistaken for broken data.
+
+## 2026-07-12 - Iteration Native Date-Control Containment Regression
+
+- Takeaway: Do not use a visible browser-native `input[type="date"]` as the visual field in Telegram iOS; WebKit can ignore its width or lose its right edge even when the DOM rectangle is bounded.
+- Exploration: A clipped-wrapper approach passed Chromium phone emulation but failed on the real Telegram iPhone screenshot. Replacing the visible control with an app-rendered field and retaining a full-size transparent native input overlay produced a bounded visual right edge while preserving direct native-picker interaction.
+- Prevention rule: Use `NativeDateField` for date-only values: assert an app-rendered display, a transparent native overlay, contained bounds, value-change behavior, and a real Telegram iPhone picker smoke; do not accept Chromium geometry alone as iOS evidence.

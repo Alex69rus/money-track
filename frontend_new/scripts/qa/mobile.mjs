@@ -169,6 +169,43 @@ async function assertNoHorizontalOverflow(page, label) {
   }
 }
 
+async function assertNativeDateControlContained(page, selector, label) {
+  const result = await page.locator(selector).evaluate((input) => {
+    const owner = input.closest("[data-native-date-control]");
+    if (!owner) {
+      return { hasOwner: false };
+    }
+
+    const inputRect = input.getBoundingClientRect();
+    const ownerRect = owner.getBoundingClientRect();
+    const inputStyles = window.getComputedStyle(input);
+    const ownerStyles = window.getComputedStyle(owner);
+    const display = owner.querySelector('[data-testid$="-display"]');
+
+    return {
+      displayIsPresent: display instanceof HTMLElement,
+      hasOwner: true,
+      inputBoxSizing: inputStyles.boxSizing,
+      inputWithinOwner: inputRect.left >= ownerRect.left - 1 && inputRect.right <= ownerRect.right + 1,
+      nativeInputOpacity: inputStyles.opacity,
+      ownerOverflowX: ownerStyles.overflowX,
+      ownerPosition: ownerStyles.position,
+    };
+  });
+
+  if (
+    !result.hasOwner ||
+    !result.displayIsPresent ||
+    result.inputBoxSizing !== "border-box" ||
+    !result.inputWithinOwner ||
+    result.nativeInputOpacity !== "0" ||
+    result.ownerOverflowX !== "hidden" ||
+    result.ownerPosition !== "relative"
+  ) {
+    throw new Error(`${label}: date field must render its own bounded visual surface and keep the native picker input transparent within it: ${JSON.stringify(result)}.`);
+  }
+}
+
 async function assertWithinViewport(page, selector, label) {
   const box = await page.locator(selector).boundingBox();
   const viewport = await page.evaluate(() => ({ height: window.innerHeight, width: window.innerWidth }));
@@ -310,6 +347,8 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await screenshot(page, profileDirectory, "transactions");
 
     await page.click('[data-testid="transactions-filters-toggle"]');
+    await assertNativeDateControlContained(page, "#transactions-from-date", "transactions from-date control");
+    await assertNativeDateControlContained(page, "#transactions-to-date", "transactions to-date control");
     if ((await page.locator('[data-testid^="tx-filter-suggested-tag-"]').count()) !== 5) {
       throw new Error("Transactions filter must render exactly five suggested tags from a large catalogue.");
     }
@@ -389,6 +428,8 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await page.goto(`${frontendBaseUrl}/analytics`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
     await assertNoHorizontalOverflow(page, "analytics");
+    await assertNativeDateControlContained(page, "#analytics-from-date", "analytics from-date control");
+    await assertNativeDateControlContained(page, "#analytics-to-date", "analytics to-date control");
     await assertBelowTelegramTopInset(page, '[data-testid="analytics-page"] > div:first-child', "analytics primary page");
     const analyticsOverview = await page.evaluate(() => {
       const metrics = (selector) => {
