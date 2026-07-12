@@ -112,7 +112,7 @@ When backend is unreachable in development/testing contexts, frontend SHOULD sup
 Transactions UI MUST provide responsive representations for small and large viewports.
 
 ### FR-033
-Critical interaction controls MUST remain reachable in Telegram Web App viewport constraints and below Telegram's content-safe top/bottom insets.
+Critical interaction controls MUST remain reachable in Telegram Web App viewport constraints and below Telegram's content-safe top/bottom insets. Fullscreen Telegram pages MUST also reserve a minimum top host-controls area when the reported content-safe top inset is too small.
 
 ### FR-034
 Search/select controls for categories and tags MUST support fast lookup over large option sets.

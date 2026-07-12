@@ -231,3 +231,20 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Guardrail: Add `shrink-0` to primary page roots inside the scrollable shell and verify a last-row action can scroll fully above the fixed navigation before declaring a layout change complete.
 - Exploration: Bot API 7.7+ `disableVerticalSwipes()` and Bot API 8.0+ `requestFullscreen()` are version-gated host requests; Telegram may still expose header controls or decline fullscreen, so always preserve normal-host layout.
 - Prevention rule: In the Telegram fixture, set safe-area CSS variables after `DOMContentLoaded`; then run the four-profile mobile matrix plus Phase 2, Phase 3, and Phase 5 before handoff.
+
+## 2026-07-11 - Iteration TWA-1 Primary-Page Host-Control Clearance
+
+- Scope: Prevent Telegram's native Close/menu controls from overlapping the top of Transactions, Analytics, Settings, and AI Chat in fullscreen Telegram launches.
+- What went wrong: Real iPhone screenshots showed primary content beginning inside the visible native control area even though the CSS safe-area inset was applied.
+- Root cause: Telegram can report a content-safe top inset that is smaller than the physical launch-control overlay, particularly around fullscreen transitions.
+- Guardrail to apply next time: Reserve `max(contentSafeAreaInset.top, 5rem)` plus the normal 1rem content gutter through the shared Telegram shell and inherited fixed-page inset; do not make individual-page offset fixes.
+- Validated pattern to repeat: Assert the first primary control on all four tabs starts below the 96px host-control clearance in every mobile-fixture profile, then review representative screenshots.
+- Exploration notes: The earlier four-profile mobile harness and Phase 2/3/5 checks passed; rerun them after changing the clearance threshold. A real Telegram iPhone run remains required because the local fixture cannot render native Telegram controls.
+- Prevention rule: Evaluate lifecycle state before fixture-resetting `page.goto()` calls, or persist the fixture state across navigations; otherwise BackButton assertions can produce false failures.
+- Files/areas affected: `frontend_new/src/app/layout/AppShell.tsx`, `frontend_new/src/styles.css`, `frontend_new/scripts/qa/mobile.mjs`, `frontend_new/src/pages/SettingsPage.tsx`, `docs/tasklist.md`.
+
+## 2026-07-12 - Iteration TWA-1 Shared Skill Capture
+
+- Takeaway: Promote reusable Telegram navigation, viewport, and fixture lessons into `.agents/skills/telegram-mini-app/`; keep device-specific spacing values in the consuming project.
+- Exploration: Confirmed Bot API 7.7 introduces vertical-swipe control and Bot API 8.0 introduces fullscreen, safe-area fields, and fullscreen events; validated the edited skill with `quick_validate.py`.
+- Prevention rule: Treat content-safe insets as a minimum, measure the host-control reserve on a real target client, and keep the reserve configurable rather than copying a prior product's pixels.

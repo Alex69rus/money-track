@@ -32,7 +32,7 @@ Fullscreen is a Telegram host request, not an irreversible app setting. Re-reque
   - `--tg-safe-area-*`
   - `--tg-content-safe-area-*`
 - Base bottom-pinned controls on stable viewport height.
-- Apply `contentSafeAreaInset.top` to the primary app surface and every fixed full-page overlay. Apply the bottom inset to persistent navigation and sticky actions.
+- Apply the greater of `contentSafeAreaInset.top` and the product's 5rem fullscreen host-controls reserve, followed by the normal 1rem content gutter, to the primary app surface and every fixed full-page overlay. Apply the bottom inset to persistent navigation and sticky actions.
 - Recompute layout on:
   - `themeChanged`
   - `viewportChanged`

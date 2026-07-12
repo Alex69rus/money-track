@@ -9,6 +9,7 @@ const PROFILES = [
   { id: "iphone-15-pro-max", width: 430, height: 932, safeAreaBottom: 34, safeAreaTop: 48 },
   { id: "iphone-se", width: 375, height: 667, safeAreaBottom: 0, safeAreaTop: 24 },
 ];
+const TELEGRAM_HOST_CONTROLS_MIN_TOP_PX = 96;
 
 function buildFixtures() {
   const createdAt = new Date().toISOString();
@@ -173,9 +174,10 @@ async function assertBelowTelegramTopInset(page, selector, label) {
     }),
   ]);
 
-  if (!box || !Number.isFinite(insets.safeTop) || box.y < insets.safeTop) {
+  const requiredTop = Math.max(insets.safeTop, TELEGRAM_HOST_CONTROLS_MIN_TOP_PX);
+  if (!box || !Number.isFinite(insets.safeTop) || box.y < requiredTop) {
     throw new Error(
-      `${label}: ${selector} is inside the Telegram service-control inset (${JSON.stringify({ box, ...insets })}).`,
+      `${label}: ${selector} is inside the Telegram service-control inset (${JSON.stringify({ box, requiredTop, ...insets })}).`,
     );
   }
 }
@@ -263,6 +265,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
       throw new Error("Telegram primary screens must render the persistent bottom navigation.");
     }
     await assertWithinViewport(page, '[data-testid="app-shell-nav"]', "transactions navigation");
+    await assertBelowTelegramTopInset(page, ".mt-balance-card", "transactions primary page");
     await screenshot(page, profileDirectory, "transactions");
 
     await page.click('[data-testid="tx-mobile-category-9001"]');
@@ -325,6 +328,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await page.goto(`${frontendBaseUrl}/analytics`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
     await assertNoHorizontalOverflow(page, "analytics");
+    await assertBelowTelegramTopInset(page, '[data-testid="analytics-page"] > div:first-child', "analytics primary page");
     await screenshot(page, profileDirectory, "analytics");
 
     await page.click('[data-testid^="analytics-category-item-"]');
@@ -355,6 +359,16 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
         `Telegram fixture did not observe the expected lifecycle and viewport subscriptions: ${JSON.stringify(telegramState)}.`,
       );
     }
+
+    await page.goto(`${frontendBaseUrl}/settings`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    await page.waitForSelector('[data-testid="settings-page"]', { timeout: 30000 });
+    await assertBelowTelegramTopInset(page, '[data-testid="settings-page"]', "settings primary page");
+    await screenshot(page, profileDirectory, "settings");
+
+    await page.goto(`${frontendBaseUrl}/chat`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    await page.waitForSelector('[data-testid="ai-chat-page"]', { timeout: 30000 });
+    await assertBelowTelegramTopInset(page, '[data-testid="ai-chat-page"]', "AI Chat primary page");
+    await screenshot(page, profileDirectory, "ai-chat");
 
     return {
       pass: true,

@@ -42,7 +42,7 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
     <div
       className={cn(
         "flex w-full flex-col overflow-hidden bg-background text-foreground",
-        isTelegramHost ? "max-w-none" : "mx-auto max-w-md md:max-w-4xl",
+        isTelegramHost ? "mt-telegram-host max-w-none" : "mt-browser-host mx-auto max-w-md md:max-w-4xl",
       )}
       data-testid="app-shell-root"
       style={{
@@ -66,8 +66,8 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
           "flex min-h-0 flex-1 flex-col overflow-y-auto px-4",
           isTelegramHost
             ? shouldShowNavigation
-              ? "mt-scroll-primary pt-[calc(var(--mt-safe-area-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]"
-              : "mt-scroll-nested pt-[calc(var(--mt-safe-area-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+1rem)]"
+              ? "mt-scroll-primary pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]"
+              : "mt-scroll-nested pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+1rem)]"
             : isKeyboardOpen
               ? "mt-scroll-nested py-4 pb-4"
               : "mt-scroll-primary py-4 pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]",

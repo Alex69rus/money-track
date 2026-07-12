@@ -149,7 +149,7 @@ Implementation rule:
 - Initialize early, call `ready()` when critical UI is mounted, call `expand()` for full-height UX.
 - Use Telegram CSS and viewport/safe-area data (`--tg-theme-*`, `--tg-viewport-*`, `--tg-safe-area-*`).
 - Use `viewportStableHeight` for bottom-pinned controls.
-- Use `contentSafeAreaInset.top` (or its CSS variable) for every primary page and fixed full-page surface; Telegram host controls must never overlap app content.
+- Use the greater of `contentSafeAreaInset.top` (or its CSS variable) and the 5rem fullscreen host-controls reserve, followed by the normal 1rem content gutter, for every primary page and fixed full-page surface; Telegram host controls must never overlap app content.
 - Register and clean up Telegram event handlers (`themeChanged`, `viewportChanged`, `safeAreaChanged`, `contentSafeAreaChanged`, `fullscreenChanged`).
 - Use one central BackButton adapter with route-aware visibility and cleanup; fall back to browser history when Telegram is absent.
 - On Bot API 7.7+, call `disableVerticalSwipes()` during bootstrap. On Bot API 8.0+, request fullscreen during bootstrap and after a host exit; version-gate both, and do not claim host launch controls can be forcibly disabled.

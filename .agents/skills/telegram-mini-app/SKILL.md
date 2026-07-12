@@ -1,6 +1,6 @@
 ---
 name: telegram-mini-app
-description: Build, integrate, and debug Telegram Mini Apps (Web Apps) end-to-end. Use when implementing frontend behavior with window.Telegram.WebApp, selecting launch modes (keyboard, inline, menu, inline mode, direct link, attachment menu), wiring bot-side flows (sendData and answerWebAppQuery), applying Telegram theme/viewport/safe-area behavior, validating initData on backend, or testing Mini Apps across Telegram clients.
+description: Build, integrate, and debug Telegram Mini Apps (Web Apps) end-to-end. Use when implementing frontend behavior with window.Telegram.WebApp, launch modes (keyboard, inline, menu, inline mode, direct link, attachment menu), native BackButton navigation, fullscreen/safe-area/keyboard behavior, bot-side flows (sendData and answerWebAppQuery), initData validation, or testing Mini Apps across Telegram clients.
 ---
 
 # Telegram Mini App
@@ -43,7 +43,7 @@ Use this shortcut:
 Always include Telegram script in `<head>` before app scripts:
 
 ```html
-<script src="https://telegram.org/js/telegram-web-app.js?61"></script>
+<script src="https://telegram.org/js/telegram-web-app.js?62"></script>
 ```
 
 Implementation requirements:
@@ -63,6 +63,14 @@ Use Telegram-provided styling and viewport data:
 - Use `viewportStableHeight` for sticky/bottom positioning logic.
 - Subscribe to relevant events (`themeChanged`, `viewportChanged`, safe-area/fullscreen events).
 - Respect mobile-first behavior and low-performance Android devices.
+- Treat `contentSafeAreaInset.top` as a lower bound, not proof that native header controls cannot visually overlap content. For fullscreen products, apply `max(content-safe top, product-measured host-controls reserve) + normal content gutter` through one shared shell variable for primary routes and fixed full-page overlays. Measure the reserve on real target clients; do not copy another product's pixel value.
+- Keep one intended page scroll container (`min-height: 0` plus overflow) and give it matching top/bottom `scroll-padding`. When an editor gains focus or the viewport changes, scroll the focused field inside that container so it remains visible above the keyboard.
+
+### Navigation Ownership
+
+- Classify routes as primary destinations or nested flows before implementing UI. Keep product navigation on primary destinations; hide it for nested editor, selector, and drilldown flows.
+- Use one route-aware `BackButton` adapter for nested-flow return navigation, including handler cleanup. Do not recreate Telegram's native Close or Back chrome in HTML.
+- Preserve primary-route state and scroll position when returning from a nested route whenever the framework/router allows it.
 
 See [js-api-cheatsheet](references/js-api-cheatsheet.md).
 
@@ -75,6 +83,12 @@ Before using a method, verify:
 - Method interaction constraints are met (some calls require user gesture).
 
 Method/event map and constraints: [js-api-cheatsheet](references/js-api-cheatsheet.md).
+
+For immersive, scroll-heavy products:
+
+- On Bot API 7.7+, consider `disableVerticalSwipes()` only when the Mini App's own gestures conflict with Telegram's minimize/close gesture.
+- On Bot API 8.0+, request fullscreen when the product benefits from it, and handle `fullscreenChanged` and `fullscreenFailed`.
+- Treat both calls as requests. Version support, client behavior, and visible host controls can vary; retain a usable non-fullscreen layout.
 
 ## Step 5: Enforce Security on Backend
 
@@ -93,6 +107,7 @@ Validation algorithm and backend snippets: [security-auth](references/security-a
 - Use Telegram test environment when needed.
 - Enable webview inspection on each platform.
 - Test launch-link variants and parameter passing (`startapp`, `startattach`, `tgWebAppStartParam`).
+- Use a browser fixture for repeatable route, viewport, and screenshot checks, but require a real Telegram client smoke test for native chrome, keyboard, and fullscreen behavior.
 
 Checklist and per-platform debug instructions: [testing-debugging](references/testing-debugging.md).
 
@@ -121,6 +136,9 @@ Watch these sharp edges:
 2. Direct-link and inline-mode launches cannot directly send messages to chat; use inline handoff patterns.
 3. Bottom-pinned controls can jump if based on `viewportHeight`; prefer `viewportStableHeight`.
 4. Fullscreen and safe-area changes can break layout unless `safeAreaChanged` and `contentSafeAreaChanged` are handled.
+5. Fullscreen does not mean Telegram's visible header controls are gone. Do not rely on the reported content-safe top inset alone; use a measured shared reserve and a real-device screenshot.
+6. Duplicate in-app close/back controls compete with Telegram navigation. Use product navigation only for primary routes and the host `BackButton` for nested routes.
+7. A browser fixture may reset its fake WebApp state on full navigations. Preserve that state or assert lifecycle behavior before navigating away from the route under test.
 
 ## Done Criteria
 
@@ -130,6 +148,7 @@ Consider task complete only when:
 - UX adapts to theme/viewport/safe-area updates.
 - Backend validates `initData` and rejects invalid signatures.
 - Version-gated features include fallback behavior.
+- Primary/nested navigation, top host-control clearance, and keyboard focus behavior are verified in the target client.
 - Critical user path is verified in Telegram client(s), not only browser.
 - Production guardrails (close behavior, deep-link safety, and observability) are implemented.
 

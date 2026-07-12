@@ -51,7 +51,7 @@ Execution requirement:
 
 - [ ] `ready()` and `expand()` lifecycle behavior is correct.
 - [ ] Theme and safe-area variables are respected.
-- [ ] Primary pages and every fixed full-page surface start below the Telegram content-safe top inset.
+- [ ] Primary pages and every fixed full-page surface start below the greater of Telegram's content-safe top inset and the 5rem host-controls reserve, plus the normal 1rem content gutter.
 - [ ] Bot API 7.7+ clients call `disableVerticalSwipes()`; Bot API 8.0+ clients request fullscreen at launch and when fullscreen is exited.
 - [ ] Unsupported/declined fullscreen preserves a usable normal-host layout; do not claim host launch controls are forcibly disabled.
 - [ ] Event listeners are unsubscribed on cleanup.

@@ -33,6 +33,7 @@
     --tg-content-safe-area-inset-top,
     var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px))
   );
+  --mt-twa-host-controls-inset-top: max(5rem, var(--mt-safe-area-inset-top));
 }
 
 * {
@@ -119,15 +120,23 @@ body {
 }
 
 .mt-twa-page-safe-top {
-  padding-top: calc(var(--mt-safe-area-inset-top) + 0.5rem);
+  padding-top: calc(var(--mt-page-top-inset, var(--mt-safe-area-inset-top)) + 1rem);
+}
+
+.mt-telegram-host {
+  --mt-page-top-inset: var(--mt-twa-host-controls-inset-top);
+}
+
+.mt-browser-host {
+  --mt-page-top-inset: var(--mt-safe-area-inset-top);
 }
 
 .mt-scroll-primary {
-  scroll-padding-block: calc(var(--mt-safe-area-inset-top) + 1rem)
+  scroll-padding-block: calc(var(--mt-page-top-inset, var(--mt-safe-area-inset-top)) + 1rem)
     calc(var(--mt-safe-area-inset-bottom) + 6rem);
 }
 
 .mt-scroll-nested {
-  scroll-padding-block: calc(var(--mt-safe-area-inset-top) + 1rem)
+  scroll-padding-block: calc(var(--mt-page-top-inset, var(--mt-safe-area-inset-top)) + 1rem)
     calc(var(--mt-safe-area-inset-bottom) + 1rem);
 }
