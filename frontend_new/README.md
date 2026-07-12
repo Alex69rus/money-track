@@ -112,6 +112,7 @@ Phase scaffolding pattern:
 - `frontend_new/docs/api-evolution-plan.md`: API adapter-first integration and planned BE deltas.
 - `frontend_new/docs/qa-acceptance-checklist.md`: functional and UX validation checklist.
 - `frontend_new/docs/decisions.md`: locked redesign kickoff decisions.
+- `frontend_new/docs/bug-fix-iterations.md`: central frontend bug register, linked evidence/iteration status, and implementation-ready acceptance criteria for the next approved bug-fix slices.
 
 ## Design Assets (Mandatory Input)
 

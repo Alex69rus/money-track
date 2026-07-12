@@ -254,3 +254,9 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Takeaway: Preserve the newer Telegram full-page route/host BackButton contract when aligning an older popup draft; port the draft's visual hierarchy, not its obsolete navigation chrome.
 - Exploration: The dark category hero, signed category total, compact tags/date metadata, separators, and chevrons passed the component test, Phase-3 FR matrix, and all four mobile fixture profiles. The real-device command correctly stopped because `TELEGRAM_DEVICE_NGROK_DOMAIN` is unset.
 - Prevention rule: If a phase runner reuses a local service and reports CORS failures, classify it as runtime ownership first; rerun on fresh isolated ports with the runner's explicit `CORS_ALLOW_ORIGINS` contract before changing product code.
+
+## 2026-07-12 - Central Bug-Fix Iteration Planning
+
+- Takeaway: Group related UX defects by shared route/component and regression suite; keep overview limits, detail routes, and chart interaction as separate delivery slices.
+- Exploration: Mapped all seven `temp.md` items and the five Telegram iOS smoke findings to five frontend-only iterations; kept the ambiguous category-sign wording explicit as the existing category icon/color affordance.
+- Prevention rule: Keep original evidence in `frontend_new/bugs_reports/`, then add every source bug ID, state, linked BFX iteration, Telegram navigation constraint, acceptance criteria, and Phase-2/Phase-3/mobile QA scope to `frontend_new/docs/bug-fix-iterations.md` before implementation starts.
