@@ -44,6 +44,11 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 3. Update progress in `docs/tasklist.md` after each iteration
 4. Wait for explicit approval before moving to next iteration
 
+## Bug Management
+
+- Use the repository `bug-management` skill whenever the user reports a bug, regression, UI/UX defect, smoke-test finding, or supplies bug evidence such as screenshots, videos, or logs.
+- Capture and track the bug before changing product code. Follow the skill's evidence, iteration, test-first, verification, and status rules.
+
 ## Local Testing
 
 **Backend Testing:**

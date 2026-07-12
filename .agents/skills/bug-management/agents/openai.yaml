@@ -1,0 +1,6 @@
+interface:
+  display_name: "Bug Management"
+  short_description: "Capture and track actionable bugs"
+  default_prompt: "Use $bug-management to record, plan, or fix this reported bug."
+policy:
+  allow_implicit_invocation: true
