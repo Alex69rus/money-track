@@ -58,6 +58,21 @@ async function readSummaryCount(page) {
   return match ? Number(match[1]) : null;
 }
 
+async function readCategories(backendBaseUrl) {
+  const response = await fetch(`${backendBaseUrl}/api/categories`);
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Failed to read QA categories (${response.status}): ${details}`);
+  }
+
+  const categories = await response.json();
+  if (!Array.isArray(categories) || categories.length < 6) {
+    throw new Error(`BFX-3 QA requires at least six categories, received ${JSON.stringify(categories)}.`);
+  }
+
+  return categories.slice(0, 6);
+}
+
 export const phase3Definition = {
   id: "phase3",
   frIds: PHASE3_FR_IDS,
@@ -73,6 +88,8 @@ export const phase3Definition = {
     const oldRangeDate = formatDateOnly(oldDate);
     const oldMonthKey = formatMonthOnly(oldDate);
     const oldTag = `${runId}_old_tag`;
+    const previewCategories = await readCategories(backendBaseUrl);
+    const previewTagPrefix = `${runId}_preview_tag`;
 
     const created = await Promise.all([
       createQaTransaction(backendBaseUrl, {
@@ -93,12 +110,22 @@ export const phase3Definition = {
       }),
       createQaTransaction(backendBaseUrl, {
         transactionDate: new Date(oldDate.setHours(17, 30, 0, 0)).toISOString(),
-        amount: -64.9,
+        amount: -99999,
         note: `${runId}_expense_old`,
         categoryId: null,
         tags: [oldTag],
         currency: "AED",
       }),
+      ...previewCategories.map((category, index) =>
+        createQaTransaction(backendBaseUrl, {
+          transactionDate: new Date().toISOString(),
+          amount: -(12 + index),
+          note: `${runId}_category_preview_${index + 1}`,
+          categoryId: category.id,
+          tags: [`${previewTagPrefix}_${index + 1}`],
+          currency: "AED",
+        }),
+      ),
     ]);
 
     try {
@@ -123,10 +150,59 @@ export const phase3Definition = {
       const tagsVisible = await page.locator('[data-testid="analytics-tags-card"]').isVisible();
       const trendsVisible = await page.locator('[data-testid="analytics-trends-card"]').isVisible();
 
+      const overviewContainment = await page.evaluate(() => {
+        const getMetrics = (selector) => {
+          const element = document.querySelector(selector);
+          if (!element) {
+            return null;
+          }
+          const styles = window.getComputedStyle(element);
+          return {
+            clientHeight: element.clientHeight,
+            overflowY: styles.overflowY,
+            scrollHeight: element.scrollHeight,
+          };
+        };
+
+        const dateRange = document.querySelector('[data-testid="analytics-date-range-card"]');
+        const dateInputs = [...document.querySelectorAll('[data-testid="analytics-from-date"], [data-testid="analytics-to-date"]')];
+        const summary = document.querySelector('[data-testid="analytics-summary-card"]');
+        const summaryContent = document.querySelector('[data-testid="analytics-summary-content"]');
+        const trends = document.querySelector('[data-testid="analytics-trends-card"]');
+        const trendsContent = document.querySelector('[data-testid="analytics-trends-content"]');
+        const presets = document.querySelector('[data-testid="analytics-date-presets"]');
+        const dateRangeRect = dateRange?.getBoundingClientRect();
+
+        return {
+          categories: getMetrics('[data-testid="analytics-category-list"]'),
+          dateInputsContained: Boolean(dateRangeRect) && dateInputs.every((input) => {
+            const rect = input.getBoundingClientRect();
+            return rect.left >= dateRangeRect.left - 1 && rect.right <= dateRangeRect.right + 1;
+          }),
+          presetScrollbarWidth: presets ? window.getComputedStyle(presets).scrollbarWidth : null,
+          summaryContentHeight: summaryContent?.getBoundingClientRect().height ?? 0,
+          summaryMinHeight: summary ? window.getComputedStyle(summary).minHeight : null,
+          tags: getMetrics('[data-testid="analytics-tag-list"]'),
+          trendsContentHeight: trendsContent?.getBoundingClientRect().height ?? 0,
+          trendsMinHeight: trends ? window.getComputedStyle(trends).minHeight : null,
+        };
+      });
+
       fr["FR-019"] =
-        summaryVisible && categoriesVisible && tagsVisible && trendsVisible
-          ? pass("Analytics renders summary, category spend, tag spend, and monthly trend widgets.")
-          : fail("One or more required analytics widgets are missing.");
+        summaryVisible &&
+        categoriesVisible &&
+        tagsVisible &&
+        trendsVisible &&
+        overviewContainment.categories?.scrollHeight === overviewContainment.categories?.clientHeight &&
+        overviewContainment.tags?.scrollHeight === overviewContainment.tags?.clientHeight &&
+        overviewContainment.dateInputsContained &&
+        overviewContainment.presetScrollbarWidth === "none" &&
+        overviewContainment.summaryContentHeight > 0 &&
+        overviewContainment.summaryMinHeight === "auto" &&
+        overviewContainment.trendsContentHeight > 0 &&
+        overviewContainment.trendsMinHeight === "auto"
+          ? pass("Analytics renders contained overview widgets with hidden preset scrollbar and non-collapsed summary/trend bodies.")
+          : fail(`Analytics overview containment failed: ${JSON.stringify(overviewContainment)}.`);
 
       await page.fill('[data-testid="analytics-from-date"]', oldRangeDate);
       await page.fill('[data-testid="analytics-to-date"]', todayDate);
@@ -160,6 +236,35 @@ export const phase3Definition = {
       await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
       await page.waitForTimeout(500);
 
+      const categoryPreviewCount = await page.locator('[data-testid^="analytics-category-item-"]').count();
+      const tagPreviewCount = await page.locator('[data-testid^="analytics-tag-item-"]').count();
+      const fromBeforeBreakdowns = await page.inputValue('[data-testid="analytics-from-date"]');
+
+      await page.click('[data-testid="analytics-category-view-all"]');
+      await page.waitForSelector('[data-testid="analytics-category-breakdown-page"]', { timeout: 15000 });
+      const categoryBreakdownCount = await page.locator('[data-testid^="analytics-breakdown-item-category-"]').count();
+      await page.evaluate(() => window.__qaTelegram.pressBack());
+      await page.waitForSelector('[data-testid="analytics-category-breakdown-page"]', { state: "hidden", timeout: 15000 });
+
+      await page.click('[data-testid="analytics-tag-view-all"]');
+      await page.waitForSelector('[data-testid="analytics-tag-breakdown-page"]', { timeout: 15000 });
+      const tagBreakdownCount = await page.locator('[data-testid^="analytics-breakdown-item-tag-"]').count();
+      await page.evaluate(() => window.__qaTelegram.pressBack());
+      await page.waitForSelector('[data-testid="analytics-tag-breakdown-page"]', { state: "hidden", timeout: 15000 });
+      const fromAfterBreakdowns = await page.inputValue('[data-testid="analytics-from-date"]');
+
+      if (
+        categoryPreviewCount !== 5 ||
+        tagPreviewCount !== 5 ||
+        categoryBreakdownCount <= categoryPreviewCount ||
+        tagBreakdownCount <= tagPreviewCount ||
+        fromBeforeBreakdowns !== fromAfterBreakdowns
+      ) {
+        throw new Error(
+          `Analytics View all behavior failed: ${JSON.stringify({ categoryPreviewCount, tagPreviewCount, categoryBreakdownCount, tagBreakdownCount, fromBeforeBreakdowns, fromAfterBreakdowns })}.`,
+        );
+      }
+
       const oldTagVisibleWide = await page
         .locator(`[data-testid="analytics-tag-item-${oldTagSegment}"]`)
         .isVisible()
@@ -175,6 +280,14 @@ export const phase3Definition = {
           .textContent()
           .catch(() => "")
       )?.trim();
+      await page.click(`[data-testid="analytics-trend-item-${oldMonthKey}"]`);
+      const oldTrendSelected =
+        (await page.locator(`[data-testid="analytics-trend-item-${oldMonthKey}"]`).getAttribute("aria-pressed")) === "true";
+      const oldTrendSummaryMonth = await page.locator('[data-testid="analytics-trend-summary-month"]').textContent();
+      const oldTrendSummaryValuesVisible = await Promise.all([
+        page.locator('[data-testid="analytics-trend-summary-income"]').isVisible(),
+        page.locator('[data-testid="analytics-trend-summary-expense"]').isVisible(),
+      ]).then((checks) => checks.every(Boolean));
 
       await page.fill('[data-testid="analytics-from-date"]', todayDate);
       await page.fill('[data-testid="analytics-to-date"]', todayDate);
@@ -196,6 +309,8 @@ export const phase3Definition = {
           .textContent()
           .catch(() => "")
       )?.trim();
+      const selectedVisibleTrendCount = await page.locator('[data-testid^="analytics-trend-item-"][aria-pressed="true"]').count();
+      const narrowTrendSummaryMonth = await page.locator('[data-testid="analytics-trend-summary-month"]').textContent();
 
       fr["FR-021"] =
         oldTagVisibleWide &&
@@ -203,10 +318,16 @@ export const phase3Definition = {
         oldMonthVisibleWide &&
         !oldMonthVisibleNarrow &&
         wideCategoryAmount !== narrowCategoryAmount
-          ? pass("Date-range updates recompute tags, trends, and category totals consistently.")
+          &&
+        oldTrendSelected &&
+        oldTrendSummaryMonth?.trim() !== "" &&
+        oldTrendSummaryValuesVisible &&
+        selectedVisibleTrendCount === 1 &&
+        narrowTrendSummaryMonth !== oldTrendSummaryMonth
+          ? pass("Date-range updates recompute tags, trends, category totals, and selected-month disclosure consistently.")
           : fail(
-              `Expected consistent widget recompute. tagWide=${oldTagVisibleWide}, tagNarrow=${oldTagVisibleNarrow}, monthWide=${oldMonthVisibleWide}, monthNarrow=${oldMonthVisibleNarrow}, categoryWide=${wideCategoryAmount}, categoryNarrow=${narrowCategoryAmount}.`,
-            );
+              `Expected consistent widget recompute. tagWide=${oldTagVisibleWide}, tagNarrow=${oldTagVisibleNarrow}, monthWide=${oldMonthVisibleWide}, monthNarrow=${oldMonthVisibleNarrow}, categoryWide=${wideCategoryAmount}, categoryNarrow=${narrowCategoryAmount}, oldTrendSelected=${oldTrendSelected}, oldTrendSummaryMonth=${oldTrendSummaryMonth}, oldTrendSummaryValuesVisible=${oldTrendSummaryValuesVisible}, selectedVisibleTrendCount=${selectedVisibleTrendCount}, narrowTrendSummaryMonth=${narrowTrendSummaryMonth}.`,
+          );
 
       let delayedLoadingProbe = true;
       await page.route("**/api/transactions*", async (route) => {
@@ -280,11 +401,12 @@ export const phase3Definition = {
       );
       const drilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
       const drilldownVisualStructure = await Promise.all([
-        page.locator('[data-testid="analytics-drilldown-category-icon"]').isVisible(),
+        page.locator('[data-testid="analytics-drilldown-icon"]').isVisible(),
         page.locator('[data-testid="analytics-drilldown-total"]').isVisible(),
         page.locator('[data-testid="analytics-drilldown-range"]').isVisible(),
         page.locator('[data-testid="analytics-drilldown-scroll"]').isVisible(),
       ]).then((checks) => checks.every(Boolean));
+      const categoryRowAffordanceCount = await page.locator('[data-testid^="analytics-drilldown-transaction-category-"]').count();
 
       await page.evaluate(() => window.__qaTelegram.pressBack());
       await page.waitForSelector('[data-testid="analytics-drilldown-page"]', {
@@ -292,14 +414,41 @@ export const phase3Definition = {
         timeout: 15000,
       });
 
-      const fromAfterDrilldown = await page.inputValue('[data-testid="analytics-from-date"]');
-      const contextPreserved = fromBeforeDrilldown === fromAfterDrilldown;
+      const fromAfterCategoryDrilldown = await page.inputValue('[data-testid="analytics-from-date"]');
+      const tagButton = page.locator(`[data-testid="analytics-tag-item-${oldTagSegment}"]`);
+      await tagButton.click();
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+      const tagDrilldownVisible = await page.locator('[data-testid="analytics-drilldown-page"]').isVisible();
+      const tagDrilldownLabel = await page.locator('[data-testid="analytics-drilldown-label"]').textContent();
+      const tagDrilldownSubject = await page.locator('[data-testid="analytics-drilldown-subject"]').textContent();
+      const tagDrilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
+      const tagRowAffordanceCount = await page.locator('[data-testid^="analytics-drilldown-transaction-category-"]').count();
+
+      await page.evaluate(() => window.__qaTelegram.pressBack());
+      await page.waitForSelector('[data-testid="analytics-drilldown-page"]', {
+        state: "hidden",
+        timeout: 15000,
+      });
+
+      const fromAfterTagDrilldown = await page.inputValue('[data-testid="analytics-from-date"]');
+      const contextPreserved =
+        fromBeforeDrilldown === fromAfterCategoryDrilldown && fromBeforeDrilldown === fromAfterTagDrilldown;
 
       fr["FR-022"] =
-        drilldownVisible && hostBackListenerActive && drilldownListCount > 0 && drilldownVisualStructure && contextPreserved
-          ? pass("Category drilldown renders its category summary/list, returns through Telegram host back, and preserves analytics context.")
-        : fail(
-              `Drilldown behavior failed (open=${drilldownVisible}, hostBack=${hostBackListenerActive}, listCount=${drilldownListCount}, structure=${drilldownVisualStructure}, contextPreserved=${contextPreserved}).`,
+        drilldownVisible &&
+        hostBackListenerActive &&
+        drilldownListCount > 0 &&
+        drilldownVisualStructure &&
+        categoryRowAffordanceCount === drilldownListCount &&
+        tagDrilldownVisible &&
+        tagDrilldownLabel?.trim() === "Spendings by Tag" &&
+        tagDrilldownSubject?.trim() === `#${oldTag}` &&
+        tagDrilldownListCount > 0 &&
+        tagRowAffordanceCount === tagDrilldownListCount &&
+        contextPreserved
+          ? pass("Category and tag drilldowns render category-aware rows, return through Telegram host back, and preserve analytics context.")
+          : fail(
+              `Drilldown behavior failed (categoryOpen=${drilldownVisible}, hostBack=${hostBackListenerActive}, categoryListCount=${drilldownListCount}, categoryAffordances=${categoryRowAffordanceCount}, structure=${drilldownVisualStructure}, tagOpen=${tagDrilldownVisible}, tagLabel=${tagDrilldownLabel}, tagSubject=${tagDrilldownSubject}, tagListCount=${tagDrilldownListCount}, tagAffordances=${tagRowAffordanceCount}, contextPreserved=${contextPreserved}).`,
           );
 
       return {

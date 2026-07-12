@@ -1,6 +1,5 @@
-import { PencilLineIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatSignedAmount, formatTransactionTime, groupTransactionsByDay } from "@/features/transactions/utils";
 import type { Transaction } from "@/types/transactions";
@@ -10,15 +9,6 @@ interface TransactionsMobileListProps {
   onEditCategory: (transaction: Transaction) => void;
   onEditTags: (transaction: Transaction) => void;
   onEditTransaction: (transaction: Transaction) => void;
-}
-
-function getFallbackAvatarText(transaction: Transaction): string {
-  const source = transaction.category?.name || transaction.note || "?";
-  const trimmed = source.trim();
-  if (trimmed.length === 0) {
-    return "?";
-  }
-  return trimmed[0]?.toUpperCase() ?? "?";
 }
 
 function getCategoryIconName(transaction: Transaction): string | null {
@@ -67,77 +57,79 @@ export function TransactionsMobileList({
 
                   return (
                     <li
-                      className="flex items-start gap-3 px-4 py-3.5"
+                      className="relative px-4 py-3.5"
                       data-testid={`tx-mobile-row-${transaction.id}`}
                       key={transaction.id}
                     >
                       <button
-                        aria-label={`Change category for transaction ${transaction.id}`}
-                        className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
-                        data-testid={`tx-mobile-category-${transaction.id}`}
-                        onClick={() => onEditCategory(transaction)}
+                        aria-label={`Edit transaction ${transaction.id}`}
+                        className="absolute inset-0 z-0 rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        data-testid={`tx-mobile-edit-${transaction.id}`}
+                        onClick={() => onEditTransaction(transaction)}
                         type="button"
-                      >
-                        {categoryIcon ? (
-                          <span aria-hidden className="material-symbols-outlined text-[18px]">
-                            {categoryIcon}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-semibold">{getFallbackAvatarText(transaction)}</span>
-                        )}
-                      </button>
+                      />
 
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-medium">
-                            {transaction.note?.trim() || transaction.category?.name || "Untitled transaction"}
-                          </p>
-                          <p className={amountClassName(transaction.amount)}>
-                            {formatSignedAmount(transaction.amount, transaction.currency)}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                          <span>{formatTransactionTime(transaction.transactionDate)}</span>
-                          {transaction.category ? <span>• {transaction.category.name}</span> : null}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {transaction.tags.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {transaction.tags.slice(0, 3).map((tag) => (
-                                <Badge className="rounded-md text-[10px]" key={`${transaction.id}-${tag}`} variant="secondary">
-                                  #{tag}
-                                </Badge>
-                              ))}
-                            </div>
+                      <div className="pointer-events-none relative z-10 flex min-w-0 items-start gap-3">
+                        <button
+                          aria-label={
+                            transaction.category
+                              ? `Change category for transaction ${transaction.id}`
+                              : `Choose category for transaction ${transaction.id}`
+                          }
+                          className="pointer-events-auto mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                          data-testid={`tx-mobile-category-${transaction.id}`}
+                          onClick={() => onEditCategory(transaction)}
+                          type="button"
+                        >
+                          {categoryIcon ? (
+                            <span aria-hidden className="material-symbols-outlined text-[18px]">
+                              {categoryIcon}
+                            </span>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground">No tags</span>
+                            <span aria-hidden className="text-base font-semibold">?</span>
                           )}
-                          <button
-                            aria-label={`Edit tags for transaction ${transaction.id}`}
-                            className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
-                            data-testid={`tx-mobile-tags-${transaction.id}`}
-                            onClick={() => onEditTags(transaction)}
-                            type="button"
-                          >
-                            <PlusIcon aria-hidden className="size-3" />
-                          </button>
-                        </div>
+                        </button>
 
-                        <div className="pt-0.5">
-                          <Button
-                            aria-label={`Edit transaction ${transaction.id}`}
-                            className="h-7 rounded-lg px-2.5"
-                            data-testid={`tx-mobile-edit-${transaction.id}`}
-                            onClick={() => onEditTransaction(transaction)}
-                            size="xs"
-                            type="button"
-                            variant="outline"
-                          >
-                            <PencilLineIcon aria-hidden data-icon="inline-start" />
-                            Edit
-                          </Button>
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                              {transaction.note?.trim() || transaction.category?.name || "Untitled transaction"}
+                            </p>
+                            <p
+                              className={`${amountClassName(transaction.amount)} shrink-0 whitespace-nowrap tabular-nums`}
+                              data-testid={`tx-mobile-amount-${transaction.id}`}
+                            >
+                              {formatSignedAmount(transaction.amount, transaction.currency)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>{formatTransactionTime(transaction.transactionDate)}</span>
+                            {transaction.category ? <span>• {transaction.category.name}</span> : null}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {transaction.tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {transaction.tags.slice(0, 3).map((tag) => (
+                                  <Badge className="rounded-md text-[10px]" key={`${transaction.id}-${tag}`} variant="secondary">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">No tags</span>
+                            )}
+                            <button
+                              aria-label={`Edit tags for transaction ${transaction.id}`}
+                              className="pointer-events-auto flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
+                              data-testid={`tx-mobile-tags-${transaction.id}`}
+                              onClick={() => onEditTags(transaction)}
+                              type="button"
+                            >
+                              <PlusIcon aria-hidden className="size-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </li>

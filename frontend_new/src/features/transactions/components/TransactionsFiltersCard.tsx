@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,7 +39,6 @@ interface TransactionsFiltersCardProps {
   draft: TransactionFilterDraft;
   activeFiltersCount: number;
   categorySearch: string;
-  tagSearch: string;
   expanded: boolean;
   optionsLoading: boolean;
   optionsError: string | null;
@@ -49,7 +46,7 @@ interface TransactionsFiltersCardProps {
   onSetExpanded: (expanded: boolean) => void;
   onDraftChange: (next: TransactionFilterDraft) => void;
   onCategorySearchChange: (value: string) => void;
-  onTagSearchChange: (value: string) => void;
+  onOpenTagSelector: () => void;
   onRetryOptions: () => void;
 }
 
@@ -62,27 +59,12 @@ function toTestIdSegment(value: string): string {
 }
 
 function toggleTag(currentTags: string[], tag: string): string[] {
-  if (currentTags.includes(tag)) {
-    return currentTags.filter((item) => item !== tag);
+  const normalizedTag = normalize(tag);
+  if (currentTags.some((item) => normalize(item) === normalizedTag)) {
+    return currentTags.filter((item) => normalize(item) !== normalizedTag);
   }
 
   return [...currentTags, tag];
-}
-
-function formatRangeLabel(fromDate: string, toDate: string): string {
-  if (!fromDate && !toDate) {
-    return "Any date";
-  }
-
-  if (fromDate && toDate) {
-    return `${fromDate} - ${toDate}`;
-  }
-
-  if (fromDate) {
-    return `From ${fromDate}`;
-  }
-
-  return `Until ${toDate}`;
 }
 
 export function TransactionsFiltersCard({
@@ -91,7 +73,6 @@ export function TransactionsFiltersCard({
   draft,
   activeFiltersCount,
   categorySearch,
-  tagSearch,
   expanded,
   optionsLoading,
   optionsError,
@@ -99,7 +80,7 @@ export function TransactionsFiltersCard({
   onSetExpanded,
   onDraftChange,
   onCategorySearchChange,
-  onTagSearchChange,
+  onOpenTagSelector,
   onRetryOptions,
 }: TransactionsFiltersCardProps): JSX.Element {
   const filteredCategories = useMemo(() => {
@@ -113,14 +94,12 @@ export function TransactionsFiltersCard({
     });
   }, [categories, categorySearch]);
 
-  const filteredTags = useMemo(() => {
-    const query = normalize(tagSearch);
-    if (query.length === 0) {
-      return tags;
-    }
-
-    return tags.filter((tag) => normalize(tag).includes(query));
-  }, [tags, tagSearch]);
+  const selectedTagSet = useMemo(() => new Set(draft.tags.map(normalize)), [draft.tags]);
+  const selectedTags = useMemo(() => draft.tags.slice(0, 5), [draft.tags]);
+  const suggestedTags = useMemo(
+    () => tags.filter((tag) => !selectedTagSet.has(normalize(tag))).slice(0, 5),
+    [selectedTagSet, tags],
+  );
 
   const selectedCategoryLabel = useMemo(() => {
     if (!draft.categoryId) {
@@ -175,10 +154,7 @@ export function TransactionsFiltersCard({
       tags: [],
     });
     onCategorySearchChange("");
-    onTagSearchChange("");
   };
-
-  const rangeLabel = formatRangeLabel(draft.fromDate, draft.toDate);
 
   return (
     <Card className="rounded-xl border-border/70 bg-card/70 py-0">
@@ -187,13 +163,14 @@ export function TransactionsFiltersCard({
           <Button
             aria-label={expanded ? "Hide filters" : "Show filters"}
             className="h-9 flex-1 justify-start rounded-lg px-3"
+            data-testid="transactions-filters-toggle"
             onClick={() => onSetExpanded(!expanded)}
             size="sm"
             type="button"
             variant={expanded ? "default" : "outline"}
           >
             <SlidersHorizontalIcon aria-hidden data-icon="inline-start" />
-            <span className="truncate text-xs font-semibold">{rangeLabel}</span>
+            <span className="truncate text-xs font-semibold">Filters</span>
           </Button>
           <div className="flex items-center gap-1">
             {activeFiltersCount > 0 ? (
@@ -209,6 +186,10 @@ export function TransactionsFiltersCard({
           </div>
         </div>
 
+        <span aria-live="polite" className="sr-only">
+          {isDebouncing ? "Applying filters" : ""}
+        </span>
+
         <div className="relative">
           <SearchIcon className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
           <Input
@@ -223,15 +204,6 @@ export function TransactionsFiltersCard({
           />
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm font-semibold">Filters</CardTitle>
-          {isDebouncing ? (
-            <Badge className="h-6 rounded-full px-2 text-[10px]" variant="outline">
-              Applying...
-            </Badge>
-          ) : null}
-        </div>
-        <CardDescription className="text-xs">Changes apply automatically after a short debounce.</CardDescription>
       </CardHeader>
 
       <CardContent className={cn("flex flex-col gap-4 px-4 pb-4", expanded ? "pt-0" : "hidden")}>
@@ -352,17 +324,19 @@ export function TransactionsFiltersCard({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="transactions-tag-search">
-              Tags
-            </label>
-
-            <Input
-              id="transactions-tag-search"
-              onChange={(event) => onTagSearchChange(event.target.value)}
-              placeholder="Search tags"
-              type="search"
-              value={tagSearch}
-            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium">Tags</p>
+              <Button
+                className="h-auto px-1 text-xs font-semibold text-primary hover:text-primary"
+                data-testid="tx-filter-edit-tags"
+                onClick={onOpenTagSelector}
+                size="xs"
+                type="button"
+                variant="ghost"
+              >
+                Edit tags
+              </Button>
+            </div>
 
             {optionsLoading ? (
               <div className="grid grid-cols-3 gap-2">
@@ -370,28 +344,64 @@ export function TransactionsFiltersCard({
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
               </div>
-            ) : filteredTags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {filteredTags.map((tag) => {
-                  const isActive = draft.tags.includes(tag);
-
-                  return (
-                    <Button
-                      aria-pressed={isActive}
-                      data-testid={`tx-filter-tag-option-${toTestIdSegment(tag)}`}
-                      key={tag}
-                      onClick={() => onTagToggle(tag)}
-                      size="xs"
-                      type="button"
-                      variant={isActive ? "default" : "outline"}
-                    >
-                      {tag}
-                    </Button>
-                  );
-                })}
-              </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No tags match this search.</p>
+              <div className="flex flex-col gap-3" data-testid="tx-filter-tags-compact">
+                {selectedTags.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedTags.map((tag) => (
+                      <Button
+                        aria-label={`Remove ${tag} filter tag`}
+                        aria-pressed
+                        className="max-w-40"
+                        data-testid={`tx-filter-selected-tag-${toTestIdSegment(tag)}`}
+                        key={tag}
+                        onClick={() => onTagToggle(tag)}
+                        size="xs"
+                        type="button"
+                      >
+                        <span className="truncate">{tag}</span>
+                      </Button>
+                    ))}
+                    {draft.tags.length > selectedTags.length ? (
+                      <Button
+                        aria-label={`Edit ${draft.tags.length} selected filter tags`}
+                        className="max-w-40"
+                        data-testid="tx-filter-selected-tags-count"
+                        onClick={onOpenTagSelector}
+                        size="xs"
+                        type="button"
+                        variant="outline"
+                      >
+                        +{draft.tags.length - selectedTags.length} selected
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {suggestedTags.length > 0 ? (
+                  <div>
+                    <p className="mb-2 text-xs text-muted-foreground">Suggested tags</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedTags.map((tag) => (
+                        <Button
+                          aria-label={`Add ${tag} filter tag`}
+                          className="max-w-40"
+                          data-testid={`tx-filter-suggested-tag-${toTestIdSegment(tag)}`}
+                          key={tag}
+                          onClick={() => onTagToggle(tag)}
+                          size="xs"
+                          type="button"
+                          variant="outline"
+                        >
+                          <span className="truncate">{tag}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No additional tags to suggest.</p>
+                )}
+              </div>
             )}
           </div>
         </div>

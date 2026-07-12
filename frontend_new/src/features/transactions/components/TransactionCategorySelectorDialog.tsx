@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
+import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, SearchIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -326,33 +326,28 @@ export function TransactionCategorySelectorDialog({
                         <span className="truncate text-[1.15rem] font-semibold tracking-tight">{group.parent.name}</span>
                       </button>
 
-                      <button
-                        aria-label={
-                          hasChildren
-                            ? `${isExpanded ? "Collapse" : "Expand"} ${group.parent.name} group`
-                            : `Select category ${group.parent.name}`
-                        }
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
-                        onClick={() => {
-                          if (!hasChildren) {
-                            void handleCategorySelect(group.parent.id);
-                            return;
-                          }
-                          toggleExpanded(group.parent.id);
-                        }}
-                        type="button"
-                      >
-                        {hasChildren ? (
+                      {hasChildren ? (
+                        <button
+                          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group.parent.name} group`}
+                          className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                          data-testid={`tx-category-expand-${group.parent.id}`}
+                          onClick={() => toggleExpanded(group.parent.id)}
+                          type="button"
+                        >
                           <ChevronDownIcon
                             aria-hidden
                             className={cn("size-5 transition-transform", isExpanded ? "rotate-180" : "")}
                           />
-                        ) : isParentSelected ? (
-                          <CheckCircle2Icon aria-hidden className="size-5 text-[#2d8cff]" />
-                        ) : (
-                          <ChevronRightIcon aria-hidden className="size-5" />
-                        )}
-                      </button>
+                        </button>
+                      ) : isParentSelected ? (
+                        <span
+                          aria-hidden
+                          className="flex size-9 shrink-0 items-center justify-center text-[#2d8cff]"
+                          data-testid={`tx-category-selection-marker-${group.parent.id}`}
+                        >
+                          <CheckCircle2Icon className="size-5" />
+                        </span>
+                      ) : null}
                     </div>
 
                     {showChildren ? (

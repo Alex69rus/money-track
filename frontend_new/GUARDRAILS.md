@@ -260,3 +260,41 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Takeaway: Group related UX defects by shared route/component and regression suite; keep overview limits, detail routes, and chart interaction as separate delivery slices.
 - Exploration: Mapped all seven `temp.md` items and the five Telegram iOS smoke findings to five frontend-only iterations; kept the ambiguous category-sign wording explicit as the existing category icon/color affordance.
 - Prevention rule: Keep original evidence in `frontend_new/bugs_reports/`, then add every source bug ID, state, linked BFX iteration, Telegram navigation constraint, acceptance criteria, and Phase-2/Phase-3/mobile QA scope to `frontend_new/docs/bug-fix-iterations.md` before implementation starts.
+
+## 2026-07-12 - Iteration BFX-1 Transaction Card Interaction and Category Affordances
+
+- Takeaway: Make a mobile transaction card editable with a full-card sibling action surface behind its visual content; do not wrap category and tag buttons in an outer button.
+- Exploration: Unit coverage confirmed category/tag quick actions do not trigger edit, Phase-2 exercised the route flows with a `-12,000 AED` fixture, and all four Telegram phone profiles kept the signed amount on one line without a visible `Edit` button.
+- Prevention rule: Put quick controls above the card edit surface with explicit pointer events, use a neutral `?` plus `Choose category` label for uncategorized rows, and assert `white-space: nowrap` plus no amount overflow at the iPhone SE width.
+
+## 2026-07-12 - Iteration BFX-2 Analytics Drilldown Parity
+
+- Takeaway: Retain source transactions on each analytics aggregation item before rendering any summary; a drilldown must derive from its model, never from the visible preview rows.
+- Exploration: Category and tag routes shared one read-only drilldown and per-row category affordance, then passed the extended Phase-3 BackButton/context checks and all four mobile fixture profiles.
+- Prevention rule: Use a stable normalized value for tag route identity while deriving DOM test IDs separately, and assert that every analytics drilldown row has its own category/unassigned affordance.
+
+## 2026-07-12 - Iteration BFX-3 Analytics Overview Containment and View All
+
+- Takeaway: Keep a complete analytics aggregate for navigation and derive the overview preview with `slice(0, 5)` only at render time.
+- Exploration: Six deterministic QA categories/tags proved that each overview stayed at five rows while its Telegram full-page route exposed the larger list; fixtures also verified hidden preset scrollbar styling and non-collapsed summary/trend cards.
+- Prevention rule: Never add an inner scrolling container to an analytics overview widget. Add a route-backed full list, preserve the active range through host BackButton return, and assert `scrollHeight === clientHeight` for each overview list at phone widths.
+
+## 2026-07-12 - Iteration BFX-4 Monthly Trends Value Disclosure
+
+- Takeaway: Make data-viz columns native buttons and keep the selected value summary in normal card flow; do not rely on hover or a floating tooltip for exact mobile values.
+- Exploration: Phase-3 selected an older month, checked exact summary controls, then narrowed the range and confirmed selection fell back to the only/current visible month.
+- Validation: The four-profile Telegram fixture subsequently passed the selected-summary and one-selected-month checks.
+- Prevention rule: Retain a selected chart key only when it is still in the recomputed series; otherwise select the newest item and assert exactly one `aria-pressed` trend button.
+
+## 2026-07-12 - Iteration BFX-5 Bounded Transactions Tag Filter
+
+- Takeaway: Render only a fixed number of suggested tags in the filter card and move catalogue search to the existing full-page selector.
+- Exploration: Component tests covered a 100-tag catalogue, seven selected tags, compact overflow count, and disabled tag creation on the filter selector; static build/type/lint gates passed.
+- Validation: The four-profile Telegram fixture subsequently passed with a 121-tag catalogue, five suggested compact chips, the full-page selector, and long-label overflow checks.
+- Prevention rule: Keep filter tag selection route-backed with host BackButton return, preserve selected tags in the selector pool, truncate long labels, and never expose the full catalogue inline by default.
+
+## 2026-07-12 - Iteration BFX-6 UI Clarity and Natural Analytics Sizing
+
+- Takeaway: Use natural card height and compact content composition for mobile analytics; a fixed minimum height prevents clipping but can create a worse empty-space regression.
+- Exploration: Phase-3 and all four phone profiles confirmed native date inputs remain inside their control card after applying `inline-size`, `max-width`, `box-sizing`, and a phone-safe single-column layout.
+- Prevention rule: Prevent header-only cards by asserting visible body content, not a fixed pixel minimum; label selected chart values explicitly with a full month/year so an abbreviated date cannot be mistaken for broken data.

@@ -12,7 +12,7 @@ const PHASE2_FR_IDS = [
 async function createQaTransaction(backendBaseUrl, note) {
   const payload = {
     transactionDate: new Date().toISOString(),
-    amount: -1.23,
+    amount: -12000,
     note,
     categoryId: null,
     tags: ["qa-phase2"],
@@ -70,6 +70,28 @@ export const phase2Definition = {
     const tagsButton = page.locator(`[data-testid="tx-${transactionLayout}-tags-${transactionId}"]`);
     const editButton = page.locator(`[data-testid="tx-${transactionLayout}-edit-${transactionId}"]`);
 
+    if (transactionLayout === "mobile") {
+      const amountIntegrity = await page.locator(`[data-testid="tx-mobile-amount-${transactionId}"]`).evaluate((element) => {
+        const styles = window.getComputedStyle(element);
+        return {
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+          whiteSpace: styles.whiteSpace,
+        };
+      });
+      const visibleEditLabels = await row.getByText("Edit", { exact: true }).count();
+
+      if (
+        amountIntegrity.whiteSpace !== "nowrap" ||
+        amountIntegrity.scrollWidth > amountIntegrity.clientWidth ||
+        visibleEditLabels !== 0
+      ) {
+        throw new Error(
+          `Mobile transaction card must keep large signed amounts intact and use card-tap editing: ${JSON.stringify({ amountIntegrity, visibleEditLabels })}.`,
+        );
+      }
+    }
+
     await categoryButton.click();
     await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
     fr["FR-010"] = pass("Category action in transaction row opens a dedicated full-page category selector.");
@@ -113,6 +135,20 @@ export const phase2Definition = {
     }
     await page.locator('[data-testid="tx-tags-update"]').click();
     await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
+
+    await page.locator('[data-testid="transactions-filters-toggle"]').click();
+    await page.locator('[data-testid="tx-filter-edit-tags"]').click();
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
+    await page.fill('[data-testid="tx-tags-search"]', `not-a-real-filter-tag-${Date.now()}`);
+    const filterCanCreateTag = await page.locator('[data-testid="tx-tags-add-from-search"]').count();
+    await page.fill('[data-testid="tx-tags-search"]', "qa-phase2");
+    const filterTagOption = page.locator('[data-testid="tx-tag-option-qa-phase2"]');
+    await filterTagOption.click();
+    await page.locator('[data-testid="tx-tags-update"]').click();
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
+    if (filterCanCreateTag !== 0) {
+      throw new Error("Filter tag selector must not offer creation for an unknown tag.");
+    }
 
     await editButton.click();
     await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });

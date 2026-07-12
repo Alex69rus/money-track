@@ -5,9 +5,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AnalyticsBreakdownPage } from "@/features/analytics/components/AnalyticsBreakdownPage";
 import { CategoryDrilldownDialog } from "@/features/analytics/components/CategoryDrilldownDialog";
 import { AnalyticsLoadingState } from "@/features/analytics/components/AnalyticsLoadingState";
 import { useAnalyticsTransactions } from "@/features/analytics/hooks/useAnalyticsTransactions";
+import type { AnalyticsDrilldownItem } from "@/features/analytics/types";
 import {
   buildAnalyticsModel,
   formatDateRangeLabel,
@@ -16,6 +18,7 @@ import {
   getCurrentMonthDateRange,
   getLastDaysDateRange,
   resolveCurrencyDisplay,
+  toTestIdSegment,
 } from "@/features/analytics/utils";
 
 type DatePreset = "current-month" | "last-7-days" | "last-30-days" | "custom";
@@ -70,6 +73,18 @@ function updateToDate(currentFromDate: string, nextToDate: string): { fromDate: 
   };
 }
 
+function formatTrendSummaryMonth(monthKey: string): string {
+  const [year, month] = monthKey.split("-").map(Number);
+  if (!year || !month) {
+    return monthKey;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(year, month - 1, 1));
+}
+
 function toHexPair(value: string): string {
   return `${value}${value}`;
 }
@@ -109,37 +124,60 @@ export function AnalyticsPage(): JSX.Element {
   const navigate = useNavigate();
   const [dateRange, setDateRange] = useState(getCurrentMonthDateRange);
   const [activePreset, setActivePreset] = useState<DatePreset>("current-month");
-  const selectedCategoryKey = useMemo(() => {
-    const routeMatch = /^\/analytics\/category\/(.+)$/.exec(location.pathname);
+  const [selectedTrendKey, setSelectedTrendKey] = useState<string | null>(null);
+  const drilldownRoute = useMemo(() => {
+    const routeMatch = /^\/analytics\/(category|tag)\/(.+)$/.exec(location.pathname);
     if (!routeMatch?.[1]) {
       return null;
     }
 
     try {
-      return decodeURIComponent(routeMatch[1]);
+      return {
+        key: decodeURIComponent(routeMatch[2] ?? ""),
+        kind: routeMatch[1] as "category" | "tag",
+      };
     } catch {
       return null;
     }
+  }, [location.pathname]);
+  const breakdownKind = useMemo<"category" | "tag" | null>(() => {
+    if (location.pathname === "/analytics/categories") {
+      return "category";
+    }
+
+    if (location.pathname === "/analytics/tags") {
+      return "tag";
+    }
+
+    return null;
   }, [location.pathname]);
 
   const { transactions, loading, error, retry } = useAnalyticsTransactions(dateRange);
 
   const analytics = useMemo(() => buildAnalyticsModel(transactions), [transactions]);
   const currencyDisplay = useMemo(() => resolveCurrencyDisplay(transactions), [transactions]);
+  const categoryPreview = useMemo(() => analytics.categorySpending.slice(0, 5), [analytics.categorySpending]);
+  const tagPreview = useMemo(() => analytics.tagSpending.slice(0, 5), [analytics.tagSpending]);
 
-  const selectedCategory = useMemo(
-    () =>
-      selectedCategoryKey
-        ? analytics.categorySpending.find((categoryItem) => categoryItem.key === selectedCategoryKey) ?? null
-        : null,
-    [analytics.categorySpending, selectedCategoryKey],
-  );
+  const selectedDrilldown = useMemo<AnalyticsDrilldownItem | null>(() => {
+    if (!drilldownRoute) {
+      return null;
+    }
+
+    if (drilldownRoute.kind === "category") {
+      const item = analytics.categorySpending.find((categoryItem) => categoryItem.key === drilldownRoute.key);
+      return item ? { kind: "category", item } : null;
+    }
+
+    const item = analytics.tagSpending.find((tagItem) => tagItem.key === drilldownRoute.key);
+    return item ? { kind: "tag", item } : null;
+  }, [analytics.categorySpending, analytics.tagSpending, drilldownRoute]);
 
   useEffect(() => {
-    if (!loading && selectedCategoryKey && !selectedCategory) {
+    if (!loading && drilldownRoute && !selectedDrilldown) {
       navigate("/analytics", { replace: true });
     }
-  }, [loading, navigate, selectedCategory, selectedCategoryKey]);
+  }, [drilldownRoute, loading, navigate, selectedDrilldown]);
 
   const closeDrilldown = (): void => {
     const routeState = location.state as { mtReturnPath?: string } | null;
@@ -159,6 +197,21 @@ export function AnalyticsPage(): JSX.Element {
 
     return Math.max(1, maxSeriesValue);
   }, [analytics.monthlyTrends]);
+
+  useEffect(() => {
+    setSelectedTrendKey((current) => {
+      if (current && analytics.monthlyTrends.some((monthItem) => monthItem.key === current)) {
+        return current;
+      }
+
+      return analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.key ?? null;
+    });
+  }, [analytics.monthlyTrends]);
+
+  const selectedTrend = useMemo(
+    () => analytics.monthlyTrends.find((monthItem) => monthItem.key === selectedTrendKey) ?? null,
+    [analytics.monthlyTrends, selectedTrendKey],
+  );
 
   const hasNoData = !loading && !error && analytics.summary.transactionCount === 0;
 
@@ -198,7 +251,10 @@ export function AnalyticsPage(): JSX.Element {
           </Button>
         </div>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+        <div
+          className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          data-testid="analytics-date-presets"
+        >
           {DATE_PRESET_DEFINITIONS.map((preset) => (
             <Button
               className={
@@ -220,14 +276,17 @@ export function AnalyticsPage(): JSX.Element {
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2 min-[430px]:grid-cols-2" data-testid="analytics-date-range-card">
+        <div
+          className="mt-3 grid min-w-0 max-w-full grid-cols-1 gap-2 overflow-hidden sm:grid-cols-2"
+          data-testid="analytics-date-range-card"
+        >
           <div className="min-w-0 flex flex-col gap-1">
             <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-slate-400 uppercase" htmlFor="analytics-from-date">
               From
             </label>
             <Input
               aria-label="Analytics from date"
-              className="mt-analytics-date-input h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
+              className="mt-analytics-date-input block max-w-full h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
               data-testid="analytics-from-date"
               id="analytics-from-date"
               onChange={(event) => {
@@ -244,7 +303,7 @@ export function AnalyticsPage(): JSX.Element {
             </label>
             <Input
               aria-label="Analytics to date"
-              className="mt-analytics-date-input h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
+              className="mt-analytics-date-input block max-w-full h-9 rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-visible:border-[#2d8cff] focus-visible:ring-1 focus-visible:ring-[#2d8cff]/55"
               data-testid="analytics-to-date"
               id="analytics-to-date"
               onChange={(event) => {
@@ -286,16 +345,16 @@ export function AnalyticsPage(): JSX.Element {
           ) : null}
 
           <Card
-            className="overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
+            className="gap-0 overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
             data-testid="analytics-summary-card"
           >
-            <CardHeader className="gap-2 border-b border-[#20344f]/70 pb-4">
+            <CardHeader className="gap-2 border-b border-[#20344f]/70 pb-3">
               <CardTitle className="flex items-center justify-center gap-2 text-[0.88rem] font-bold tracking-[0.09em] text-slate-400 uppercase">
                 <TrendingUpIcon />
                 Balance Snapshot
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-5 pt-4">
+            <CardContent className="flex flex-col gap-3 pt-3" data-testid="analytics-summary-content">
               <div className="flex flex-col items-center gap-1.5">
                 <p className="text-sm font-medium text-slate-400">Net Cash Flow</p>
                 <p
@@ -310,7 +369,7 @@ export function AnalyticsPage(): JSX.Element {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-0 border-t border-[#20344f]/70 pt-4">
+              <div className="grid grid-cols-2 gap-0 border-t border-[#20344f]/70 pt-3">
                 <div className="border-r border-[#20344f]/70 pr-3 text-center">
                   <p className="flex items-center justify-center gap-1.5 text-xs font-semibold tracking-[0.09em] text-emerald-400 uppercase">
                     <ArrowDownIcon className="size-4" />
@@ -333,9 +392,9 @@ export function AnalyticsPage(): JSX.Element {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#20344f]/70 bg-[#1a2b43]/75 px-4 py-3">
-                <p className="text-xs font-semibold tracking-[0.08em] text-slate-400 uppercase">Average Transaction</p>
-                <p className="pt-1 text-lg font-semibold text-slate-100">
+              <div className="flex items-center justify-between gap-3 border-t border-[#20344f]/70 pt-3">
+                <p className="text-xs font-semibold tracking-[0.08em] text-slate-400 uppercase">Average transaction</p>
+                <p className="shrink-0 text-base font-semibold text-slate-100 tabular-nums">
                   {formatMoney(analytics.summary.averageTransaction, currencyDisplay.currency)}
                 </p>
               </div>
@@ -353,15 +412,20 @@ export function AnalyticsPage(): JSX.Element {
                 </CardTitle>
                 <Button
                   className="h-auto p-0 text-[1.05rem] font-semibold text-[#2d8cff] hover:text-[#4ca0ff]"
+                  data-testid="analytics-category-view-all"
+                  disabled={analytics.categorySpending.length === 0}
+                  onClick={() => {
+                    navigate("/analytics/categories", { state: { mtReturnPath: location.pathname } });
+                  }}
                   type="button"
                   variant="ghost"
                 >
                   View all
                 </Button>
               </CardHeader>
-              <CardContent className="p-0">
-                {analytics.categorySpending.length > 0 ? (
-                  analytics.categorySpending.map((categoryItem) => {
+              <CardContent className="p-0" data-testid="analytics-category-list">
+                {categoryPreview.length > 0 ? (
+                  categoryPreview.map((categoryItem) => {
                     const categoryColor = normalizeHexColor(categoryItem.color ?? "");
                     const iconForeground = categoryColor ? `#${categoryColor}` : "#2d8cff";
                     const barColor = categoryColor ? `#${categoryColor}` : "#2d8cff";
@@ -434,19 +498,30 @@ export function AnalyticsPage(): JSX.Element {
                 </CardTitle>
                 <Button
                   className="h-auto p-0 text-[1.05rem] font-semibold text-[#2d8cff] hover:text-[#4ca0ff]"
+                  data-testid="analytics-tag-view-all"
+                  disabled={analytics.tagSpending.length === 0}
+                  onClick={() => {
+                    navigate("/analytics/tags", { state: { mtReturnPath: location.pathname } });
+                  }}
                   type="button"
                   variant="ghost"
                 >
                   View all
                 </Button>
               </CardHeader>
-              <CardContent className="p-0">
-                {analytics.tagSpending.length > 0 ? (
-                  analytics.tagSpending.map((tagItem, index) => (
-                    <div
-                      className="flex items-center justify-between gap-3 border-b border-[#20344f]/65 p-4 last:border-b-0"
-                      data-testid={`analytics-tag-item-${tagItem.key}`}
+              <CardContent className="p-0" data-testid="analytics-tag-list">
+                {tagPreview.length > 0 ? (
+                  tagPreview.map((tagItem, index) => (
+                    <button
+                      className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-[#20344f]/65 p-4 text-left transition-colors last:border-b-0 hover:bg-[#1b2e47]"
+                      data-testid={`analytics-tag-item-${toTestIdSegment(tagItem.key)}`}
                       key={tagItem.key}
+                      onClick={() => {
+                        navigate(`/analytics/tag/${encodeURIComponent(tagItem.key)}`, {
+                          state: { mtReturnPath: location.pathname },
+                        });
+                      }}
+                      type="button"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div
@@ -476,7 +551,7 @@ export function AnalyticsPage(): JSX.Element {
                       <p className="shrink-0 pl-2 text-right text-lg font-bold tracking-tight tabular-nums sm:text-xl">
                         {formatMoney(tagItem.amount, currencyDisplay.currency)}
                       </p>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <p className="p-4 text-sm text-slate-400" data-testid="analytics-tags-empty">
@@ -488,7 +563,7 @@ export function AnalyticsPage(): JSX.Element {
           </div>
 
           <Card
-            className="overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
+            className="gap-0 overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
             data-testid="analytics-trends-card"
           >
             <CardHeader className="flex flex-row items-center justify-between border-b border-[#20344f]/70 pb-4">
@@ -504,23 +579,53 @@ export function AnalyticsPage(): JSX.Element {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="flex flex-col pt-4" data-testid="analytics-trends-content">
               {analytics.monthlyTrends.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <>
+                  {selectedTrend ? (
+                    <div className="mb-4 rounded-xl border border-[#20344f]/70 bg-[#1a2b43]/75 px-3 py-2.5" data-testid="analytics-trend-summary">
+                      <div className="mb-2 flex items-baseline justify-between gap-3 border-b border-[#20344f]/70 pb-2">
+                        <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-slate-400 uppercase">Selected month</p>
+                        <p className="text-sm font-semibold text-slate-100" data-testid="analytics-trend-summary-month">
+                          {formatTrendSummaryMonth(selectedTrend.key)}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                        <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-emerald-400 uppercase">Income</p>
+                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-slate-100 tabular-nums" data-testid="analytics-trend-summary-income">
+                          {formatMoney(selectedTrend.income, currencyDisplay.currency)}
+                        </p>
+                        </div>
+                        <div className="border-l border-[#20344f]/70 pl-3">
+                        <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-rose-400 uppercase">Expense</p>
+                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-slate-100 tabular-nums" data-testid="analytics-trend-summary-expense">
+                          {formatMoney(selectedTrend.expenses, currencyDisplay.currency)}
+                        </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {analytics.monthlyTrends.map((monthItem) => {
                     const incomeHeight = monthItem.income > 0 ? Math.max(4, (monthItem.income / trendMaxValue) * 100) : 0;
                     const expenseHeight =
                       monthItem.expenses > 0 ? Math.max(4, (monthItem.expenses / trendMaxValue) * 100) : 0;
                     const monthLabel = monthItem.monthLabel.split(" ")[0] ?? monthItem.monthLabel;
-                    const isActive = monthItem === analytics.monthlyTrends[analytics.monthlyTrends.length - 1];
+                    const isActive = monthItem.key === selectedTrendKey;
 
                     return (
-                      <div
-                        className="flex w-16 shrink-0 flex-col items-center gap-3"
+                      <button
+                        aria-label={`Select ${monthItem.monthLabel}: income ${formatMoney(monthItem.income, currencyDisplay.currency)}, expense ${formatMoney(monthItem.expenses, currencyDisplay.currency)}`}
+                        aria-pressed={isActive}
+                        className="flex w-16 shrink-0 flex-col items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-[#2d8cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16253a]"
                         data-testid={`analytics-trend-item-${monthItem.key}`}
                         key={monthItem.key}
+                        onClick={() => setSelectedTrendKey(monthItem.key)}
+                        type="button"
                       >
-                        <div className={isActive ? "flex h-36 w-full items-end gap-1 rounded-lg bg-[#1d314a] px-1.5 pb-1.5" : "flex h-36 w-full items-end gap-1 px-1.5 pb-1.5"}>
+                        <div className={isActive ? "flex h-28 w-full items-end gap-1 rounded-lg bg-[#1d314a] px-1.5 pb-1.5" : "flex h-28 w-full items-end gap-1 px-1.5 pb-1.5"}>
                           <div className="flex h-full flex-1 items-end">
                             <div
                               className={isActive ? "w-full rounded-sm bg-[#2d8cff]" : "w-full rounded-sm bg-[#2d8cff]/55"}
@@ -537,10 +642,11 @@ export function AnalyticsPage(): JSX.Element {
                         <p className={isActive ? "text-sm font-semibold text-[#2d8cff]" : "text-sm font-medium text-slate-400"}>
                           {monthLabel}
                         </p>
-                      </div>
+                      </button>
                     );
                   })}
-                </div>
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-slate-400" data-testid="analytics-trends-empty">
                   No monthly trend data in this range.
@@ -552,12 +658,42 @@ export function AnalyticsPage(): JSX.Element {
       ) : null}
 
       <CategoryDrilldownDialog
-        category={selectedCategory}
         currency={currencyDisplay.currency}
+        drilldown={selectedDrilldown}
         onClose={closeDrilldown}
         presentation="page"
         rangeLabel={formatDateRangeLabel(dateRange)}
       />
+
+      {breakdownKind === "category" ? (
+        <AnalyticsBreakdownPage
+          currency={currencyDisplay.currency}
+          items={analytics.categorySpending}
+          kind="category"
+          onClose={closeDrilldown}
+          onSelect={(categoryItem) => {
+            navigate(`/analytics/category/${encodeURIComponent(categoryItem.key)}`, {
+              state: { mtReturnPath: location.pathname },
+            });
+          }}
+          rangeLabel={formatDateRangeLabel(dateRange)}
+        />
+      ) : null}
+
+      {breakdownKind === "tag" ? (
+        <AnalyticsBreakdownPage
+          currency={currencyDisplay.currency}
+          items={analytics.tagSpending}
+          kind="tag"
+          onClose={closeDrilldown}
+          onSelect={(tagItem) => {
+            navigate(`/analytics/tag/${encodeURIComponent(tagItem.key)}`, {
+              state: { mtReturnPath: location.pathname },
+            });
+          }}
+          rangeLabel={formatDateRangeLabel(dateRange)}
+        />
+      ) : null}
     </section>
   );
 }

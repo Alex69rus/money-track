@@ -18,6 +18,7 @@ interface TransactionTagSelectorDialogProps {
   open: boolean;
   availableTags: string[];
   initialTags: string[];
+  allowCreate?: boolean;
   pending: boolean;
   error: string | null;
   title: string;
@@ -61,6 +62,7 @@ export function TransactionTagSelectorDialog({
   open,
   availableTags,
   initialTags,
+  allowCreate = true,
   pending,
   error,
   title,
@@ -97,6 +99,7 @@ export function TransactionTagSelectorDialog({
   }, [availablePool, normalizedSearch]);
 
   const canCreateTag =
+    allowCreate &&
     normalizedSearch.length > 0 &&
     !availablePool.some((tag) => normalizeTag(tag) === normalizedSearch);
 
@@ -283,7 +286,7 @@ export function TransactionTagSelectorDialog({
                   <button
                     aria-label={`${isSelected ? "Remove" : "Add"} ${tag} tag`}
                     className={cn(
-                      "flex h-11 items-center gap-2 rounded-[0.85rem] px-4 text-[1.1rem] font-medium transition-colors",
+                      "flex max-w-full items-center gap-2 rounded-[0.85rem] px-4 py-2 text-[1.1rem] font-medium transition-colors",
                       isSelected
                         ? "bg-[#2d8cff] text-white hover:bg-[#2d8cff]/90"
                         : "bg-[#1a2a40] text-slate-100 hover:bg-[#22334d]",
@@ -294,7 +297,7 @@ export function TransactionTagSelectorDialog({
                     type="button"
                   >
                     <span className={cn("text-[1.3rem] leading-none", isSelected ? "text-white" : "text-slate-400")}>#</span>
-                    <span className="leading-none">{tag}</span>
+                    <span className="max-w-52 truncate leading-none">{tag}</span>
                   </button>
                 );
               })}

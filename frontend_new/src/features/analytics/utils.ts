@@ -218,15 +218,17 @@ export function buildAnalyticsModel(transactions: Transaction[]): AnalyticsModel
       if (existing) {
         existing.amount += Math.abs(transaction.amount);
         existing.transactionCount += 1;
+        existing.transactions.push(transaction);
         continue;
       }
 
       tagMap.set(normalized, {
-        key: toTestIdSegment(normalized),
+        key: normalized,
         tag: rawTag.trim() || normalized,
         amount: Math.abs(transaction.amount),
         transactionCount: 1,
         share: 0,
+        transactions: [transaction],
       });
     }
   }
@@ -235,9 +237,9 @@ export function buildAnalyticsModel(transactions: Transaction[]): AnalyticsModel
     .map((tagItem) => ({
       ...tagItem,
       share: totalExpenses > 0 ? tagItem.amount / totalExpenses : 0,
+      transactions: sortTransactionsByDateDesc(tagItem.transactions),
     }))
-    .sort((first, second) => second.amount - first.amount)
-    .slice(0, 10);
+    .sort((first, second) => second.amount - first.amount);
 
   const monthMap = new Map<string, MonthlyTrendItem>();
 

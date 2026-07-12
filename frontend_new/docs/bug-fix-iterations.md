@@ -1,6 +1,6 @@
 # Frontend Bug-Fix Iterations
 
-Status: planning only. This document is the central register and delivery plan for frontend defects. It converts the seven UI/UX items in the root `temp.md` and the existing Telegram iOS smoke findings into implementation-ready frontend slices. It does not authorize product-code changes by itself.
+Status: active delivery. This document is the central register and delivery plan for frontend defects. It converts the seven UI/UX items in the root `temp.md` and the existing Telegram iOS smoke findings into implementation-ready frontend slices.
 
 Scope: `frontend_new/**` only. Preserve the current Telegram-native page/BackButton contract, existing API boundaries, and the four approved primary destinations.
 
@@ -16,18 +16,22 @@ Scope: `frontend_new/**` only. Preserve the current Telegram-native page/BackBut
 
 | Bug ID | Source / evidence | Concise defect | State | Planned iteration |
 | --- | --- | --- | --- | --- |
-| TEMP-001 | `temp.md` item 1 | Leaf categories display a misleading `>` affordance. | Planned | BFX-1 |
-| TEMP-002 | `temp.md` item 2 | Mobile transaction cards require `Edit` instead of opening edit on card tap. | Planned | BFX-1 |
-| TEMP-003 | `temp.md` item 3 | Uncategorized transaction icon looks like a valid category instead of a category-selection affordance. | Planned | BFX-1 |
-| TEMP-004 | `temp.md` item 4 | Spending-by-tags lacks a transaction drilldown. | Planned | BFX-2 |
-| TEMP-005 | `temp.md` item 5 | Analytics drilldown transaction rows lack the Transactions category icon/color affordance. | Planned | BFX-2 |
-| TEMP-006 | `temp.md` item 6 | Analytics category/tag widgets need top-five previews and working full-list `View all` flows. | Planned | BFX-3 |
-| TEMP-007 | `temp.md` item 7 | Monthly Trends lacks an interaction for reading exact month income/expense values. | Planned | BFX-4 |
-| BR-001 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7773.jpeg` | Analytics date-preset row exposes a native scrollbar. | Planned | BFX-3 |
-| BR-002 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7773.jpeg`, `IMG_7771.jpeg` | Balance Snapshot and Monthly Trends can collapse or clip to header-only cards. | Planned | BFX-3 |
-| BR-003 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7771.jpeg` | Analytics category/tag `View all` actions are inert. | Planned | BFX-3 |
-| BR-004 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7772.jpeg` | Transaction signed amount can wrap the sign onto a separate line. | Planned | BFX-1 |
-| BR-005 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7774.jpg` | Transactions filters render the entire tag catalogue inline. | Planned | BFX-5 |
+| TEMP-001 | `temp.md` item 1 | Leaf categories display a misleading `>` affordance. | Implemented | BFX-1 |
+| TEMP-002 | `temp.md` item 2 | Mobile transaction cards require `Edit` instead of opening edit on card tap. | Implemented | BFX-1 |
+| TEMP-003 | `temp.md` item 3 | Uncategorized transaction icon looks like a valid category instead of a category-selection affordance. | Implemented | BFX-1 |
+| TEMP-004 | `temp.md` item 4 | Spending-by-tags lacks a transaction drilldown. | Implemented | BFX-2 |
+| TEMP-005 | `temp.md` item 5 | Analytics drilldown transaction rows lack the Transactions category icon/color affordance. | Implemented | BFX-2 |
+| TEMP-006 | `temp.md` item 6 | Analytics category/tag widgets need top-five previews and working full-list `View all` flows. | Implemented | BFX-3 |
+| TEMP-007 | `temp.md` item 7 | Monthly Trends lacks an interaction for reading exact month income/expense values. | Implemented | BFX-4 |
+| BR-001 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7773.jpeg` | Analytics date-preset row exposes a native scrollbar. | Implemented | BFX-3 |
+| BR-002 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7773.jpeg`, `IMG_7771.jpeg` | Balance Snapshot and Monthly Trends can collapse or clip to header-only cards. | Implemented | BFX-3 |
+| BR-003 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7771.jpeg` | Analytics category/tag `View all` actions are inert. | Implemented | BFX-3 |
+| BR-004 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7772.jpeg` | Transaction signed amount can wrap the sign onto a separate line. | Implemented | BFX-1 |
+| BR-005 | `bugs_reports/telegram-ios-smoke-test-2026-07-11.md`, `IMG_7774.jpg` | Transactions filters render the entire tag catalogue inline. | Implemented | BFX-5 |
+| FUP-001 | User screenshot `IMG_7782.jpeg` | Transactions filter header repeats its purpose and exposes unnecessary debounce copy. | Implemented | BFX-6 |
+| FUP-002 | User screenshot `IMG_7783.jpeg` | Analytics native date inputs can visually extend beyond the date-control card. | Implemented | BFX-6 |
+| FUP-003 | User screenshot `IMG_7783.jpeg` | Analytics summary/trends use fixed-height guardrails that create excess empty space. | Implemented | BFX-6 |
+| FUP-004 | User screenshot `strange_date.png` | Monthly Trends selected-month value is visually ambiguous as an unexplained short date. | Implemented | BFX-6 |
 
 ## Sequencing
 
@@ -38,6 +42,7 @@ Scope: `frontend_new/**` only. Preserve the current Telegram-native page/BackBut
 | BFX-3 | TEMP-006, BR-001..003 | BFX-2 | Make Analytics overview widgets contained, complete, and navigable. |
 | BFX-4 | TEMP-007 | None | Make Monthly Trends values understandable through direct touch interaction. |
 | BFX-5 | BR-005 | None | Keep transaction tag filtering usable with large tag catalogues. |
+| BFX-6 | FUP-001..004 | BFX-3, BFX-4, BFX-5 | Remove redundant filter copy, contain date inputs, compact analytics widgets, and clarify selected-month context. |
 
 `BFX-1`, `BFX-4`, and `BFX-5` are independent. Complete `BFX-2` before `BFX-3` so `View all` can reuse the final drilldown navigation model.
 
@@ -77,6 +82,14 @@ The category selector shows a right-facing arrow for leaf categories that have n
 - Existing transaction route callbacks in `pages/TransactionsPage.tsx`
 - Phase-2 and mobile QA assertions for row tap versus nested controls.
 
+### Delivery record — 2026-07-12
+
+- Implemented an invisible, accessible full-card edit surface behind the transaction content. The category and tag quick actions remain sibling controls above that surface, avoiding invalid nested buttons and preventing a quick action from also opening edit.
+- Replaced the note-derived uncategorized avatar with `?` and the accessible label `Choose category`.
+- Rendered only real parent expand controls; selected leaf categories show a static selection marker and unselected leaves show no trailing affordance.
+- Made the mobile amount a non-wrapping, shrinking-resistant value while allowing the note to truncate first.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (16 tests), isolated `scripts/run_frontend_phase_qa.sh phase2`, and `scripts/run_frontend_mobile_qa.sh` for iPhone 12 Pro, iPhone 15, iPhone 15 Pro Max, and iPhone SE. The iPhone SE fixture confirms `-AED 12,000.00` stays on one line. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
 ## BFX-2 — Analytics Category and Tag Drilldown Parity
 
 Source bugs: TEMP-004, TEMP-005.
@@ -108,6 +121,13 @@ Spending-by-tags has no transaction drilldown. The category drilldown shows a si
 - `features/analytics/types.ts` and `utils.ts` for tag-to-transactions aggregation
 - `pages/AnalyticsPage.tsx`, route parsing, and `services/telegram/navigation.ts`
 - A shared presentational transaction-row component; do not import edit/quick-action behavior into Analytics read-only rows.
+
+### Delivery record — 2026-07-12
+
+- Retained each tag's matching transactions during analytics aggregation and gave the tag a stable normalized route key. The visible tag item now opens `/analytics/tag/:key`.
+- Extended the existing full-page drilldown to accept either a category or a tag. Its header identifies the subject, active period, and aggregate expense; browser fallback retains an explicit close action while Telegram uses the host BackButton.
+- Rendered the same read-only, category-aware transaction row for both drilldown types. It uses the transaction's own category icon/color when present and a neutral `?` for an uncategorized transaction.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (17 tests), isolated `scripts/run_frontend_phase_qa.sh phase3`, and all four Telegram phone-fixture profiles. Phase 3 verifies category/tag routes, row affordances, and date-context return. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## BFX-3 — Bounded Analytics Widgets and Functional View All
 
@@ -145,6 +165,13 @@ The category and tag widgets can become arbitrarily tall or rely on a scrollable
 - New route-backed full-list surface(s) under `features/analytics/components/`
 - Analytics Phase-3 and mobile QA fixtures.
 
+### Delivery record — 2026-07-12
+
+- Kept complete category/tag aggregates in the model and rendered only a top-five preview in each overview widget. The overview widgets remain natural-height page content with no internal scroll region.
+- Added `/analytics/categories` and `/analytics/tags` as Telegram full-page breakdown routes. Each preserves the active range, lists every aggregate item, and hands the selected item to the BFX-2 drilldown; browser fallback exposes an explicit close action.
+- Hid the date-preset scroller's native scrollbar while retaining horizontal scroll/swipe. Added minimum body heights for Balance Snapshot and Monthly Trends so a supported state cannot collapse to a header-only strip.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (18 tests), isolated `scripts/run_frontend_phase_qa.sh phase3` with six QA categories/tags, and the four-profile mobile Telegram fixture run. Phase/mobile checks cover top-five previews, full-list routes, preset scrollbar styling, no inner widget scroll, and body heights. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
 ## BFX-4 — Monthly Trends Value Disclosure
 
 Source bug: TEMP-007.
@@ -174,6 +201,12 @@ Monthly Trends communicates income and expense only through bar height and color
 - `pages/AnalyticsPage.tsx`
 - Analytics trend model/utilities only if a presentational value is missing
 - Phase-3 and mobile QA assertions for month selection/value disclosure.
+
+### Delivery record — 2026-07-12
+
+- Made each month column a native button with an accessible income/expense label and selected state. The latest visible month becomes selected by default; the selected key is retained when it remains in the recomputed series and otherwise falls back to the newest visible month.
+- Added an anchored summary in the Monthly Trends card with the selected month plus exact income and expense. It is persistent rather than hover-only and remains within the card/page scroll flow.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (20 tests), `npm run build`, isolated `scripts/run_frontend_phase_qa.sh phase3`, and all four Telegram phone-fixture profiles. The Phase-3/mobile checks cover selected-month recomputation, the persistent summary, and exactly one selected month. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## BFX-5 — Bounded Transactions Tag Filter
 
@@ -205,6 +238,24 @@ The Transactions filter renders the entire user tag catalogue as inline chips. L
 - `features/transactions/components/TransactionsFiltersCard.tsx`
 - Existing tag selector route/component and filter state in `pages/TransactionsPage.tsx`
 - Transaction filter tests/QA and the mobile fixture tag catalogue.
+
+### Delivery record — 2026-07-12
+
+- Replaced the inline catalogue with at most five suggested, unselected tag chips. The compact view also keeps up to five selected tags removable and gives larger selections a clear selected-count control.
+- Added the `/transactions/filters/tags` full-page selector route. It preserves draft filter selections, uses Telegram BackButton navigation, supports search across the entire catalogue, and disables tag creation so filtering cannot create an invalid tag.
+- Added truncation bounds for long full-selector tags and extended Phase-2/mobile QA code paths for the compact filter and large catalogue. Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (20 tests), `npm run build`, isolated `scripts/run_frontend_phase_qa.sh phase2`, and all four Telegram phone-fixture profiles. The mobile run uses a 121-tag fixture and verifies the five-chip bound, full-page selector, disabled creation, and no horizontal overflow. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
+## BFX-6 — Follow-Up UI Clarity and Natural Analytics Sizing
+
+Source bugs: FUP-001, FUP-002, FUP-003, FUP-004.
+
+### Delivery record — 2026-07-12
+
+- Replaced the misleading `Any date` filter-toggle label with `Filters` and removed the duplicate `Filters` heading plus the obvious debounce explanation. The live status remains available to assistive technology.
+- Contained Analytics date inputs to their card with a phone-safe single-column layout below the normal `sm` breakpoint and native-date width constraints (`inline-size`/`max-width`/`box-sizing`).
+- Removed the fixed minimum heights added in BFX-3. Balance Snapshot now uses natural content height with a compact inline average, and Monthly Trends uses shorter chart columns instead of dashboard-size empty space.
+- Clarified the trends disclosure as `Selected month` and renders the full month/year (for example, `Jul 2026`); the formerly strange `Jul 26` was a display ambiguity, not an incorrect date calculation.
+- Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (20 tests), `npm run build`, isolated Phase-2 and Phase-3 QA, plus all four Telegram phone-fixture profiles. Phone QA asserts date-input containment, natural Analytics card sizing, trend selection semantics, and no horizontal overflow. Real-device verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## Shared Regression Rules
 

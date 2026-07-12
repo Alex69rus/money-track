@@ -199,9 +199,14 @@ function readRouteTransaction(
 function parseTransactionRoute(pathname: string): {
   editTransactionId?: number;
   editSubpage: "none" | "category" | "tags";
+  filterTags?: boolean;
   quickCategoryTransactionId?: number;
   quickTagTransactionId?: number;
 } {
+  if (pathname === "/transactions/filters/tags") {
+    return { editSubpage: "none", filterTags: true };
+  }
+
   const editMatch = /^\/transactions\/(\d+)\/edit(?:\/(category|tags))?$/.exec(pathname);
   if (editMatch) {
     return {
@@ -234,7 +239,6 @@ export function TransactionsPage(): JSX.Element {
   const navigate = useNavigate();
   const [filtersDraft, setFiltersDraft] = useState<TransactionFilterDraft>(DEFAULT_FILTERS);
   const [categorySearch, setCategorySearch] = useState("");
-  const [tagSearch, setTagSearch] = useState("");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -528,12 +532,15 @@ export function TransactionsPage(): JSX.Element {
         isDebouncing={isDebouncing}
         onCategorySearchChange={setCategorySearch}
         onDraftChange={setFiltersDraft}
+        onOpenTagSelector={() => {
+          navigate("/transactions/filters/tags", {
+            state: { mtReturnPath: location.pathname } satisfies TransactionRouteState,
+          });
+        }}
         onRetryOptions={retryOptions}
         onSetExpanded={setFiltersExpanded}
-        onTagSearchChange={setTagSearch}
         optionsError={optionsError}
         optionsLoading={optionsLoading}
-        tagSearch={tagSearch}
         tags={tags}
       />
 
@@ -654,6 +661,27 @@ export function TransactionsPage(): JSX.Element {
         pending={tagUpdatePending}
         presentation="page"
         title="Add tags"
+      />
+
+      <TransactionTagSelectorDialog
+        allowCreate={false}
+        availableTags={tags}
+        description="Choose transaction tags to filter the list"
+        error={null}
+        initialTags={filtersDraft.tags}
+        onConfirm={(nextTags) => {
+          setFiltersDraft((current) => ({ ...current, tags: nextTags }));
+          navigateBack();
+        }}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            navigateBack();
+          }
+        }}
+        open={transactionRoute.filterTags === true}
+        pending={false}
+        presentation="page"
+        title="Filter tags"
       />
 
       <TransactionEditDialog

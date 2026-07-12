@@ -50,7 +50,7 @@ function buildFixtures() {
       id: 9001,
       userId: 123456789,
       transactionDate: createdAt,
-      amount: -45.6,
+      amount: -12000,
       note: "Mobile QA transport payment",
       categoryId: 401,
       tags: ["commute", "qa"],
@@ -74,6 +74,20 @@ function buildFixtures() {
       createdAt,
       category: categories.find((category) => category.id === 402) ?? null,
     },
+    {
+      id: 9003,
+      userId: 123456789,
+      transactionDate: createdAt,
+      amount: 17.5,
+      note: "Mobile QA uncategorized payment",
+      categoryId: null,
+      tags: [],
+      currency: "AED",
+      smsText: null,
+      messageId: null,
+      createdAt,
+      category: null,
+    },
   ];
 
   return { categories, transactions };
@@ -96,7 +110,13 @@ async function installApiFixtures(page) {
     await route.fulfill({
       contentType: "application/json",
       status: 200,
-      body: JSON.stringify(["commute", "qa", "household", ...Array.from({ length: 18 }, (_, index) => `mobile-qa-tag-${index + 1}`)]),
+      body: JSON.stringify([
+        "commute",
+        "qa",
+        "household",
+        ...Array.from({ length: 118 }, (_, index) => `mobile-qa-tag-${index + 1}`),
+        "very-long-system-generated-filter-tag-that-must-never-overflow-the-phone-screen",
+      ]),
     });
   });
   await page.route(/\/api\/transactions(?:\?.*)?$/, async (route) => {
@@ -266,7 +286,42 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     }
     await assertWithinViewport(page, '[data-testid="app-shell-nav"]', "transactions navigation");
     await assertBelowTelegramTopInset(page, ".mt-balance-card", "transactions primary page");
+    const mobileEditLabelCount = await page.locator('[data-testid="tx-mobile-row-9001"]').getByText("Edit", { exact: true }).count();
+    const amountIntegrity = await page.locator('[data-testid="tx-mobile-amount-9001"]').evaluate((element) => {
+      const styles = window.getComputedStyle(element);
+      return {
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        whiteSpace: styles.whiteSpace,
+      };
+    });
+    const uncategorizedControl = page.locator('[data-testid="tx-mobile-category-9003"]');
+    if (
+      mobileEditLabelCount !== 0 ||
+      amountIntegrity.whiteSpace !== "nowrap" ||
+      amountIntegrity.scrollWidth > amountIntegrity.clientWidth ||
+      (await uncategorizedControl.textContent())?.trim() !== "?" ||
+      (await uncategorizedControl.getAttribute("aria-label")) !== "Choose category for transaction 9003"
+    ) {
+      throw new Error(
+        `Transaction card affordances regressed: ${JSON.stringify({ mobileEditLabelCount, amountIntegrity, uncategorizedLabel: await uncategorizedControl.getAttribute("aria-label"), uncategorizedText: await uncategorizedControl.textContent() })}.`,
+      );
+    }
     await screenshot(page, profileDirectory, "transactions");
+
+    await page.click('[data-testid="transactions-filters-toggle"]');
+    if ((await page.locator('[data-testid^="tx-filter-suggested-tag-"]').count()) !== 5) {
+      throw new Error("Transactions filter must render exactly five suggested tags from a large catalogue.");
+    }
+    await page.click('[data-testid="tx-filter-edit-tags"]');
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
+    await page.fill('[data-testid="tx-tags-search"]', "very-long-system-generated-filter-tag");
+    await assertNoHorizontalOverflow(page, "filter tag selector");
+    if ((await page.locator('[data-testid="tx-tags-add-from-search"]').count()) !== 0) {
+      throw new Error("Transaction filter tag selector must not create unknown tags.");
+    }
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     await page.click('[data-testid="tx-mobile-category-9001"]');
     await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
@@ -277,6 +332,12 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await assertNoHorizontalOverflow(page, "category selector");
     await assertScrollable(page, '[data-testid="tx-category-scroll"]', "category selector");
     await assertWithinViewport(page, '[data-testid="tx-category-update"]', "category selector action");
+    if (
+      (await page.locator('[data-testid="tx-category-expand-401"]').count()) !== 0 ||
+      (await page.locator('[data-testid="tx-category-selection-marker-401"]').count()) !== 1
+    ) {
+      throw new Error("Leaf category must not render an expand chevron and must retain its selected marker.");
+    }
     await screenshot(page, profileDirectory, "category-selector");
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
@@ -329,6 +390,54 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
     await assertNoHorizontalOverflow(page, "analytics");
     await assertBelowTelegramTopInset(page, '[data-testid="analytics-page"] > div:first-child', "analytics primary page");
+    const analyticsOverview = await page.evaluate(() => {
+      const metrics = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          return null;
+        }
+        return {
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+        };
+      };
+      const dateRange = document.querySelector('[data-testid="analytics-date-range-card"]');
+      const dateInputs = [...document.querySelectorAll('[data-testid="analytics-from-date"], [data-testid="analytics-to-date"]')];
+      const presets = document.querySelector('[data-testid="analytics-date-presets"]');
+      const summary = document.querySelector('[data-testid="analytics-summary-card"]');
+      const summaryContent = document.querySelector('[data-testid="analytics-summary-content"]');
+      const trends = document.querySelector('[data-testid="analytics-trends-card"]');
+      const trendsContent = document.querySelector('[data-testid="analytics-trends-content"]');
+      const dateRangeRect = dateRange?.getBoundingClientRect();
+
+      return {
+        categories: metrics('[data-testid="analytics-category-list"]'),
+        dateInputsContained: Boolean(dateRangeRect) && dateInputs.every((input) => {
+          const rect = input.getBoundingClientRect();
+          return rect.left >= dateRangeRect.left - 1 && rect.right <= dateRangeRect.right + 1;
+        }),
+        presetScrollbarWidth: presets ? window.getComputedStyle(presets).scrollbarWidth : null,
+        summaryContentHeight: summaryContent?.getBoundingClientRect().height ?? 0,
+        summaryMinHeight: summary ? window.getComputedStyle(summary).minHeight : null,
+        tags: metrics('[data-testid="analytics-tag-list"]'),
+        trendsContentHeight: trendsContent?.getBoundingClientRect().height ?? 0,
+        trendsMinHeight: trends ? window.getComputedStyle(trends).minHeight : null,
+      };
+    });
+    if (
+      analyticsOverview.categories?.scrollHeight !== analyticsOverview.categories?.clientHeight ||
+      analyticsOverview.tags?.scrollHeight !== analyticsOverview.tags?.clientHeight ||
+      !analyticsOverview.dateInputsContained ||
+      analyticsOverview.presetScrollbarWidth !== "none" ||
+      analyticsOverview.summaryContentHeight <= 0 ||
+      analyticsOverview.summaryMinHeight !== "auto" ||
+      analyticsOverview.trendsContentHeight <= 0 ||
+      analyticsOverview.trendsMinHeight !== "auto" ||
+      (await page.locator('[data-testid="analytics-trend-summary"]').count()) !== 1 ||
+      (await page.locator('[data-testid^="analytics-trend-item-"][aria-pressed="true"]').count()) !== 1
+    ) {
+      throw new Error(`Analytics overview containment regressed: ${JSON.stringify(analyticsOverview)}.`);
+    }
     await screenshot(page, profileDirectory, "analytics");
 
     await page.click('[data-testid^="analytics-category-item-"]');
@@ -338,6 +447,34 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     }
     await screenshot(page, profileDirectory, "analytics-drilldown");
     await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { state: "hidden", timeout: 15000 });
+
+    await page.click('[data-testid="analytics-category-view-all"]');
+    await page.waitForSelector('[data-testid="analytics-category-breakdown-page"]', { timeout: 15000 });
+    await assertNoHorizontalOverflow(page, "analytics category breakdown");
+    await screenshot(page, profileDirectory, "analytics-category-breakdown");
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="analytics-category-breakdown-page"]', { state: "hidden", timeout: 15000 });
+
+    await page.click('[data-testid="analytics-tag-view-all"]');
+    await page.waitForSelector('[data-testid="analytics-tag-breakdown-page"]', { timeout: 15000 });
+    await assertNoHorizontalOverflow(page, "analytics tag breakdown");
+    await screenshot(page, profileDirectory, "analytics-tag-breakdown-list");
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="analytics-tag-breakdown-page"]', { state: "hidden", timeout: 15000 });
+
+    await page.click('[data-testid="analytics-tag-item-commute"]');
+    await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+    if (
+      (await page.locator('[data-testid="analytics-drilldown-label"]').textContent())?.trim() !== "Spendings by Tag" ||
+      (await page.locator('[data-testid^="analytics-drilldown-transaction-category-"]').count()) === 0
+    ) {
+      throw new Error("Tag drilldown must use the shared category-aware transaction row.");
+    }
+    await assertNoHorizontalOverflow(page, "analytics tag drilldown");
+    await screenshot(page, profileDirectory, "analytics-tag-drilldown");
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { state: "hidden", timeout: 15000 });
 
     await page.evaluate(() => {
       ["viewportChanged", "safeAreaChanged", "contentSafeAreaChanged", "fullscreenChanged"].forEach((event) => {

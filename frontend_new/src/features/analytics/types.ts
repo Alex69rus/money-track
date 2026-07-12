@@ -31,7 +31,18 @@ export interface TagSpendingItem {
   amount: number;
   transactionCount: number;
   share: number;
+  transactions: Transaction[];
 }
+
+export type AnalyticsDrilldownItem =
+  | {
+      kind: "category";
+      item: CategorySpendingItem;
+    }
+  | {
+      kind: "tag";
+      item: TagSpendingItem;
+    };
 
 export interface MonthlyTrendItem {
   key: string;
