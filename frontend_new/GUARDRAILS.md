@@ -304,3 +304,9 @@ When a guardrail is promoted into `frontend_new/AGENTS.MD`, avoid duplicating th
 - Takeaway: Do not use a visible browser-native `input[type="date"]` as the visual field in Telegram iOS; WebKit can ignore its width or lose its right edge even when the DOM rectangle is bounded.
 - Exploration: A clipped-wrapper approach passed Chromium phone emulation but failed on the real Telegram iPhone screenshot. Replacing the visible control with an app-rendered field and retaining a full-size transparent native input overlay produced a bounded visual right edge while preserving direct native-picker interaction.
 - Prevention rule: Use `NativeDateField` for date-only values: assert an app-rendered display, a transparent native overlay, contained bounds, value-change behavior, and a real Telegram iPhone picker smoke; do not accept Chromium geometry alone as iOS evidence.
+
+## 2026-07-12 - Frontend Test Suite Layout
+
+- Takeaway: Keep frontend test code under `frontend_new/tests/`, mirroring production paths, while importing application code through the `@/` alias.
+- Exploration: Moving 12 tests and the shared setup file required only the Vitest setup path and TypeScript `include` update; lint, typecheck, all 22 tests, and production build remained green.
+- Prevention rule: When adding a frontend test, place it under the matching `tests/` path and keep `tests` in `tsconfig.app.json` so test type errors cannot escape the normal quality gate.
