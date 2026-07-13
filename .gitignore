@@ -176,6 +176,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# Keep shared shell helpers under the repository's root scripts directory.
+!scripts/lib/
+!scripts/lib/*.sh
 lib64/
 parts/
 sdist/

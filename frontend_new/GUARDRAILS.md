@@ -46,3 +46,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Keep browser QA modules under `tests/qa/` with the unit-test suite, not under a separate frontend scripts tree.
 - Exploration: The preserved runner/module hierarchy worked unchanged after package commands moved to `tests/qa/run-phase.mjs`; lint, typecheck, 22 tests, build, and Phase-5 all passed.
 - Prevention rule: Update package commands and every evidence/document pointer when moving test harness files, then execute the affected root-owned phase gate.
+
+## QA stack ownership — 2026-07-13
+
+- Takeaway: Start phase and mobile QA through the shared root stack helper so backend CORS, development auth, and `uv` cache settings cannot drift.
+- Exploration: Treat a reused or partial localhost stack as an environment failure; do not infer its API configuration from an open port.
+- Prevention rule: Reuse a QA stack only with `QA_REUSE_SERVICES=1`, rerun browser QA with elevated local-process permission when macOS sandboxing blocks Chromium, and use a small tolerance for browser-reported geometry.

@@ -2,73 +2,15 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKEND_PORT="${QA_BACKEND_PORT:-8002}"
-FRONTEND_PORT="${QA_FRONTEND_PORT:-4174}"
-BACKEND_URL="${QA_BACKEND_URL:-http://127.0.0.1:${BACKEND_PORT}}"
-FRONTEND_URL="${QA_FRONTEND_URL:-http://127.0.0.1:${FRONTEND_PORT}}"
-TMP_DIR="${ROOT_DIR}/.codex-tmp"
-mkdir -p "${TMP_DIR}"
 
-BACKEND_LOG="${TMP_DIR}/qa-mobile-backend.log"
-FRONTEND_LOG="${TMP_DIR}/qa-mobile-frontend.log"
-STARTED_BACKEND=0
-STARTED_FRONTEND=0
-BACKEND_PID=""
-FRONTEND_PID=""
-
-cleanup() {
-  if [[ "${STARTED_FRONTEND}" -eq 1 && -n "${FRONTEND_PID}" ]]; then
-    kill "${FRONTEND_PID}" 2>/dev/null || true
-    wait "${FRONTEND_PID}" 2>/dev/null || true
-  fi
-  if [[ "${STARTED_BACKEND}" -eq 1 && -n "${BACKEND_PID}" ]]; then
-    kill "${BACKEND_PID}" 2>/dev/null || true
-    wait "${BACKEND_PID}" 2>/dev/null || true
-  fi
-}
-
-trap cleanup EXIT INT TERM
-
-is_up() {
-  curl -sf "$1" >/dev/null 2>&1
-}
-
-wait_up() {
-  local name="$1"
-  local url="$2"
-  for ((i=1; i<=90; i+=1)); do
-    if is_up "${url}"; then
-      return 0
-    fi
-    sleep 1
-  done
-  echo "[qa:mobile] ${name} did not become ready at ${url}" >&2
-  return 1
-}
-
-if ! is_up "${BACKEND_URL}/health"; then
-  (
-    cd "${ROOT_DIR}/backend_new"
-    ENVIRONMENT=Development TELEGRAM_WEBHOOK_URL= TELEGRAM_WEBHOOK_SECRET= uv run python -m uvicorn app.main:app --host 127.0.0.1 --port "${BACKEND_PORT}"
-  ) >"${BACKEND_LOG}" 2>&1 &
-  BACKEND_PID=$!
-  STARTED_BACKEND=1
-  wait_up "backend" "${BACKEND_URL}/health"
-fi
-
-if ! is_up "${FRONTEND_URL}"; then
-  (
-    cd "${ROOT_DIR}/frontend_new"
-    VITE_API_BASE_URL="${BACKEND_URL}" npm run dev -- --host 127.0.0.1 --port "${FRONTEND_PORT}"
-  ) >"${FRONTEND_LOG}" 2>&1 &
-  FRONTEND_PID=$!
-  STARTED_FRONTEND=1
-  wait_up "frontend" "${FRONTEND_URL}"
-fi
+source "${ROOT_DIR}/scripts/lib/frontend_qa_stack.sh"
+qa_stack_init "${ROOT_DIR}" "qa-mobile"
+trap qa_stack_cleanup EXIT INT TERM
+qa_stack_start
 
 (
   cd "${ROOT_DIR}/frontend_new"
-  QA_FRONTEND_URL="${FRONTEND_URL}" \
-    QA_MOBILE_REPORT_FILE="${TMP_DIR}/qa-mobile-report.json" \
+  QA_FRONTEND_URL="${QA_FRONTEND_URL}" \
+    QA_MOBILE_REPORT_FILE="${QA_TMP_DIR}/qa-mobile-report.json" \
     npm run qa:mobile
 )

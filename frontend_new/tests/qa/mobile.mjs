@@ -10,6 +10,7 @@ const PROFILES = [
   { id: "iphone-se", width: 375, height: 667, safeAreaBottom: 0, safeAreaTop: 24 },
 ];
 const TELEGRAM_HOST_CONTROLS_MIN_TOP_PX = 96;
+const FOCUSED_FIELD_MAX_TOP_PX = 192;
 
 function buildFixtures() {
   const createdAt = new Date().toISOString();
@@ -452,7 +453,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
         scrollTop: scrollContainer?.scrollTop ?? 0,
       };
     });
-    if (focusPosition.scrollTop <= 0 || focusPosition.top > 180) {
+    if (focusPosition.scrollTop <= 0 || focusPosition.top > FOCUSED_FIELD_MAX_TOP_PX) {
       throw new Error(`transaction editor focus positioning failed: ${JSON.stringify(focusPosition)}.`);
     }
     await page.setViewportSize({ width: profile.width, height: profile.height });

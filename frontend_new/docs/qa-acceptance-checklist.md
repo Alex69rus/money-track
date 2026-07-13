@@ -7,6 +7,8 @@ Execution requirement:
 - Do not mark a phase complete until QA sub-agent results are recorded with pass/fail and any console/network issues.
 - Preferred deterministic fallback for local runs: `npm run qa:phase -- <phase-id>` from repo root (`phase2`-`phase5` implemented).
 - For every `frontend_new` layout, sheet, input, or viewport change, run `scripts/run_frontend_mobile_qa.sh` and retain its screenshot artifact directory in the QA report.
+- Let one root QA runner own a fresh stack. Use `QA_REUSE_SERVICES=1` only for an intentional, complete backend/frontend pair; the runner rejects partial stacks and incompatible backend CORS.
+- On this macOS workspace, rerun the same browser QA command with elevated local-process permission when sandboxed Chromium launch fails; treat that as an environment exception, not an application regression.
 
 ## A. App Shell and Navigation
 

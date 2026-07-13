@@ -34,6 +34,20 @@ For layout, sheet, input, or Telegram-viewport work:
 scripts/run_frontend_mobile_qa.sh
 ```
 
+Root QA runners own a fresh local stack by default. Reuse an existing backend/frontend pair only when it is intentional and CORS-compatible:
+
+```bash
+QA_REUSE_SERVICES=1 scripts/run_frontend_phase_qa.sh phase3
+```
+
+On this macOS workspace, browser QA must be run with the desktop runner's elevated local-process permission; the sandbox cannot launch Chromium.
+
+The stack lifecycle decision matrix is covered by:
+
+```bash
+scripts/test_frontend_qa_stack.sh
+```
+
 For a physical Telegram iPhone check once the reserved test-bot domain is available:
 
 ```bash

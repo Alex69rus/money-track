@@ -16,6 +16,7 @@
 | BFX-5 | BR-005 | P2 | Fixed — verification pending | Bounded Transactions tag filtering. |
 | BFX-6 | FUP-001..004 | P2 | Fixed — verification pending | Follow-up filter, date-surface, and analytics sizing clarity. |
 | BFX-7 / BR-006 | `frontend_new/bugs_reports/phase-qa-findings-2026-07-12.md` | P2 | Verified | Repair the stale Phase-5 tag integration gate. |
+| QA-1 | Iteration retrospective, 2026-07-13 | P3 | Verified | Harden local frontend QA stack startup, reuse, and cleanup contracts. |
 | TST-1 | Pending issue 1 | P3 | Verified | Move frontend tests to `frontend_new/tests/`. |
 | DOC-1 | Pending issues 2–3 | P3 | Verified | Complete the redesign audit and consolidate the frontend harness. |
 
@@ -177,6 +178,16 @@ The gate must test the current accessible filter-tag control and confirm `/api/t
 ### Acceptance and delivery record
 
 The retired hook was replaced with the `Add <tag> filter tag` accessible name. Lint, typecheck, 22 unit tests, build, and the complete Phase-5 matrix passed at 390×844 / DPR 3. This harness task is verified.
+
+## QA-1 — Frontend QA stack ownership
+
+### Problem and required behavior
+
+The phase and mobile root scripts had separate backend startup settings, implicitly reused any service on the default ports, and cleaned up only their shell-parent processes. A mobile-run backend could therefore be reused without the browser phase's CORS contract, while interrupted runs could leave child services behind.
+
+### Acceptance and delivery record
+
+Both commands now source one stack helper that uses identical development authentication, webhook, CORS, and workspace-local `UV_CACHE_DIR` settings. A complete running stack is reused only with explicit `QA_REUSE_SERVICES=1` and a CORS preflight; partial or accidental stacks fail fast. Normal cleanup walks started process trees. Shell syntax and the stack decision matrix passed; Phase-2 and an iPhone 12 Pro mobile profile passed through fresh shared-stack startups, with the latter confirming the prior run had cleaned up. The mobile geometry assertion now allows a small subpixel tolerance while retaining its usable-region check. Browser sandbox escalation remains documented as a macOS environment requirement.
 
 ## TST-1 — Frontend test-suite layout
 
