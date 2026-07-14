@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 
+from telegram import MenuButtonWebApp
+
 from app.core.config import get_settings
 from app.services.telegram_runtime import TelegramBotRuntime
 
@@ -10,6 +12,7 @@ from app.services.telegram_runtime import TelegramBotRuntime
 @dataclass
 class _FakeBot:
     webhook_calls: list[dict[str, object]] = field(default_factory=list)
+    menu_button_calls: list[MenuButtonWebApp] = field(default_factory=list)
 
     async def set_webhook(
         self,
@@ -25,6 +28,9 @@ class _FakeBot:
                 "secret_token": secret_token,
             }
         )
+
+    async def set_chat_menu_button(self, *, menu_button: MenuButtonWebApp) -> None:
+        self.menu_button_calls.append(menu_button)
 
 
 @dataclass
@@ -66,11 +72,12 @@ class _FakeBuilder:
         return self.app
 
 
-def test_telegram_runtime_registers_webhook(monkeypatch) -> None:
+def test_telegram_runtime_registers_webhook_and_default_web_app_menu(monkeypatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql://postgres:password@127.0.0.1:5432/moneytrack")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
     monkeypatch.setenv("TELEGRAM_WEBHOOK_URL", "https://money-track.org/api/telegram/webhook")
     monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "secret-value")
+    monkeypatch.setenv("TELEGRAM_WEB_APP_URL", "https://money-track.org/")
     get_settings.cache_clear()
 
     fake_application = _FakeApplication()
@@ -93,6 +100,10 @@ def test_telegram_runtime_registers_webhook(monkeypatch) -> None:
             "secret_token": "secret-value",
         }
     ]
+    assert len(fake_application.bot.menu_button_calls) == 1
+    menu_button = fake_application.bot.menu_button_calls[0]
+    assert menu_button.text == "App"
+    assert menu_button.web_app.url == "https://money-track.org/"
 
     asyncio.run(runtime.stop())
     assert fake_application.stopped is True

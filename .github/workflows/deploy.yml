@@ -70,10 +70,11 @@ jobs:
       - name: Install backend dependencies
         run: uv sync --group dev
 
-      - name: Run static checks
+      - name: Run backend checks
         run: |
           uv run ruff check .
           uv run mypy .
+          uv run pytest tests/test_telegram_runtime.py -q
 
   build-and-push:
     needs: [validate-frontend, validate-backend]
@@ -213,6 +214,7 @@ jobs:
             : "${GHCR_TOKEN:?GHCR_TOKEN must be configured}"
 
             frontend_origin="https://${DOMAIN}"
+            telegram_web_app_url="${frontend_origin}/"
             frontend_image="ghcr.io/alex69rus/money-track/frontend-new:${DEPLOY_SHA}"
             backend_image="ghcr.io/alex69rus/money-track/backend:latest"
             legacy_frontend_image="ghcr.io/alex69rus/money-track/frontend:latest"
@@ -253,7 +255,7 @@ jobs:
             TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
             TELEGRAM_WEBHOOK_URL=$TELEGRAM_WEBHOOK_URL
             TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET
-            TELEGRAM_WEB_APP_URL=$frontend_origin
+            TELEGRAM_WEB_APP_URL=$telegram_web_app_url
             CORS_ALLOW_ORIGINS=$frontend_origin
             OPENAI_API_KEY=$OPENAI_API_KEY
             OPENAI_MODEL=$OPENAI_MODEL
@@ -350,7 +352,7 @@ jobs:
             wait_for check_api_health || { echo "ERROR: backend health check failed"; exit 1; }
 
             telegram_menu_result="$(curl --fail --silent --show-error "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMenuButton")"
-            printf '%s' "$telegram_menu_result" | grep -Fq "\"url\":\"${frontend_origin}\"" || {
+            printf '%s' "$telegram_menu_result" | grep -Fq "\"url\":\"${telegram_web_app_url}\"" || {
               echo "ERROR: Telegram menu button URL does not match the production frontend"
               exit 1
             }
