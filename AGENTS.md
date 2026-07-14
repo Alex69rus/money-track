@@ -41,13 +41,19 @@ Money Track is a Telegram bot and web app for personal money tracking. The syste
 **Workflow Steps:**
 1. **Plan -> Approve -> Implement -> Test -> Confirm -> Commit -> Next**
 2. Always propose solution with code snippets before implementing
-3. Update progress in `docs/tasklist.md` after each iteration
+3. Use `docs/tasklist.md` only for approved multi-iteration batches that need decomposition, status tracking, or handoff; do not create a row for an isolated defect, CI failure, or small focused fix.
 4. Wait for explicit approval before moving to next iteration
+
+### Task Register Scope
+
+- Add a task-list row only when the work is large enough to benefit from explicit substeps across iterations.
+- For an isolated bug or CI finding, keep any necessary raw evidence in the relevant `bugs_reports/` directory and record the resolution in the delivery handoff; do not create a dedicated task-list entry.
 
 ## Bug Management
 
 - Use the repository `bug-management` skill whenever the user reports a bug, regression, UI/UX defect, smoke-test finding, or supplies bug evidence such as screenshots, videos, or logs.
 - Capture and track the bug before changing product code. Follow the skill's evidence, iteration, test-first, verification, and status rules.
+- Keep bug tracking proportionate: a raw report is sufficient for a focused fix unless the user explicitly asks to turn it into a larger batch.
 
 ## Local Testing
 

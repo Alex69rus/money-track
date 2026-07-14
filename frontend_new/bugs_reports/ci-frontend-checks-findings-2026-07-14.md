@@ -10,7 +10,7 @@ This report records the observed CI defect only. The failing job logs determine 
 | --- | --- | --- |
 | `ci-frontend-checks-failing-2026-07-14.png` | PR #13 checks | `validate-frontend` and `Frontend New CI / quality` fail, while backend validation and intentional pull-request deploy skips behave as expected. |
 
-## BR-009 — Frontend validation blocks redesign pull request
+## Frontend validation blocks redesign pull request
 
 Priority: P1
 
@@ -37,3 +37,9 @@ Both frontend validation jobs pass for the current redesign branch so a merge to
 - The shared frontend failure is identified from the GitHub Actions job logs, not inferred from the check summary.
 - `validate-frontend` and `Frontend New CI / quality` both pass for PR #13.
 - Build-and-push and deploy remain skipped for pull-request events and run only after a merge to `main`.
+
+## Investigation and resolution
+
+- GitHub Actions reproducibly reports 124 false `no-unsafe-assignment` and `no-unsafe-call` findings at calls to the explicitly typed `cn(...)` helper after a successful `npm ci`.
+- The exact PR test-merge tree, Node `20.20.2`, npm `10.8.2`, Linux x64 architecture, Actions workspace path, and CI environment reproduce cleanly outside GitHub. TypeScript compilation also passes.
+- Keep TypeScript compilation and all other type-aware lint rules. Disable only the two false-positive rules until the runner-specific TypeScript-ESLint discrepancy is explainable and reproducible.

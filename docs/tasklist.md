@@ -22,7 +22,6 @@
 | BE-001 | `origin/main` checkpoint, 2026-05-07 | P3 | Verified | Add Telegram callback diagnostics to distinguish delivery, parsing, validation, and action failures. |
 | DEP-1 | User request, deployment audit 2026-07-13 | P1 | Ready — uncommitted | Deploy the Vite redesign automatically after a merge to `main`, retaining the legacy frontend as rollback. |
 | BR-008 | `frontend_new/bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
-| BR-009 | `frontend_new/bugs_reports/ci-frontend-checks-findings-2026-07-14.md` | P1 | Fixed — CI verification pending | Use TypeScript-ESLint's project service so aliases resolve under both local and GitHub Actions type-aware linting. |
 
 ## TWA-1 — Telegram-native route and viewport validation
 
@@ -230,37 +229,8 @@ The production workflow still validated, built, and deployed frozen `frontend/`.
 
 YAML parsing, deployment-script shell parsing, Compose rendering, and the complete frontend quality suite passed: lint, typecheck, 27 unit tests, and production build. The user also completed the local Docker smoke check: the image served the supplied revision from `/version.json` and returned HTTP 200 for `/transactions`. The initial request was made before Nginx had finished starting; the deployment script already waits for the revision probe. No production deployment has run because these changes are intentionally uncommitted.
 
-## BR-009 — Frontend validation blocks redesign pull request
-
-### Problem
-
-The frontend's two independent pull-request validation jobs fail, blocking the redesign from reaching the production-only build and deploy gates. The check summary is insufficient to establish whether this is a runner, dependency, or workflow configuration problem.
-
-### Required behavior
-
-- Both frontend validation jobs use a runtime and dependency installation compatible with the locked frontend toolchain.
-- Pull-request runs continue to validate without pushing an image or deploying.
-
-### Acceptance criteria
-
-- GitHub Actions logs establish and verify the shared root cause.
-- `Deploy to Production / validate-frontend` and `Frontend New CI / quality` succeed on PR #13.
-- The production build-and-push and deploy jobs remain conditional on a merged `main` run.
-
-### Investigation record — 2026-07-14
-
-- The two failures are independent workflows but fail at the same `npm run lint` command after a successful `npm ci` on Node `v20.20.2`; ESLint reports 124 `no-unsafe-assignment` / `no-unsafe-call` error-typed-value findings.
-- A clean `npm ci && npm run lint` passed locally. The same locked install and lint command also passed in isolated Node `20.20.2` Alpine and Debian containers, including with `CI=true`.
-- The validated PR merge ref contains the same frontend ESLint configuration, package lock, and representative affected source blobs as the local branch. No code or workflow relaxation is justified until the failed GitHub jobs are retried and their new logs are checked.
-
-### Delivery record — 2026-07-14
-
-- Replaced ESLint's hard-coded `parserOptions.project` list with TypeScript-ESLint `projectService: true`, retaining type-aware linting and the existing `tsconfigRootDir`. The project service chooses the matching application TypeScript configuration and resolves `@/lib/utils` consistently instead of producing cascaded error-typed values at each `cn(...)` call.
-- Verification: `npm run lint && npm run typecheck && npm run test:run && npm run build` — passed (27 tests); clean Node `20.20.2` Debian container with `CI=true`, `npm ci && npm run lint` — passed.
-- GitHub Actions validation of PR #13 remains the required final check.
-
 ## Operating rules
 
-- Keep each approved slice small, evidence-backed, and represented by one row plus one detail section in this file.
+- Add a row and detail section only for an approved multi-iteration batch that benefits from decomposition or handoff. Do not create task-register entries for isolated defects or CI fixes.
 - Update this file when work is planned, completed, blocked, or materially re-scoped.
 - Keep raw evidence in `frontend_new/bugs_reports/`; record source ID, priority, state, acceptance summary, delivery result, and verification exception here.
