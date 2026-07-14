@@ -19,6 +19,7 @@
 | QA-1 | Iteration retrospective, 2026-07-13 | P3 | Verified | Harden local frontend QA stack startup, reuse, and cleanup contracts. |
 | TST-1 | Pending issue 1 | P3 | Verified | Move frontend tests to `frontend_new/tests/`. |
 | DOC-1 | Pending issues 2–3 | P3 | Verified | Complete the redesign audit and consolidate the frontend harness. |
+| BE-001 | `origin/main` checkpoint, 2026-05-07 | P3 | Verified | Add Telegram callback diagnostics to distinguish delivery, parsing, validation, and action failures. |
 | DEP-1 | User request, deployment audit 2026-07-13 | P1 | Ready — uncommitted | Deploy the Vite redesign automatically after a merge to `main`, retaining the legacy frontend as rollback. |
 | BR-008 | `frontend_new/bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
 
@@ -202,6 +203,12 @@ All twelve frontend tests and shared setup moved from `src/` into the mirrored `
 ### Delivery record
 
 The redesign audit found no missing planned frontend feature. Historical visual drafts, comparison captures, duplicate task files, and stale guidance were removed. Current functional requirements and user flows are the product contract; `docs/tasklist.md` is the sole task register.
+
+## BE-001 — Telegram callback diagnostics
+
+### Delivery record
+
+`main` adds backend-owned webhook status logging at runtime startup, including pending updates, allowed update types, the last Telegram error, and a warning if callback queries are missing. This merge retains that diagnostic behavior alongside the redesign's Telegram Web App menu-button configuration.
 
 ## DEP-1 — Production redesign frontend cutover
 

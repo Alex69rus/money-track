@@ -5,11 +5,13 @@ from decimal import Decimal
 from functools import lru_cache
 
 from openai import APIError, APIStatusError, AsyncOpenAI
+from opentelemetry import trace
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+tracer = trace.get_tracer("money-track-backend-new.sms-parser")
 
 SMS_PARSER_SYSTEM_PROMPT = "\n".join(
     [
@@ -95,53 +97,54 @@ def _get_parse_validation_failure_reason(parsed: ParsedSmsTransaction, message_t
 
 
 async def parse_sms_transaction(message_text: str) -> ParsedSmsTransaction | None:
-    settings = get_settings()
-    if not settings.openai_api_key:
-        logger.error("OpenAI API key is not configured")
-        return None
+    with tracer.start_as_current_span("sms.parse"):
+        settings = get_settings()
+        if not settings.openai_api_key:
+            logger.error("OpenAI API key is not configured")
+            return None
 
-    client = _get_openai_client()
-    try:
-        parsed_response = await client.responses.parse(
-            model=settings.openai_model,
-            temperature=0,
-            instructions=SMS_PARSER_SYSTEM_PROMPT,
-            input=message_text,
-            text_format=ParsedSmsTransaction,
-        )
-    except APIStatusError as exc:
-        logger.error(
-            "OpenAI request failed with status %s: %s (%s)",
-            exc.status_code,
-            exc.response.text if exc.response is not None else "<no-body>",
-            exc,
-            exc_info=True,
-        )
-        return None
-    except APIError as exc:
-        logger.error(
-            "Failed to parse SMS via OpenAI SDK: %s",
-            exc,
-            exc_info=True,
-        )
-        return None
+        client = _get_openai_client()
+        try:
+            parsed_response = await client.responses.parse(
+                model=settings.openai_model,
+                temperature=0,
+                instructions=SMS_PARSER_SYSTEM_PROMPT,
+                input=message_text,
+                text_format=ParsedSmsTransaction,
+            )
+        except APIStatusError as exc:
+            logger.error(
+                "OpenAI request failed with status %s: %s (%s)",
+                exc.status_code,
+                exc.response.text if exc.response is not None else "<no-body>",
+                exc,
+                exc_info=True,
+            )
+            return None
+        except APIError as exc:
+            logger.error(
+                "Failed to parse SMS via OpenAI SDK: %s",
+                exc,
+                exc_info=True,
+            )
+            return None
 
-    parsed = parsed_response.output_parsed
-    if not isinstance(parsed, ParsedSmsTransaction):
-        logger.info(
-            "OpenAI parser returned unexpected output type: %s",
-            type(parsed).__name__,
-        )
-        return None
-    validation_failure_reason = _get_parse_validation_failure_reason(parsed, message_text)
-    if validation_failure_reason is not None:
-        logger.info(
-            "SMS parse verification failed: %s (amount=%s currency=%s note=%s text=%r)",
-            validation_failure_reason,
-            parsed.amount,
-            parsed.currency,
-            parsed.note,
-            message_text,
-        )
-        return None
-    return parsed
+        parsed = parsed_response.output_parsed
+        if not isinstance(parsed, ParsedSmsTransaction):
+            logger.info(
+                "OpenAI parser returned unexpected output type: %s",
+                type(parsed).__name__,
+            )
+            return None
+        validation_failure_reason = _get_parse_validation_failure_reason(parsed, message_text)
+        if validation_failure_reason is not None:
+            logger.info(
+                "SMS parse verification failed: %s (amount=%s currency=%s note=%s text=%r)",
+                validation_failure_reason,
+                parsed.amount,
+                parsed.currency,
+                parsed.note,
+                message_text,
+            )
+            return None
+        return parsed

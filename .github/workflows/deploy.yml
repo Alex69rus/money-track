@@ -349,17 +349,6 @@ jobs:
 
             wait_for check_api_health || { echo "ERROR: backend health check failed"; exit 1; }
 
-            set_webhook_result="$(curl --fail --silent --show-error -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
-              -H 'Content-Type: application/json' \
-              -d "{\"url\":\"${TELEGRAM_WEBHOOK_URL}\",\"secret_token\":\"${TELEGRAM_WEBHOOK_SECRET}\",\"allowed_updates\":[\"message\",\"edited_message\"]}")"
-            printf '%s' "$set_webhook_result" | grep -Fq '"ok":true' || { echo "ERROR: Telegram setWebhook failed"; exit 1; }
-
-            webhook_info_result="$(curl --fail --silent --show-error "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo")"
-            printf '%s' "$webhook_info_result" | grep -Fq "\"url\":\"${TELEGRAM_WEBHOOK_URL}\"" || {
-              echo "ERROR: Telegram webhook URL mismatch after deployment"
-              exit 1
-            }
-
             telegram_menu_result="$(curl --fail --silent --show-error "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMenuButton")"
             printf '%s' "$telegram_menu_result" | grep -Fq "\"url\":\"${frontend_origin}\"" || {
               echo "ERROR: Telegram menu button URL does not match the production frontend"
