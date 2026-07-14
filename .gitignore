@@ -67,6 +67,9 @@ jspm_packages/
 
 # dotenv environment variable files
 .env
+.env.prod
+.env.prod.previous
+.env.prod.rollback
 .env.development.local
 .env.test.local
 .env.production.local

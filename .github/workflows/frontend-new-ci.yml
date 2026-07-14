@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "frontend_new/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy.yml"
       - ".github/workflows/frontend-new-ci.yml"
   push:
     branches: [main]
     paths:
       - "frontend_new/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy.yml"
       - ".github/workflows/frontend-new-ci.yml"
 
 jobs:
@@ -42,4 +46,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
