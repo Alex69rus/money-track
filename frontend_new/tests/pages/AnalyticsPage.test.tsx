@@ -62,7 +62,6 @@ describe("AnalyticsPage", () => {
     expect(screen.getAllByTestId(/^analytics-tag-item-/)).toHaveLength(5);
     expect(screen.getByTestId("analytics-date-presets")).toHaveClass("[scrollbar-width:none]");
     expect(screen.getByTestId("analytics-trend-summary")).toBeInTheDocument();
-    expect(screen.getByText("Selected month")).toBeInTheDocument();
     expect(screen.getByTestId("analytics-date-range-card")).toHaveClass("overflow-hidden");
     expect(screen.getByTestId("analytics-from-date")).toHaveClass("max-w-full");
     expect(screen.getByTestId("analytics-summary-card")).not.toHaveClass("min-h-[21rem]");
@@ -71,6 +70,15 @@ describe("AnalyticsPage", () => {
     fireEvent.click(screen.getByTestId("analytics-trend-item-2026-06"));
     expect(screen.getByTestId("analytics-trend-item-2026-06")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("analytics-trend-summary-month")).toHaveTextContent("Jun 2026");
+    expect(screen.getByTestId("analytics-trend-summary-net")).toHaveTextContent(/-AED\s*100\.00/);
+    expect(screen.getByTestId("analytics-trend-summary-net")).not.toHaveTextContent("Net");
+    expect(screen.getByTestId("analytics-trend-summary-header")).toHaveClass("justify-between");
+    expect(screen.getByTestId("analytics-trend-summary-header").firstElementChild).toBe(
+      screen.getByTestId("analytics-trend-summary-month"),
+    );
+    expect(screen.getByTestId("analytics-trend-summary-header").lastElementChild).toBe(
+      screen.getByTestId("analytics-trend-summary-net"),
+    );
     expect(screen.getByTestId("analytics-trend-summary-income")).toHaveTextContent("AED");
     expect(screen.getByTestId("analytics-trend-summary-expense")).toHaveTextContent("AED");
 

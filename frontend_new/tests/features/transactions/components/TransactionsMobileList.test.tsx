@@ -18,6 +18,23 @@ const uncategorizedTransaction: Transaction = {
   category: null,
 };
 
+const selectedCategoryWithoutIconTransaction: Transaction = {
+  ...uncategorizedTransaction,
+  id: 78,
+  categoryId: 4,
+  note: "Transaction with a selected category",
+  category: {
+    id: 4,
+    name: "Clothing & Shoes",
+    type: "EXPENSE",
+    color: "#22c55e",
+    icon: null,
+    parentCategoryId: null,
+    orderIndex: 4,
+    createdAt: new Date("2026-07-12T09:15:00"),
+  },
+};
+
 describe("TransactionsMobileList", () => {
   it("uses an explicit uncategorized affordance, keeps the amount intact, and makes the card the edit target", () => {
     const onEditCategory = vi.fn();
@@ -53,5 +70,22 @@ describe("TransactionsMobileList", () => {
 
     fireEvent.click(editSurface);
     expect(onEditTransaction).toHaveBeenCalledWith(uncategorizedTransaction);
+  });
+
+  it("uses friendly category initials instead of the uncategorized glyph when a selected category has no icon", () => {
+    render(
+      <TransactionsMobileList
+        onEditCategory={vi.fn()}
+        onEditTags={vi.fn()}
+        onEditTransaction={vi.fn()}
+        transactions={[selectedCategoryWithoutIconTransaction]}
+      />,
+    );
+
+    const categoryControl = screen.getByTestId("tx-mobile-category-78");
+
+    expect(categoryControl).toHaveAccessibleName("Change category for transaction 78");
+    expect(categoryControl).toHaveTextContent("CS");
+    expect(screen.getByTestId("tx-mobile-category-initials-78")).toHaveTextContent("CS");
   });
 });

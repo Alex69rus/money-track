@@ -52,3 +52,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Start phase and mobile QA through the shared root stack helper so backend CORS, development auth, and `uv` cache settings cannot drift.
 - Exploration: Treat a reused or partial localhost stack as an environment failure; do not infer its API configuration from an open port.
 - Prevention rule: Reuse a QA stack only with `QA_REUSE_SERVICES=1`, rerun browser QA with elevated local-process permission when macOS sandboxing blocks Chromium, and use a small tolerance for browser-reported geometry.
+
+## Mobile category and trend summaries — 2026-07-14
+
+- Takeaway: Decide whether a transaction is categorized from `categoryId`, not whether its category has a configured icon.
+- Exploration: A selected category without an icon rendered readable category initials at 390×844 / DPR 3, while the `?` glyph remained exclusive to an uncategorized row; the trend summary fit the full month and signed net number without a label in one header row.
+- Prevention rule: Cover one- and two-word iconless category initials, plus the label-free selected-month net summary, in component tests and the phone fixture.
