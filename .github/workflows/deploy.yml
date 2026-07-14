@@ -287,10 +287,11 @@ jobs:
             printf '%s\n' "$CLOUDFLARE_KEY" > ssl/cloudflare-key.pem
             chmod 600 ssl/cloudflare-key.pem
 
-            # Reconcile the stack, then explicitly recreate only the two services whose
-            # image or runtime configuration can change in this deployment.
+            # Recreate upstream services, then recreate nginx so it resolves the
+            # fresh Docker service addresses instead of retaining stale IPs.
             compose up -d --remove-orphans
             compose up -d --no-deps --force-recreate backend frontend
+            compose up -d --no-deps --force-recreate nginx
 
             wait_for() {
               attempts=0
@@ -332,6 +333,7 @@ jobs:
               chmod 600 .env.prod
               compose pull frontend
               compose up -d --no-deps --force-recreate frontend
+              compose up -d --no-deps --force-recreate nginx
               echo "Frontend rolled back to $rollback_image"
             }
 
