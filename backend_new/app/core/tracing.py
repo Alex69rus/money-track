@@ -23,4 +23,3 @@ def configure_tracing() -> None:
         provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
     trace.set_tracer_provider(provider)
     _configured = True
-

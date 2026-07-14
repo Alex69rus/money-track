@@ -1,262 +1,100 @@
-# Production Deployment Guide
+# Production deployment
 
-This guide covers automated deployment using GitHub Actions with Cloudflare Origin Certificates for SSL.
+Merges to `main` run [the production workflow](../.github/workflows/deploy.yml). It validates the Vite redesign, builds ARM64 images, and deploys the exact redesign image built from that commit.
 
-## Prerequisites
+## Frontend cutover and rollback
 
-- Domain managed by Cloudflare
-- AWS EC2 instance (ARM64)
-- GitHub repository with Actions enabled
+Production serves the `frontend` Compose service from the separate `ghcr.io/alex69rus/money-track/frontend-new` package. The frozen `frontend/` source tree and its `ghcr.io/alex69rus/money-track/frontend` image remain unchanged as the rollback target.
 
-## AWS EC2 Setup
+The redesign image is built with an empty `VITE_API_BASE_URL`. That is intentional: browser requests remain same-origin and nginx forwards `/api/*` to the backend. No Vite API URL secret or Actions variable is required.
 
-### 1. Launch EC2 Instance
+Every deployment uses `frontend-new:<full-commit-sha>`, creates `/version.json` with that revision, and verifies all of the following before succeeding:
 
-1. **Instance Configuration:**
-   - AMI: Amazon Linux 2023 (ARM64)
-   - Instance Type: t4g.small (ARM-based Graviton2)
-   - Storage: 20GB gp3 SSD minimum
-   - Security Group: Allow HTTP (80), HTTPS (443), SSH (22)
+- the expected revision is served through HTTPS;
+- `/transactions` receives the SPA shell rather than a 404;
+- `/health` succeeds through nginx;
+- the running `frontend` container uses the expected immutable image;
+- the Telegram webhook and default Web App menu button point to the production domain.
 
-2. **Security Group Rules:**
-   ```
-   SSH (22)     - Your IP only
-   HTTP (80)    - 0.0.0.0/0
-   HTTPS (443)  - 0.0.0.0/0
-   ```
+Before replacing the frontend, the server saves `/opt/money-track/.env.prod.previous` and records the running image digest. If the new frontend revision or route check fails, the workflow recreates only the `frontend` service with that saved image.
 
-### 2. Server Setup Commands
+## Required GitHub configuration
 
-```bash
-# Update system
-sudo yum update -y
+Configure the following repository secrets. The workflow stops before deployment if a required value is empty.
 
-# Install Docker
-sudo yum install -y docker
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker $USER
-
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Verify installations
-docker --version
-docker-compose --version
-
-# Log out and back in for Docker group changes to take effect
-# Or run: newgrp docker
-
-# Install Git
-sudo yum install -y git
-
-# Create deployment directory
-sudo mkdir -p /opt/money-track
-sudo chown $USER:$USER /opt/money-track
-cd /opt/money-track
-
-# Clone repository (or copy files) - Optional for manual setup
-# GitHub Actions will handle this automatically
-git clone https://github.com/Alex69rus/money-track.git .
+```text
+SERVER_HOST
+SERVER_USER
+SSH_PRIVATE_KEY
+CLOUDFLARE_CERT
+CLOUDFLARE_KEY
+POSTGRES_PASSWORD
+TELEGRAM_BOT_TOKEN
+TELEGRAM_WEBHOOK_SECRET
+N8N_ENCRYPTION_KEY
 ```
 
-**Note**: The above manual setup is optional. The recommended approach is to use GitHub Actions for automated deployment.
+`OPENAI_API_KEY` is optional. `OPENAI_MODEL` may be an Actions variable or secret and defaults to `gpt-4.1-mini`.
 
-## Automated Deployment with GitHub Actions
+Configure these Actions variables (secrets also work for compatibility):
 
-The deployment is fully automated via GitHub Actions. You only need to configure secrets and certificates.
-
-Note: CI/CD intentionally skips automated backend test execution because the parity suite requires a real PostgreSQL database.
-
-### 3. SSL Certificate Setup (Cloudflare)
-
-We use Cloudflare Origin Certificates for SSL, which are:
-- Valid for 3 years (no renewal needed)
-- Trusted by Cloudflare's edge servers
-- Simpler than Let's Encrypt ACME challenges
-
-Follow the detailed guide: [Cloudflare SSL Setup](./cloudflare-ssl-setup.md)
-
-### 4. GitHub Actions Secrets
-
-Set the following secrets in your GitHub repository:
-
-**Required secrets:**
-```
-# Server connection
-SERVER_HOST=your-ec2-hostname
-SERVER_USER=ec2-user
-SSH_PRIVATE_KEY=your-private-key-content
-
-# SSL certificates (from Cloudflare)
-CLOUDFLARE_CERT=your-cloudflare-origin-certificate
-CLOUDFLARE_KEY=your-cloudflare-private-key
-
-# Application secrets
-POSTGRES_PASSWORD=your-secure-database-password
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-TELEGRAM_WEBHOOK_SECRET=your-random-webhook-secret
-DOMAIN=your-domain.com
-EMAIL=your-email@domain.com
-REACT_APP_API_URL=https://your-domain.com
-REACT_APP_AI_WEBHOOK_URL=https://your-n8n-webhook-url.com/webhook/chat
-```
-
-**Optional backend feature settings:**
-```
+```text
+DOMAIN=money-track.org
 TELEGRAM_WEBHOOK_URL=https://money-track.org/api/telegram/webhook
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_MODEL=gpt-4.1-mini
 ```
 
-`TELEGRAM_WEBHOOK_URL` can be stored as a GitHub Actions variable (`vars`) or secret; if omitted, deployment defaults it to `https://money-track.org/api/telegram/webhook`.
+The workflow derives these production-only backend settings from `DOMAIN`; do not point them to a development tunnel:
 
-`REACT_APP_API_URL` should be the root origin (for example `https://your-domain.com`), not `/api`.
+```text
+TELEGRAM_WEB_APP_URL=https://money-track.org
+CORS_ALLOW_ORIGINS=https://money-track.org
+```
 
-**How to get certificates:** See [Cloudflare SSL Setup Guide](./cloudflare-ssl-setup.md)
+The job logs into GHCR using the repository token. Ensure the `frontend-new` package remains linked to this repository and grants GitHub Actions read access; otherwise the EC2 pull will fail. The server needs Docker and either Docker Compose v2 (`docker compose`) or the legacy `docker-compose` binary.
 
-### 5. Domain Configuration
+## Server setup
 
-1. **Cloudflare DNS Setup:**
-   - Point your domain A record to EC2 public IP
-   - Enable Cloudflare proxy (orange cloud) ☁️
-   - Set SSL mode to "Full (strict)" in Cloudflare dashboard
-   - Enable "Always Use HTTPS"
-
-2. **Automatic Configuration:**
-   - No manual nginx config needed
-   - GitHub Actions handles SSL certificate deployment
-   - Deployment is fully automated
-
-### 6. Health Monitoring
+Before the first deployment, create `/opt/money-track` and make the deployment user its owner. The workflow then checks out `main` there. The server user needs Docker access, Git, and outbound HTTPS access to GitHub Container Registry, Telegram, and the public domain.
 
 ```bash
-# Check service status
-docker-compose -f docker-compose.prod.yml ps
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Test endpoints
-curl -f http://localhost/health
-curl -f https://your-domain.com/health
-
-# Monitor resource usage
-docker stats
+sudo mkdir -p /opt/money-track
+sudo chown "$USER":"$USER" /opt/money-track
 ```
 
-### 7. Backup Strategy
+Cloudflare should proxy the domain and use **Full (strict)** SSL with the configured Origin Certificate. Open only ports 80 and 443 publicly; restrict SSH to trusted addresses.
+
+`/opt/money-track/.env.prod` and its rollback snapshot are generated by the workflow and intentionally ignored by Git. Use [.env.prod.example](../.env.prod.example) only as a non-secret local reference. If a real credential was ever placed in the previously tracked `.env.prod`, rotate it.
+
+## Manual frontend rollback
+
+Use this only if the automated rollback itself cannot complete. It preserves the database, backend, n8n, and nginx containers.
 
 ```bash
-# Database backup script
-#!/bin/bash
-BACKUP_DIR="/opt/backups"
-mkdir -p $BACKUP_DIR
-docker exec money-track-postgres-1 pg_dump -U postgres moneytrack > "$BACKUP_DIR/db-$(date +%Y%m%d_%H%M%S).sql"
-
-# Keep only last 7 days
-find $BACKUP_DIR -name "db-*.sql" -mtime +7 -delete
+cd /opt/money-track
+umask 077
+rollback_image="$(sed -n 's/^ROLLBACK_FRONTEND_IMAGE=//p' .env.prod.previous | tail -n 1)"
+test -n "$rollback_image"
+awk -v image="$rollback_image" '
+  /^FRONTEND_IMAGE=/ { print "FRONTEND_IMAGE=" image; updated=1; next }
+  { print }
+  END { if (!updated) print "FRONTEND_IMAGE=" image }
+' .env.prod > .env.prod.rollback
+mv .env.prod.rollback .env.prod
+chmod 600 .env.prod
+docker compose -f docker-compose.prod.yml --env-file .env.prod pull frontend
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --force-recreate frontend
 ```
 
-### 8. Troubleshooting
+If the host only has the legacy binary, replace `docker compose` with `docker-compose` in those commands.
 
-**Common Issues:**
+## Operational checks
 
-1. **SSL Certificate Issues:**
-   ```bash
-   # Check nginx logs for SSL errors
-   docker-compose -f docker-compose.prod.yml logs nginx
-   
-   # Verify certificates are properly mounted
-   docker-compose -f docker-compose.prod.yml exec nginx ls -la /etc/nginx/ssl/
-   
-   # Test SSL configuration
-   docker-compose -f docker-compose.prod.yml exec nginx nginx -t
-   ```
+```bash
+cd /opt/money-track
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs --tail=100 frontend backend nginx
+curl --resolve money-track.org:443:127.0.0.1 --insecure https://money-track.org/version.json
+curl --resolve money-track.org:443:127.0.0.1 --insecure https://money-track.org/health
+```
 
-2. **GitHub Actions Deployment Issues:**
-   ```bash
-   # Check if certificates were deployed
-   ls -la /opt/money-track/ssl/
-   
-   # Verify certificate permissions
-   ls -la /opt/money-track/ssl/cloudflare-key.pem
-   # Should show: -rw------- (600 permissions)
-   ```
-
-3. **Database Connection Issues:**
-   ```bash
-   # Check database health
-   docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U postgres
-   
-   # Reset database
-   docker-compose -f docker-compose.prod.yml down
-   docker volume rm money-track_postgres_data
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
-
-4. **Service Not Starting:**
-   ```bash
-   # Check logs
-   docker-compose -f docker-compose.prod.yml logs backend
-   docker-compose -f docker-compose.prod.yml logs frontend
-   docker-compose -f docker-compose.prod.yml logs nginx
-   
-   # Rebuild images
-   docker-compose -f docker-compose.prod.yml down
-   docker-compose -f docker-compose.prod.yml pull
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
-
-### 9. Security Considerations
-
-1. **Server Security:**
-   - Disable root login
-   - Use SSH keys only
-   - Enable firewall (ufw)
-   - Regular security updates
-
-2. **Application Security:**
-   - Environment variables in .env.prod
-   - Rate limiting in nginx
-   - HTTPS only
-   - Security headers
-
-3. **Database Security:**
-   - Strong passwords
-   - Network isolation
-   - Regular backups
-   - Access logging
-
-## Deployment Checklist
-
-### Initial Setup
-- [ ] EC2 instance launched and configured (ARM64)
-- [ ] Docker and Docker Compose installed
-- [ ] GitHub repository configured with Actions
-- [ ] Domain managed by Cloudflare
-
-### Certificate & DNS Setup
-- [ ] Cloudflare Origin Certificate generated
-- [ ] Certificate added to `CLOUDFLARE_CERT` secret
-- [ ] Private key added to `CLOUDFLARE_KEY` secret
-- [ ] Domain DNS pointed to EC2 IP (proxied)
-- [ ] Cloudflare SSL mode set to "Full (strict)"
-- [ ] "Always Use HTTPS" enabled
-
-### GitHub Actions Configuration
-- [ ] All required secrets configured
-- [ ] SSH access to EC2 verified
-- [ ] Deployment pipeline tested
-- [ ] ARM64 Docker images building successfully
-
-### Verification
-- [ ] HTTPS site accessible
-- [ ] Health checks passing
-- [ ] SSL certificate valid
-- [ ] All services running
-
-### Optional
-- [ ] Monitoring setup
-- [ ] Backup strategy implemented
+The `version.json` response must contain the full commit SHA recorded in the successful Actions run.

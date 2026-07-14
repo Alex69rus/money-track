@@ -1,68 +1,34 @@
 # Development Conventions
 
-These conventions implement the principles defined in `docs/vision.md`. Follow these rules when generating code for Money Track.
+## Core rules
 
-## Core Rules
+1. Keep solutions simple and explicit.
+2. Use framework defaults unless a measured product need requires otherwise.
+3. Implement only approved product scope.
 
-1. **KISS & YAGNI**: Write the simplest code that works.
-2. **Framework Conventions**: Use FastAPI/Piccolo defaults for backend and React defaults for frontend unless there is a clear reason not to.
-3. **MVP Focus**: Build only what is defined in `docs/vision.md` usage scenarios.
+## Backend
 
-## Python Backend Conventions
+- Group FastAPI routes by domain under `backend_new/app/api/routes`.
+- Use Piccolo for runtime database access, Pydantic for validation, and async methods by default.
+- Log caught exceptions at error level with `exc_info=True` and the exception object.
+- Keep migrations under `backend_new/piccolo_migrations` and use PostgreSQL arrays for transaction tags.
 
-- **FastAPI routes**: Keep routes in `app/api/routes` and group by domain.
-- **Piccolo ORM**: Use Piccolo for runtime DB access.
-- **Validation**: Use Pydantic schemas.
-- **Logging**: Use basic info/error logging.
-- **Async by default**: Prefer async API and DB operations.
-- **Minimal abstractions**: Avoid unnecessary layers.
-- **Search API**: Keep transaction search case-insensitive over intended fields.
+## Frontend
 
-## React Frontend Conventions
+- `frontend/` is frozen legacy code; its React/MUI conventions apply only when legacy work is explicitly requested.
+- `frontend_new/` uses strict TypeScript, React function components, Vite, Tailwind v4, shadcn/ui, and Fetch-based adapters. Its scoped `AGENTS.MD` is authoritative for frontend-new work.
+- Keep simple component-local state and hooks. Do not use axios, Redux, or a Context state store.
+- Use only Vite-prefixed environment variables in `frontend_new`; API access goes through its typed services/hooks.
 
-- **TypeScript**: Required for all components and services.
-- **Material-UI**: Use standard components with project theme tokens.
-- **Function Components**: No class components.
-- **Simple State**: `useState` / `useEffect` only.
-- **API Calls**: Fetch in services/hooks; no axios.
-- **Telegram Web App**: Use official SDK methods only.
-- **Search UX**: Keep simple text search with debouncing.
+## Testing and style
 
-## Database Conventions
+- Prefer deterministic tests that protect user-visible behavior.
+- Keep frontend tests under `frontend_new/tests/` and backend tests under `backend_new/tests/`.
+- Use `ruff format` for Python and Prettier-compatible formatting for React/TypeScript.
+- Keep comments for non-obvious business rules only.
 
-- **PostgreSQL**: Standard types, arrays for tags.
-- **Migrations**: Piccolo forward migrations in `backend_new/piccolo_migrations`.
-- **Primary Keys**: Use BIGINT for numeric identifiers where applicable.
-- **Foreign Keys**: Standard FK relationships.
+## Never do
 
-## Testing Conventions
-
-- Prefer practical integration coverage for backend API behavior.
-- Keep tests deterministic with explicit setup/cleanup.
-- For frontend, add tests where they materially reduce regression risk.
-
-## Code Style
-
-- **Auto-formatting**: `ruff format` for Python, Prettier for React.
-- **Type safety**: Keep strict typing, avoid `Any` in runtime paths.
-- **Comments**: Add only for non-obvious business logic.
-
-## Architecture Adherence
-
-- **Database-first persistence**: All data operations through Piccolo-backed services.
-- **No caching layer by default**: Query PostgreSQL directly.
-- **Environment Variables**: All runtime configuration via env vars.
-
-## NEVER DO
-
-- Introduce microservices without explicit product need.
-- Add complex configuration systems for MVP scope.
-- Add unnecessary abstraction layers.
-- Optimize prematurely without measured bottlenecks.
-
-## DO
-
-- Keep methods simple and responsibilities clear.
-- Use readable names for variables and methods.
-- Implement baseline error handling.
-- Keep API behavior documented in project docs.
+- Add microservices, caching, or abstractions without a proven need.
+- Hard-code runtime configuration.
+- Modify the legacy frontend without explicit approval.

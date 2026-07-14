@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telegram Mini App"
+  short_description: "Build and debug Telegram Mini Apps"
+  default_prompt: "Use this skill when implementing, integrating, testing, or debugging Telegram Mini Apps (Web Apps) with the official Telegram WebApp API, launch modes, and initData validation."

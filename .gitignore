@@ -67,6 +67,9 @@ jspm_packages/
 
 # dotenv environment variable files
 .env
+.env.prod
+.env.prod.previous
+.env.prod.rollback
 .env.development.local
 .env.test.local
 .env.production.local
@@ -176,6 +179,13 @@ downloads/
 eggs/
 .eggs/
 lib/
+# The frontend's shared TypeScript utilities are source files, not generated
+# libraries, and must stay visible to Git.
+!frontend_new/src/lib/
+!frontend_new/src/lib/**
+# Keep shared shell helpers under the repository's root scripts directory.
+!scripts/lib/
+!scripts/lib/*.sh
 lib64/
 parts/
 sdist/
@@ -198,3 +208,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 .pyre/
+
+# Codex
+.codex-tmp/

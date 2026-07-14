@@ -62,10 +62,7 @@ async def telegram_webhook(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid update payload")
 
         logger.info(
-            (
-                "Telegram webhook update parsed "
-                "update_id=%s has_message=%s has_edited_message=%s has_callback_query=%s"
-            ),
+            ("Telegram webhook update parsed update_id=%s has_message=%s has_edited_message=%s has_callback_query=%s"),
             parsed_update.update_id,
             parsed_update.message is not None,
             parsed_update.edited_message is not None,

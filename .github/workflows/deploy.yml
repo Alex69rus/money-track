@@ -2,63 +2,78 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
-  FRONTEND_IMAGE_NAME: alex69rus/money-track/frontend
-  BACKEND_IMAGE_NAME: alex69rus/money-track/backend
 
 jobs:
   validate-frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend
-    
+        working-directory: ./frontend_new
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Build frontend
-      run: npm run build
-      env:
-        REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL || 'https://localhost' }}
-        REACT_APP_AI_WEBHOOK_URL: ${{ vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL || 'https://localhost/webhook' }}
-        DISABLE_ESLINT_PLUGIN: true
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ./frontend_new/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify production image build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend_new
+          push: false
+          build-args: |
+            VITE_API_BASE_URL=
+            BUILD_SHA=${{ github.sha }}
 
   validate-backend:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend_new
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        version: "latest"
-    
-    - name: Install backend dependencies
-      run: uv sync --group dev
-    
-    - name: Run static checks
-      run: |
-        uv run ruff check .
-        uv run mypy .
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+
+      - name: Install backend dependencies
+        run: uv sync --group dev
+
+      - name: Run static checks
+        run: |
+          uv run ruff check .
+          uv run mypy .
 
   build-and-push:
     needs: [validate-frontend, validate-backend]
@@ -73,196 +88,285 @@ jobs:
       matrix:
         include:
           - service: frontend
-            context: ./frontend
+            context: ./frontend_new
+            image_name: alex69rus/money-track/frontend-new
           - service: backend
             context: ./backend_new
+            image_name: alex69rus/money-track/backend
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: alex69rus
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: alex69rus
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ matrix.service == 'frontend' && env.FRONTEND_IMAGE_NAME || env.BACKEND_IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+      - name: Set frontend build arguments
+        id: build_args
+        shell: bash
+        run: |
+          if [ "${{ matrix.service }}" = "frontend" ]; then
+            {
+              echo "value<<EOF"
+              echo "VITE_API_BASE_URL="
+              echo "BUILD_SHA=${{ github.sha }}"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
 
-    - name: Build and push ARM64 Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: ${{ matrix.context }}
-        platforms: linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha,scope=${{ matrix.service }}-arm64
-        cache-to: type=gha,mode=min,scope=${{ matrix.service }}-arm64
-        build-args: |
-          ${{ matrix.service == 'frontend' && format('REACT_APP_API_URL={0}', vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL || '') || '' }}
-          ${{ matrix.service == 'frontend' && format('REACT_APP_AI_WEBHOOK_URL={0}', vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL || '') || '' }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.image_name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ github.sha }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push ARM64 Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}-arm64
+          cache-to: type=gha,mode=min,scope=${{ matrix.service }}-arm64
+          build-args: ${{ steps.build_args.outputs.value }}
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+      DOMAIN: ${{ vars.DOMAIN || secrets.DOMAIN }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_WEBHOOK_URL: ${{ vars.TELEGRAM_WEBHOOK_URL || secrets.TELEGRAM_WEBHOOK_URL || 'https://money-track.org/api/telegram/webhook' }}
+      TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL || 'gpt-4.1-mini' }}
+      N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
+      CLOUDFLARE_CERT: ${{ secrets.CLOUDFLARE_CERT }}
+      CLOUDFLARE_KEY: ${{ secrets.CLOUDFLARE_KEY }}
+      GHCR_TOKEN: ${{ github.token }}
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          set -e  # Exit on any error
-          set -u  # Exit on undefined variables
-          set -o pipefail  # Exit on pipe failures
-          
-          # Navigate to deployment directory
-          cd /opt/money-track
-          
-          # Update repository safely without removing files
-          if [ -d ".git" ]; then
-            echo "Updating existing repository..."
-            git fetch origin || { echo "ERROR: Failed to fetch from origin"; exit 1; }
-            git reset --hard origin/main || { echo "ERROR: Failed to reset to origin/main"; exit 1; }
-          else
-            echo "Initializing new repository..."
-            git init || { echo "ERROR: Failed to initialize git repository"; exit 1; }
-            git remote add origin https://github.com/${{ github.repository }}.git || { echo "ERROR: Failed to add remote origin"; exit 1; }
-            git fetch origin || { echo "ERROR: Failed to fetch from origin"; exit 1; }
-            git reset --hard origin/main || { echo "ERROR: Failed to reset to origin/main"; exit 1; }
-            git branch --set-upstream-to=origin/main main || { echo "ERROR: Failed to set upstream branch"; exit 1; }
-          fi
-          
-          # Verify critical files exist
-          if [ ! -f "docker-compose.prod.yml" ]; then
-            echo "ERROR: docker-compose.prod.yml not found after git checkout"
-            ls -la
-            exit 1
-          fi
-          echo "✅ Repository updated successfully"
-          
-          # Create production environment file
-          cat > .env.prod << EOF
-          POSTGRES_DB=moneytrack
-          POSTGRES_USER=postgres
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_WEBHOOK_URL=${{ vars.TELEGRAM_WEBHOOK_URL || secrets.TELEGRAM_WEBHOOK_URL || 'https://money-track.org/api/telegram/webhook' }}
-          TELEGRAM_WEBHOOK_SECRET=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
-          OPENAI_MODEL=${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL || 'gpt-4.1-mini' }}
-          ENVIRONMENT=Production
-          API_HOST=0.0.0.0
-          API_PORT=8000
-          BACKEND_IMAGE=ghcr.io/alex69rus/money-track/backend:latest
-          FRONTEND_IMAGE=ghcr.io/alex69rus/money-track/frontend:latest
-          DOMAIN=${{ vars.DOMAIN || secrets.DOMAIN || 'localhost' }}
-          EMAIL=${{ vars.EMAIL || secrets.EMAIL || 'admin@localhost.com' }}
-          REACT_APP_API_URL=${{ vars.REACT_APP_API_URL || secrets.REACT_APP_API_URL }}
-          REACT_APP_AI_WEBHOOK_URL=${{ vars.REACT_APP_AI_WEBHOOK_URL || secrets.REACT_APP_AI_WEBHOOK_URL }}
-          N8N_ENCRYPTION_KEY=${{ secrets.N8N_ENCRYPTION_KEY || 'default-encryption-key-change-me' }}
-          EOF
+      - uses: actions/checkout@v4
 
-          # Validate Telegram webhook configuration for backend ingestion
-          telegram_webhook_url="$(grep '^TELEGRAM_WEBHOOK_URL=' .env.prod | cut -d= -f2-)"
-          telegram_webhook_secret="$(grep '^TELEGRAM_WEBHOOK_SECRET=' .env.prod | cut -d= -f2-)"
-          if [ -z "${telegram_webhook_url}" ]; then
-            echo "ERROR: TELEGRAM_WEBHOOK_URL must be set for backend Telegram ingestion"
-            exit 1
-          fi
-          if [ -z "${telegram_webhook_secret}" ]; then
-            echo "ERROR: TELEGRAM_WEBHOOK_SECRET must be set when TELEGRAM_WEBHOOK_URL is set"
-            exit 1
-          fi
-          case "${telegram_webhook_url}" in
-            https://*/api/telegram/webhook) ;;
-            *)
-              echo "ERROR: TELEGRAM_WEBHOOK_URL must target backend endpoint /api/telegram/webhook (got ${telegram_webhook_url})"
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DEPLOY_SHA,DOMAIN,POSTGRES_PASSWORD,TELEGRAM_BOT_TOKEN,TELEGRAM_WEBHOOK_URL,TELEGRAM_WEBHOOK_SECRET,OPENAI_API_KEY,OPENAI_MODEL,N8N_ENCRYPTION_KEY,CLOUDFLARE_CERT,CLOUDFLARE_KEY,GHCR_TOKEN
+          script: |
+            set -eu
+            set -o pipefail
+            umask 077
+
+            cd /opt/money-track
+
+            # This file became ignored in this revision. Save the running deployment's
+            # configuration before git removes its formerly tracked placeholder.
+            if [ -f .env.prod ]; then
+              cp .env.prod .env.prod.previous
+              chmod 600 .env.prod.previous
+            fi
+
+            if [ -d .git ]; then
+              git fetch origin
+              git reset --hard origin/main
+            else
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+              git fetch origin
+              git checkout -B main origin/main
+            fi
+
+            [ -f docker-compose.prod.yml ] || { echo "ERROR: docker-compose.prod.yml is missing"; exit 1; }
+            [ -n "$DOMAIN" ] || { echo "ERROR: DOMAIN must be configured"; exit 1; }
+            case "$DOMAIN" in
+              *://*|*/*|*" "*) echo "ERROR: DOMAIN must be a hostname without a scheme or path"; exit 1 ;;
+            esac
+            : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be configured}"
+            : "${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN must be configured}"
+            : "${TELEGRAM_WEBHOOK_SECRET:?TELEGRAM_WEBHOOK_SECRET must be configured}"
+            : "${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be configured}"
+            : "${CLOUDFLARE_CERT:?CLOUDFLARE_CERT must be configured}"
+            : "${CLOUDFLARE_KEY:?CLOUDFLARE_KEY must be configured}"
+            : "${GHCR_TOKEN:?GHCR_TOKEN must be configured}"
+
+            frontend_origin="https://${DOMAIN}"
+            frontend_image="ghcr.io/alex69rus/money-track/frontend-new:${DEPLOY_SHA}"
+            backend_image="ghcr.io/alex69rus/money-track/backend:latest"
+            legacy_frontend_image="ghcr.io/alex69rus/money-track/frontend:latest"
+
+            case "$TELEGRAM_WEBHOOK_URL" in
+              https://*/api/telegram/webhook) ;;
+              *) echo "ERROR: TELEGRAM_WEBHOOK_URL must target /api/telegram/webhook"; exit 1 ;;
+            esac
+
+            # Preserve a runnable frontend image before updating the production env file.
+            previous_env=.env.prod.previous
+            previous_frontend_image=""
+            if [ -f .env.prod ] && [ ! -f "$previous_env" ]; then
+              cp .env.prod "$previous_env"
+              chmod 600 "$previous_env"
+            fi
+            if [ -f "$previous_env" ]; then
+              previous_frontend_image="$(sed -n 's/^FRONTEND_IMAGE=//p' "$previous_env" | head -n 1)"
+            fi
+            frontend_container_id="$(docker ps -q --filter label=com.docker.compose.service=frontend | head -n 1 || true)"
+            if [ -n "$frontend_container_id" ]; then
+              running_digest="$(docker inspect --format '{{index .RepoDigests 0}}' "$frontend_container_id" 2>/dev/null || true)"
+              if [ -n "$running_digest" ] && [ "$running_digest" != "<no value>" ]; then
+                previous_frontend_image="$running_digest"
+              fi
+            fi
+            if [ -z "$previous_frontend_image" ]; then
+              previous_frontend_image="$legacy_frontend_image"
+            fi
+            if [ -f "$previous_env" ]; then
+              printf '\nROLLBACK_FRONTEND_IMAGE=%s\n' "$previous_frontend_image" >> "$previous_env"
+            fi
+
+            cat > .env.prod <<EOF
+            POSTGRES_DB=moneytrack
+            POSTGRES_USER=postgres
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+            TELEGRAM_WEBHOOK_URL=$TELEGRAM_WEBHOOK_URL
+            TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET
+            TELEGRAM_WEB_APP_URL=$frontend_origin
+            CORS_ALLOW_ORIGINS=$frontend_origin
+            OPENAI_API_KEY=$OPENAI_API_KEY
+            OPENAI_MODEL=$OPENAI_MODEL
+            N8N_ENCRYPTION_KEY=$N8N_ENCRYPTION_KEY
+            ENVIRONMENT=Production
+            API_HOST=0.0.0.0
+            API_PORT=8000
+            BACKEND_IMAGE=$backend_image
+            FRONTEND_IMAGE=$frontend_image
+            DOMAIN=$DOMAIN
+            EOF
+            chmod 600 .env.prod
+
+            if docker compose version >/dev/null 2>&1; then
+              compose() { docker compose -f docker-compose.prod.yml --env-file .env.prod "$@"; }
+            elif command -v docker-compose >/dev/null 2>&1; then
+              compose() { docker-compose -f docker-compose.prod.yml --env-file .env.prod "$@"; }
+            else
+              echo "ERROR: Docker Compose v2 or docker-compose is required"
               exit 1
-              ;;
-          esac
-          
-          # Login to container registry
-          echo "Logging in to container registry..."
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u alex69rus --password-stdin || { echo "ERROR: Failed to login to container registry"; exit 1; }
-          echo "✅ Logged in successfully"
-          
-          # Pull latest images
-          echo "Pulling latest Docker images..."
-          docker pull ghcr.io/alex69rus/money-track/frontend:latest || { echo "ERROR: Failed to pull frontend image"; exit 1; }
-          docker pull ghcr.io/alex69rus/money-track/backend:latest || { echo "ERROR: Failed to pull backend image"; exit 1; }
-          echo "✅ Images pulled successfully"
-          
-          # Stop existing services (allow this to fail for first-time deployment)
-          echo "Stopping existing services..."
-          docker-compose -f docker-compose.prod.yml --env-file .env.prod down || echo "No existing services to stop"
-          
-          # Create SSL certificate directory and deploy Cloudflare certificates
-          echo "Setting up Cloudflare Origin Certificates..."
-          mkdir -p ssl
-          echo "${{ secrets.CLOUDFLARE_CERT }}" > ssl/cloudflare-cert.pem || { echo "ERROR: Failed to create certificate file"; exit 1; }
-          echo "${{ secrets.CLOUDFLARE_KEY }}" > ssl/cloudflare-key.pem || { echo "ERROR: Failed to create private key file"; exit 1; }
-          chmod 600 ssl/cloudflare-key.pem
-          echo "✅ Cloudflare certificates deployed"
-          
-          # Start services
-          echo "Starting services with Cloudflare SSL..."
-          docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d || { echo "ERROR: Failed to start services"; exit 1; }
-          echo "✅ Services started successfully"
-          
-          # Wait for services to be ready
-          echo "Waiting for services to initialize..."
-          sleep 30
+            fi
 
-          # Verify services are running
-          echo "Verifying services are running..."
-          docker-compose -f docker-compose.prod.yml --env-file .env.prod ps || { echo "ERROR: Failed to check service status"; exit 1; }
-          
-          # Health check
-          echo "Performing health checks..."
-          if curl -f http://localhost/health >/dev/null 2>&1 || curl -f http://localhost/api/health >/dev/null 2>&1; then
-            echo "✅ Health check passed"
-          else
-            echo "⚠️  Health check failed - services may still be starting up"
-            # Don't fail deployment on health check failure as services might still be initializing
-          fi
-          
-          # Clean up old images
-          echo "Cleaning up old Docker images..."
-          docker image prune -f || echo "⚠️  Failed to clean up old images"
-          
-          echo "🎉 Deployment completed successfully"
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u alex69rus --password-stdin
+            docker pull "$frontend_image"
+            docker pull "$backend_image"
+
+            mkdir -p ssl
+            printf '%s\n' "$CLOUDFLARE_CERT" > ssl/cloudflare-cert.pem
+            printf '%s\n' "$CLOUDFLARE_KEY" > ssl/cloudflare-key.pem
+            chmod 600 ssl/cloudflare-key.pem
+
+            # Reconcile the stack, then explicitly recreate only the two services whose
+            # image or runtime configuration can change in this deployment.
+            compose up -d --remove-orphans
+            compose up -d --no-deps --force-recreate backend frontend
+
+            wait_for() {
+              attempts=0
+              until "$@"; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 20 ]; then
+                  return 1
+                fi
+                sleep 3
+              done
+            }
+
+            origin_curl() {
+              curl --fail --silent --show-error --resolve "${DOMAIN}:443:127.0.0.1" --insecure "$@"
+            }
+            check_frontend_revision() {
+              origin_curl "${frontend_origin}/version.json?revision=${DEPLOY_SHA}" | grep -Fq "\"revision\":\"${DEPLOY_SHA}\""
+            }
+            check_frontend_route() {
+              origin_curl "${frontend_origin}/transactions" | grep -Fq 'id="root"'
+            }
+            check_api_health() {
+              origin_curl "${frontend_origin}/health" >/dev/null
+            }
+            rollback_frontend() {
+              if [ ! -f "$previous_env" ]; then
+                echo "ERROR: no previous frontend configuration is available for rollback"
+                return 1
+              fi
+              rollback_image="$(sed -n 's/^ROLLBACK_FRONTEND_IMAGE=//p' "$previous_env" | tail -n 1)"
+              [ -n "$rollback_image" ] || rollback_image="$(sed -n 's/^FRONTEND_IMAGE=//p' "$previous_env" | head -n 1)"
+              [ -n "$rollback_image" ] || { echo "ERROR: no rollback image is recorded"; return 1; }
+              awk -v image="$rollback_image" '
+                /^FRONTEND_IMAGE=/ { print "FRONTEND_IMAGE=" image; updated=1; next }
+                { print }
+                END { if (!updated) print "FRONTEND_IMAGE=" image }
+              ' .env.prod > .env.prod.rollback
+              mv .env.prod.rollback .env.prod
+              chmod 600 .env.prod
+              compose pull frontend
+              compose up -d --no-deps --force-recreate frontend
+              echo "Frontend rolled back to $rollback_image"
+            }
+
+            if ! wait_for check_frontend_revision || ! check_frontend_route; then
+              echo "ERROR: the expected frontend image failed verification; rolling it back"
+              rollback_frontend || true
+              exit 1
+            fi
+
+            running_frontend_id="$(compose ps -q frontend)"
+            running_frontend_image="$(docker inspect --format '{{.Config.Image}}' "$running_frontend_id")"
+            [ "$running_frontend_image" = "$frontend_image" ] || {
+              echo "ERROR: frontend container image does not match the commit image"
+              rollback_frontend || true
+              exit 1
+            }
+
+            wait_for check_api_health || { echo "ERROR: backend health check failed"; exit 1; }
+
+            telegram_menu_result="$(curl --fail --silent --show-error "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMenuButton")"
+            printf '%s' "$telegram_menu_result" | grep -Fq "\"url\":\"${frontend_origin}\"" || {
+              echo "ERROR: Telegram menu button URL does not match the production frontend"
+              exit 1
+            }
+
+            compose ps
+            echo "Deployment completed: $frontend_image"
 
   notify:
     needs: deploy
     runs-on: ubuntu-latest
     if: always()
-    
     steps:
-    - name: Notify deployment status
-      run: |
-        if [[ "${{ needs.deploy.result }}" == "success" ]]; then
-          echo "✅ Deployment successful"
-        else
-          echo "❌ Deployment failed"
-        fi
+      - name: Report deployment status
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "Deployment successful"
+          else
+            echo "Deployment failed"
+          fi

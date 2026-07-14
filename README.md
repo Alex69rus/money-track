@@ -5,7 +5,8 @@ Personal money tracking application with Telegram bot integration.
 ## Architecture
 
 - **Backend**: Python FastAPI (`backend_new`) with Piccolo ORM and PostgreSQL
-- **Frontend**: React + TypeScript + Material-UI
+- **Production frontend**: React + TypeScript + Vite in `frontend_new/`
+- **Legacy frontend**: `frontend/` is retained as a rollback-only backup and is not the production deployment target
 - **Database**: PostgreSQL
 - **Automation / AI**: n8n workflows
 - **Containerization**: Docker Compose
@@ -33,28 +34,55 @@ docker-compose up --build
 - `uv`
 - Node.js 18+
 
-### Backend
+### Backend (`backend_new`)
 
 ```bash
 cd backend_new
 uv sync --group dev
-ENVIRONMENT=Development DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/moneytrack TELEGRAM_BOT_TOKEN=test-token uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+### Frontend (`frontend_new`)
 
 ```bash
-cd frontend
-REACT_APP_API_URL=http://localhost:8000 npm start
+cd frontend_new
+npm install
+npm run dev -- --host 0.0.0.0 --port 4173
 ```
 
-### ngrok for Webhook Testing
+### Real Telegram Debugging (single domain for FE + BE)
 
-To test Instagram webhooks locally:
+Use this flow to debug the Telegram Web App against local code while keeping one public domain for both frontend and backend.
+
+1. Make frontend API same-origin through nginx proxy:
+
+```env
+# frontend_new/.env
+VITE_API_BASE_URL=
+```
+
+2. Set backend Telegram URLs to the same public domain:
+
+```env
+# backend_new/.env
+TELEGRAM_WEB_APP_URL=https://delicate-halibut-tolerant.ngrok-free.app
+TELEGRAM_WEBHOOK_URL=https://delicate-halibut-tolerant.ngrok-free.app/api/telegram/webhook
+```
+
+3. Run backend and frontend locally (commands above).
+4. Run nginx proxy container (routes `/api/*` -> backend `:8000`, `/` -> frontend `:4173`):
 
 ```bash
-ngrok http 8000 --url delicate-halibut-tolerant.ngrok-free.app
+docker compose -f compose.dev.yml up -d
 ```
+
+5. Expose nginx via ngrok:
+
+```bash
+ngrok http 8080 --url delicate-halibut-tolerant.ngrok-free.app
+```
+
+If UI shows fallback mode, verify `frontend_new/.env` still has empty `VITE_API_BASE_URL` and restart Vite.
 
 
 ## Health Check
@@ -71,8 +99,9 @@ money-track/
 │   ├── tests/                # Integration and fixtures
 │   ├── piccolo_migrations/   # Forward migrations
 │   └── pyproject.toml
-├── frontend/                 # React TypeScript app
-├── n8n/                      # n8n workflows
+├── frontend/                 # Frozen legacy rollback source
+├── frontend_new/             # Shipped Vite redesign
+├── n8n/                      # n8n workflows (outdated)
 ├── docs/                     # ADRs, deployment, workflow
 └── docker-compose.yml        # Local development setup
 ```

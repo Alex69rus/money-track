@@ -32,6 +32,8 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL:-}
       - TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET:-}
+      - TELEGRAM_WEB_APP_URL=${TELEGRAM_WEB_APP_URL:-}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1-mini}
     depends_on:
@@ -48,7 +50,7 @@ services:
       - frontend
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/alex69rus/money-track/frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/alex69rus/money-track/frontend-new:latest}
     restart: unless-stopped
     logging:
       driver: "json-file"
