@@ -179,6 +179,10 @@ downloads/
 eggs/
 .eggs/
 lib/
+# The frontend's shared TypeScript utilities are source files, not generated
+# libraries, and must stay visible to Git.
+!frontend_new/src/lib/
+!frontend_new/src/lib/**
 # Keep shared shell helpers under the repository's root scripts directory.
 !scripts/lib/
 !scripts/lib/*.sh

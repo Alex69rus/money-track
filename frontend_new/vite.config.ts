@@ -1,13 +1,10 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vitest/config";
 
-// Vite bundles this config before running Vitest, so import.meta.url isn't the
-// source config's location. npm_package_json remains the package's real path.
-const frontendRoot = process.env.npm_package_json
-  ? path.dirname(process.env.npm_package_json)
-  : process.cwd();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -17,7 +14,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.join(frontendRoot, "src"),
+      "@": path.resolve(__dirname, "src"),
     },
   },
   test: {
