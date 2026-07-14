@@ -40,7 +40,7 @@ function buildFixtures() {
       name: "Groceries",
       type: "EXPENSE",
       color: "#22c55e",
-      icon: "shopping_cart",
+      icon: null,
       parentCategoryId: null,
       orderIndex: 2,
       createdAt,
@@ -367,15 +367,19 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
       };
     });
     const uncategorizedControl = page.locator('[data-testid="tx-mobile-category-9003"]');
+    const selectedCategoryWithoutIconControl = page.locator('[data-testid="tx-mobile-category-9002"]');
     if (
       mobileEditLabelCount !== 0 ||
       amountIntegrity.whiteSpace !== "nowrap" ||
       amountIntegrity.scrollWidth > amountIntegrity.clientWidth ||
       (await uncategorizedControl.textContent())?.trim() !== "?" ||
-      (await uncategorizedControl.getAttribute("aria-label")) !== "Choose category for transaction 9003"
+      (await uncategorizedControl.getAttribute("aria-label")) !== "Choose category for transaction 9003" ||
+      (await selectedCategoryWithoutIconControl.textContent())?.trim() !== "G" ||
+      (await selectedCategoryWithoutIconControl.getAttribute("aria-label")) !== "Change category for transaction 9002" ||
+      (await page.locator('[data-testid="tx-mobile-category-initials-9002"]').count()) !== 1
     ) {
       throw new Error(
-        `Transaction card affordances regressed: ${JSON.stringify({ mobileEditLabelCount, amountIntegrity, uncategorizedLabel: await uncategorizedControl.getAttribute("aria-label"), uncategorizedText: await uncategorizedControl.textContent() })}.`,
+        `Transaction card affordances regressed: ${JSON.stringify({ mobileEditLabelCount, amountIntegrity, uncategorizedLabel: await uncategorizedControl.getAttribute("aria-label"), uncategorizedText: await uncategorizedControl.textContent(), selectedCategoryWithoutIconLabel: await selectedCategoryWithoutIconControl.getAttribute("aria-label"), selectedCategoryWithoutIconText: await selectedCategoryWithoutIconControl.textContent() })}.`,
       );
     }
     await screenshot(page, profileDirectory, "transactions");
@@ -525,6 +529,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
         trendsMinHeight: trends ? window.getComputedStyle(trends).minHeight : null,
       };
     });
+    const trendSummaryNet = await page.locator('[data-testid="analytics-trend-summary-net"]').textContent();
     if (
       analyticsOverview.categories?.scrollHeight !== analyticsOverview.categories?.clientHeight ||
       analyticsOverview.tags?.scrollHeight !== analyticsOverview.tags?.clientHeight ||
@@ -535,10 +540,14 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
       analyticsOverview.trendsContentHeight <= 0 ||
       analyticsOverview.trendsMinHeight !== "auto" ||
       (await page.locator('[data-testid="analytics-trend-summary"]').count()) !== 1 ||
-      (await page.locator('[data-testid^="analytics-trend-item-"][aria-pressed="true"]').count()) !== 1
+      (await page.locator('[data-testid^="analytics-trend-item-"][aria-pressed="true"]').count()) !== 1 ||
+      !trendSummaryNet?.trim() ||
+      trendSummaryNet.includes("Net")
     ) {
-      throw new Error(`Analytics overview containment regressed: ${JSON.stringify(analyticsOverview)}.`);
+      throw new Error(`Analytics overview containment regressed: ${JSON.stringify({ ...analyticsOverview, trendSummaryNet })}.`);
     }
+    await page.locator('[data-testid="analytics-trends-card"]').scrollIntoViewIfNeeded();
+    await screenshot(page, profileDirectory, "analytics-trends");
     await screenshot(page, profileDirectory, "analytics");
 
     await page.click('[data-testid^="analytics-category-item-"]');

@@ -11,6 +11,8 @@ interface TransactionsMobileListProps {
   onEditTransaction: (transaction: Transaction) => void;
 }
 
+const IGNORED_CATEGORY_INITIAL_WORDS = new Set(["and", "of", "the"]);
+
 function getCategoryIconName(transaction: Transaction): string | null {
   const iconName = transaction.category?.icon?.trim();
   if (!iconName) {
@@ -18,6 +20,22 @@ function getCategoryIconName(transaction: Transaction): string | null {
   }
 
   return iconName;
+}
+
+function getCategoryInitials(transaction: Transaction): string | null {
+  const categoryName = transaction.category?.name?.trim();
+  if (!categoryName) {
+    return null;
+  }
+
+  const words = categoryName.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const initials = words
+    .filter((word) => !IGNORED_CATEGORY_INITIAL_WORDS.has(word.toLocaleLowerCase()))
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0]?.toLocaleUpperCase() ?? "")
+    .join("");
+
+  return initials || null;
 }
 
 function amountClassName(amount: number): string {
@@ -53,7 +71,9 @@ export function TransactionsMobileList({
             <CardContent className="p-0">
               <ul className="divide-y">
                 {group.transactions.map((transaction) => {
-                  const categoryIcon = getCategoryIconName(transaction);
+                  const hasSelectedCategory = transaction.categoryId !== null;
+                  const categoryIcon = hasSelectedCategory ? getCategoryIconName(transaction) : null;
+                  const categoryInitials = hasSelectedCategory ? getCategoryInitials(transaction) : null;
 
                   return (
                     <li
@@ -72,7 +92,7 @@ export function TransactionsMobileList({
                       <div className="pointer-events-none relative z-10 flex min-w-0 items-start gap-3">
                         <button
                           aria-label={
-                            transaction.category
+                            hasSelectedCategory
                               ? `Change category for transaction ${transaction.id}`
                               : `Choose category for transaction ${transaction.id}`
                           }
@@ -84,6 +104,14 @@ export function TransactionsMobileList({
                           {categoryIcon ? (
                             <span aria-hidden className="material-symbols-outlined text-[18px]">
                               {categoryIcon}
+                            </span>
+                          ) : hasSelectedCategory ? (
+                            <span
+                              aria-hidden
+                              className="text-[0.7rem] leading-none font-bold tracking-tight"
+                              data-testid={`tx-mobile-category-initials-${transaction.id}`}
+                            >
+                              {categoryInitials ?? "•"}
                             </span>
                           ) : (
                             <span aria-hidden className="text-base font-semibold">?</span>

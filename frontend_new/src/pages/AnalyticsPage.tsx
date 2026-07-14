@@ -625,10 +625,18 @@ export function AnalyticsPage(): JSX.Element {
                 <>
                   {selectedTrend ? (
                     <div className="mb-4 rounded-xl border border-[#20344f]/70 bg-[#1a2b43]/75 px-3 py-2.5" data-testid="analytics-trend-summary">
-                      <div className="mb-2 flex items-baseline justify-between gap-3 border-b border-[#20344f]/70 pb-2">
-                        <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-slate-400 uppercase">Selected month</p>
+                      <div
+                        className="mb-2 flex items-baseline justify-between gap-3 border-b border-[#20344f]/70 pb-2"
+                        data-testid="analytics-trend-summary-header"
+                      >
                         <p className="text-sm font-semibold text-slate-100" data-testid="analytics-trend-summary-month">
                           {formatTrendSummaryMonth(selectedTrend.key)}
+                        </p>
+                        <p
+                          className="shrink-0 whitespace-nowrap text-right text-sm font-bold text-[#2d8cff] tabular-nums"
+                          data-testid="analytics-trend-summary-net"
+                        >
+                          {formatSignedMoney(selectedTrend.balance, currencyDisplay.currency)}
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3">

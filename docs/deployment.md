@@ -2,6 +2,14 @@
 
 Merges to `main` run [the production workflow](../.github/workflows/deploy.yml). It validates the Vite redesign, builds ARM64 images, and deploys the exact redesign image built from that commit.
 
+## Workflow stages
+
+- A pull request targeting `main` runs frontend and backend validation only.
+- A push to `main` additionally builds and publishes ARM64 frontend and backend images to GHCR, then deploys to `/opt/money-track` over SSH.
+- The deployment selects the immutable `frontend-new:<full-commit-sha>` image. The backend service continues to use the freshly pulled `backend:latest` image.
+
+The server-side deployment script generates `.env.prod` and the Cloudflare Origin Certificate files from GitHub configuration; do not create or commit a production `.env.prod` file in the repository.
+
 ## Frontend cutover and rollback
 
 Production serves the `frontend` Compose service from the separate `ghcr.io/alex69rus/money-track/frontend-new` package. The frozen `frontend/` source tree and its `ghcr.io/alex69rus/money-track/frontend` image remain unchanged as the rollback target.
@@ -14,9 +22,15 @@ Every deployment uses `frontend-new:<full-commit-sha>`, creates `/version.json` 
 - `/transactions` receives the SPA shell rather than a 404;
 - `/health` succeeds through nginx;
 - the running `frontend` container uses the expected immutable image;
-- the Telegram webhook and default Web App menu button point to the production domain.
+- the default Telegram Web App menu button points to the production domain.
 
 Before replacing the frontend, the server saves `/opt/money-track/.env.prod.previous` and records the running image digest. If the new frontend revision or route check fails, the workflow recreates only the `frontend` service with that saved image.
+
+## Nginx routing and restart order
+
+Production mounts only [nginx/conf.d/default.conf](../nginx/conf.d/default.conf). The local [dev.compose.conf](../nginx/conf.d/dev.compose.conf) and [test.conf](../nginx/conf.d/test.conf) are intentionally not loaded: the development configuration proxies to `host.docker.internal`, which is unavailable on the production Linux host.
+
+Nginx resolves Docker service hostnames when it starts. After the workflow recreates `backend` and `frontend`, it recreates Nginx so the proxy uses their fresh container addresses. The automated frontend rollback follows the same order: recreate the frontend, then recreate Nginx. Do not mount the entire `nginx/conf.d` directory in production or omit the Nginx recreation step.
 
 ## Required GitHub configuration
 
@@ -46,7 +60,7 @@ TELEGRAM_WEBHOOK_URL=https://money-track.org/api/telegram/webhook
 The workflow derives these production-only backend settings from `DOMAIN`; do not point them to a development tunnel:
 
 ```text
-TELEGRAM_WEB_APP_URL=https://money-track.org
+TELEGRAM_WEB_APP_URL=https://money-track.org/
 CORS_ALLOW_ORIGINS=https://money-track.org
 ```
 
@@ -67,7 +81,7 @@ Cloudflare should proxy the domain and use **Full (strict)** SSL with the config
 
 ## Manual frontend rollback
 
-Use this only if the automated rollback itself cannot complete. It preserves the database, backend, n8n, and nginx containers.
+Use this only if the automated rollback itself cannot complete. It preserves the database, backend, and n8n containers, then recreates the frontend and Nginx.
 
 ```bash
 cd /opt/money-track
@@ -83,6 +97,7 @@ mv .env.prod.rollback .env.prod
 chmod 600 .env.prod
 docker compose -f docker-compose.prod.yml --env-file .env.prod pull frontend
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --force-recreate frontend
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --force-recreate nginx
 ```
 
 If the host only has the legacy binary, replace `docker compose` with `docker-compose` in those commands.
@@ -98,3 +113,27 @@ curl --resolve money-track.org:443:127.0.0.1 --insecure https://money-track.org/
 ```
 
 The `version.json` response must contain the full commit SHA recorded in the successful Actions run.
+
+## Deployment preflight and recovery
+
+Before changing production Compose or Nginx configuration, validate that Compose can render without secrets, then inspect the rendered Nginx mount.
+
+```bash
+POSTGRES_PASSWORD=verification \
+TELEGRAM_BOT_TOKEN=verification \
+N8N_ENCRYPTION_KEY=verification \
+docker compose -f docker-compose.prod.yml config -q
+
+POSTGRES_PASSWORD=verification \
+TELEGRAM_BOT_TOKEN=verification \
+N8N_ENCRYPTION_KEY=verification \
+docker compose -f docker-compose.prod.yml config | grep -F 'target: /etc/nginx/conf.d/default.conf'
+```
+
+If a manual frontend or backend container recreation produces `502` responses, recreate Nginx after the upstream services:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --force-recreate nginx
+```
+
+If Nginx instead exits with `host not found in upstream "host.docker.internal"`, production is loading a local-only Nginx configuration. Restore the checked-in production Compose configuration and confirm the preflight succeeds before restarting Nginx.
