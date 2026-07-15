@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, SearchIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
   Dialog,
   DialogContent,
@@ -45,24 +46,6 @@ function byCategoryOrder(first: Category, second: Category): number {
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
-}
-
-function getCategoryIcon(category: Category): string | null {
-  const icon = category.icon?.trim();
-  if (!icon) {
-    return null;
-  }
-
-  return icon;
-}
-
-function getCategoryFallback(category: Category): string {
-  const trimmed = category.name.trim();
-  if (trimmed.length === 0) {
-    return "?";
-  }
-
-  return trimmed[0]?.toUpperCase() ?? "?";
 }
 
 function toHexPair(value: string): string {
@@ -289,7 +272,6 @@ export function TransactionCategorySelectorDialog({
                 const hasChildren = group.children.length > 0;
                 const isExpanded = normalizedSearch.length > 0 ? true : (expandedGroupIds[group.parent.id] ?? false);
                 const parentColor = normalizeHexColor(group.parent.color ?? "");
-                const parentIcon = getCategoryIcon(group.parent);
                 const iconBackground = withAlpha(parentColor, 0.22, "rgba(45, 140, 255, 0.18)");
                 const iconForeground = parentColor ? `#${parentColor}` : "#2d8cff";
                 const showChildren = hasChildren && (isExpanded || normalizedSearch.length > 0);
@@ -315,13 +297,11 @@ export function TransactionCategorySelectorDialog({
                             color: iconForeground,
                           }}
                         >
-                          {parentIcon ? (
-                            <span aria-hidden className="material-symbols-outlined text-[1.5rem] leading-none">
-                              {parentIcon}
-                            </span>
-                          ) : (
-                            <span className="text-base font-semibold">{getCategoryFallback(group.parent)}</span>
-                          )}
+                          <CategoryIconGlyph
+                            category={group.parent}
+                            className="material-symbols-outlined text-[1.5rem] leading-none"
+                            fallbackClassName="text-base font-semibold"
+                          />
                         </div>
                         <span className="truncate text-[1.15rem] font-semibold tracking-tight">{group.parent.name}</span>
                       </button>

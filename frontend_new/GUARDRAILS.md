@@ -58,3 +58,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Decide whether a transaction is categorized from `categoryId`, not whether its category has a configured icon.
 - Exploration: A selected category without an icon rendered readable category initials at 390×844 / DPR 3, while the `?` glyph remained exclusive to an uncategorized row; the trend summary fit the full month and signed net number without a label in one header row.
 - Prevention rule: Cover one- and two-word iconless category initials, plus the label-free selected-month net summary, in component tests and the phone fixture.
+
+## Transactions snapshot and category fallbacks — 2026-07-15
+
+- Takeaway: Derive the Transactions monthly snapshot from the complete current-month Analytics query and model, never from a filtered or paginated list page.
+- Exploration: Audit the Transactions list, editor, category selector, Analytics overview, category/tag drilldowns, and View all; each needs the same configured-icon or category-initials contract.
+- Prevention rule: Render category icons through `CategoryIconGlyph`, preserve `?` only for uncategorized transactions, and run Phase-2 plus Phase-3 after changing the shared snapshot or glyph behavior.

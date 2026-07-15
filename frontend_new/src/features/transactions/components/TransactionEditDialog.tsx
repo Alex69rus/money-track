@@ -4,7 +4,6 @@ import {
   ChevronRightIcon,
   FolderPenIcon,
   LoaderCircleIcon,
-  PlusCircleIcon,
   TagsIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
   Dialog,
   DialogContent,
@@ -110,6 +110,17 @@ function formatDateTimePreview(dateTimeValue: string): string {
   }).format(parsedDate);
 }
 
+function formatEditableAmount(amount: number): string {
+  const rendered = amount.toString();
+  const decimalIndex = rendered.indexOf(".");
+
+  if (decimalIndex === -1) {
+    return `${rendered}.00`;
+  }
+
+  return rendered.length - decimalIndex === 2 ? `${rendered}0` : rendered;
+}
+
 export function TransactionEditDialog({
   open,
   transaction,
@@ -150,7 +161,7 @@ export function TransactionEditDialog({
     }
 
     initializedTransactionIdRef.current = transaction.id;
-    setAmount(String(transaction.amount));
+    setAmount(formatEditableAmount(transaction.amount));
     setTransactionDate(toDateTimeLocalValue(transaction.transactionDate));
     setCurrency(transaction.currency);
     setCategoryId(transaction.categoryId);
@@ -168,7 +179,6 @@ export function TransactionEditDialog({
 
   const selectedCategory = categoryId === null ? null : (categoryById.get(categoryId) ?? null);
   const selectedCategoryLabel = selectedCategory?.name ?? (categoryId === null ? "Uncategorized" : "Unknown");
-  const selectedCategoryIcon = selectedCategory?.icon?.trim() || null;
   const normalizedCurrency = normalizeCurrency(currency);
   const currencySymbol = resolveCurrencySymbol(currency);
   const transactionDateLabel = formatDateTimePreview(transactionDate);
@@ -179,7 +189,7 @@ export function TransactionEditDialog({
     }
 
     return (
-      amount !== String(transaction.amount) ||
+      Number(amount) !== transaction.amount ||
       transactionDate !== toDateTimeLocalValue(transaction.transactionDate) ||
       currency.trim() !== transaction.currency ||
       categoryId !== transaction.categoryId ||
@@ -349,6 +359,16 @@ export function TransactionEditDialog({
                   className="h-auto w-56 border-none bg-transparent p-0 text-center text-6xl font-bold text-slate-100 outline-none [appearance:textfield] [background:transparent] [-webkit-appearance:none] focus:ring-0 focus:outline-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   id="transaction-edit-amount"
                   inputMode="decimal"
+                  onBlur={(event) => {
+                    if (!event.target.value.trim()) {
+                      return;
+                    }
+
+                    const parsedAmount = Number(event.target.value);
+                    if (Number.isFinite(parsedAmount)) {
+                      setAmount(formatEditableAmount(parsedAmount));
+                    }
+                  }}
                   onChange={(event) => setAmount(event.target.value)}
                   type="number"
                   value={amount}
@@ -382,10 +402,12 @@ export function TransactionEditDialog({
             >
               <div className="flex items-center gap-3">
                 <div className="flex size-11 items-center justify-center rounded-xl bg-[#2d8cff] text-white shadow-[0_10px_22px_rgba(45,140,255,0.28)]">
-                  {selectedCategoryIcon ? (
-                    <span aria-hidden className="material-symbols-outlined text-[20px]">
-                      {selectedCategoryIcon}
-                    </span>
+                  {selectedCategory ? (
+                    <CategoryIconGlyph
+                      category={selectedCategory}
+                      className="material-symbols-outlined text-[20px]"
+                      fallbackClassName="text-base font-semibold"
+                    />
                   ) : (
                     <FolderPenIcon aria-hidden className="size-5" />
                   )}
@@ -439,11 +461,8 @@ export function TransactionEditDialog({
               }}
               type="button"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <p className="text-xs font-medium text-slate-400">Tags</p>
-                <span className="text-[#2d8cff]">
-                  <PlusCircleIcon aria-hidden className="size-5" />
-                </span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {tags.length === 0 ? (
