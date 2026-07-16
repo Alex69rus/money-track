@@ -18,7 +18,7 @@ const categories: Category[] = Array.from({ length: 7 }, (_, index) => ({
 const transactions: Transaction[] = categories.map((category, index) => ({
   id: index + 1,
   userId: 1,
-  transactionDate: index === 0 ? new Date("2026-06-12T10:00:00") : createdAt,
+  transactionDate: new Date(`2026-${String(index + 1).padStart(2, "0")}-12T10:00:00`),
   amount: -(100 - index),
   note: `Expense ${index + 1}`,
   categoryId: category.id,
@@ -68,13 +68,18 @@ describe("AnalyticsPage", () => {
     expect(screen.getByTestId("analytics-summary-card")).not.toHaveClass("min-h-[21rem]");
     expect(screen.getByTestId("analytics-trends-card")).not.toHaveClass("min-h-[18rem]");
     expect(screen.getAllByTestId(/^analytics-trend-item-/).map((item) => item.dataset.testid)).toEqual([
+      "analytics-trend-item-2026-01",
+      "analytics-trend-item-2026-02",
+      "analytics-trend-item-2026-03",
+      "analytics-trend-item-2026-04",
+      "analytics-trend-item-2026-05",
       "analytics-trend-item-2026-06",
       "analytics-trend-item-2026-07",
     ]);
 
-    fireEvent.click(screen.getByTestId("analytics-trend-item-2026-06"));
-    expect(screen.getByTestId("analytics-trend-item-2026-06")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("analytics-trend-summary-month")).toHaveTextContent("Jun 2026");
+    fireEvent.click(screen.getByTestId("analytics-trend-item-2026-01"));
+    expect(screen.getByTestId("analytics-trend-item-2026-01")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("analytics-trend-summary-month")).toHaveTextContent("Jan 2026");
     expect(screen.getByTestId("analytics-trend-summary-net")).toHaveTextContent(/-AED\s*100\.00/);
     expect(screen.getByTestId("analytics-trend-summary-net")).not.toHaveTextContent("Net");
     expect(screen.getByTestId("analytics-trend-summary-header")).toHaveClass("justify-between");

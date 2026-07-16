@@ -298,8 +298,7 @@ export function buildAnalyticsModel(transactions: Transaction[]): AnalyticsModel
   }
 
   const monthlyTrends = [...monthMap.values()]
-    .sort((first, second) => compareMonthKeys(first.key, second.key))
-    .slice(-6);
+    .sort((first, second) => compareMonthKeys(first.key, second.key));
 
   return {
     summary: {

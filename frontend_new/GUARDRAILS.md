@@ -70,3 +70,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Keep category and tag filtering on their existing searchable full-page selectors; compact filters should only summarize, open, and clear those selections.
 - Exploration: iPhone decimal keypads emit a comma and omit minus; a text input with `inputMode="decimal"` can normalize the comma, while an explicit income/expense control supplies the sign.
 - Prevention rule: For mutually exclusive visual states, make the inactive background explicit and inspect the phone screenshot; do not rely on conflicting Tailwind background utilities to resolve at runtime.
+
+## Monthly Trends range completeness — 2026-07-16
+
+- Takeaway: Retain every populated month in the active Analytics range; the chart's horizontal scrolling handles longer ranges.
+- Exploration: A seven-month January–July fixture proved the former six-item cap silently removed January while sorting and selected-month disclosure remained correct.
+- Prevention rule: Cover the earliest month in a range longer than six in the Analytics page regression before changing trend aggregation or display limits.
