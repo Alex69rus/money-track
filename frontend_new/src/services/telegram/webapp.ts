@@ -35,6 +35,7 @@ const TELEGRAM_VIEWPORT_EVENTS = [
   "fullscreenChanged",
 ] as const;
 
+const TELEGRAM_THEME_CHANGED_EVENT = "themeChanged";
 const DISABLE_VERTICAL_SWIPES_MIN_VERSION = "7.7";
 const FULLSCREEN_MIN_VERSION = "8.0";
 
@@ -87,6 +88,22 @@ function setRootCssVariable(name: string, value: string): void {
   document.documentElement.style.setProperty(name, value);
 }
 
+function getPreferredColorScheme(): "light" | "dark" {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return "light";
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function syncThemeCssAttribute(webApp: TelegramWebApp | undefined): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.documentElement.dataset.mtTheme = webApp?.colorScheme ?? getPreferredColorScheme();
+}
+
 function syncStableViewportHeightCssVar(webApp: TelegramWebApp | undefined): void {
   if (!webApp?.viewportStableHeight || webApp.viewportStableHeight <= 0) {
     setRootCssVariable("--mt-viewport-stable-height", "100dvh");
@@ -106,6 +123,7 @@ function syncStableViewportHeightCssVar(webApp: TelegramWebApp | undefined): voi
 export function initializeTelegramWebApp(): void {
   const webApp = getTelegramWebApp();
   syncStableViewportHeightCssVar(webApp);
+  syncThemeCssAttribute(webApp);
 
   if (!webApp) {
     return;
@@ -123,6 +141,34 @@ export function initializeTelegramWebApp(): void {
   }
 
   requestTelegramFullscreen(webApp);
+}
+
+export function subscribeTelegramThemeChanges(onChange: () => void): () => void {
+  const webApp = getTelegramWebApp();
+  syncThemeCssAttribute(webApp);
+
+  const handler = (): void => {
+    syncThemeCssAttribute(getTelegramWebApp());
+    onChange();
+  };
+
+  if (webApp?.onEvent && webApp.offEvent) {
+    webApp.onEvent(TELEGRAM_THEME_CHANGED_EVENT, handler);
+    return () => {
+      webApp.offEvent?.(TELEGRAM_THEME_CHANGED_EVENT, handler);
+    };
+  }
+
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return () => undefined;
+  }
+
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener?.("change", handler);
+
+  return () => {
+    mediaQuery.removeEventListener?.("change", handler);
+  };
 }
 
 export function getTelegramInitData(): string {

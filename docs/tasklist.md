@@ -32,6 +32,7 @@
 | BR-016 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Guarantee chronological left-to-right Monthly Trends order; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-017 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Accept iPhone locale decimal entry in the transaction amount field; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-018 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Make amount sign selection possible without an iPhone keypad minus key; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-020 | `frontend_new/bugs_reports/dark-theme-palette-findings-2026-07-16.md` | P2 | Verified | Align dark surfaces to the supplied Stitch reference and apply a coherent light palette across every primary and nested screen. |
 
 ## TWA-1 — Telegram-native route and viewport validation
 
@@ -280,6 +281,19 @@ YAML parsing, deployment-script shell parsing, Compose rendering, and the comple
 - Sorted Monthly Trends by parsed year and month, so their left-to-right order is deterministic.
 - Changed the amount editor to locale-safe text entry: `,` normalizes to `.`, whole amounts still format to two digits, and explicit Income/Expense controls replace the unavailable iPhone minus key.
 - Verification: lint, typecheck, production build, and 33 unit tests passed. Phase-2, Phase-3, Phase-5, and four-profile mobile QA passed. Targeted 390×844/DPR3 proof report: `frontend_new/.codex-tmp/followup-proofs/report.json` confirms `12,32` became `-12.32` and trends rendered Apr → May → Jun → Jul. Physical Telegram verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
+## BR-020 — Cross-screen theme palette
+
+### Problem and required behavior
+
+The dark canvas used default Telegram fallback colors and several screens carried independent hard-coded dark surfaces, so the app did not match the supplied Stitch dark reference and light mode had no coherent equivalent. The primary destinations and nested pages must resolve all structural surfaces from one active light or dark palette.
+
+### Acceptance and delivery record
+
+- Added semantic canvas, card, muted, input, border, foreground, and accent tokens. Dark mode uses the Stitch-aligned `#0d1821` canvas with layered navy surfaces; light mode uses a pale neutral canvas with white cards and accessible slate text.
+- Synchronize `data-mt-theme` with Telegram's initial and changed color scheme, with a browser preference fallback outside Telegram.
+- Audited Transactions, Analytics, AI Chat, Settings, Analytics breakdown/drilldown, and transaction editor/category/tag selector routes. The mobile QA matrix now runs all four iPhone fixtures in dark and light mode and asserts the active palette on full-page surfaces.
+- Verification: `npm run lint`, `npm run typecheck`, `npm test` (35 passed), and `npm run build` passed. Phase-2, Phase-3, Phase-4, and Phase-5 browser QA passed. Eight-mode phone-fixture QA passed, with representative dark/light captures visually inspected. Physical Telegram verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## Device verification exception — 2026-07-15
 

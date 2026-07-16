@@ -8,6 +8,7 @@ import { TransactionsPage } from "@/pages/TransactionsPage";
 import {
   initializeTelegramWebApp,
   subscribeTelegramFullscreenLock,
+  subscribeTelegramThemeChanges,
   subscribeTelegramViewportChanges,
 } from "@/services/telegram/webapp";
 import { useTelegramBackButton } from "@/services/telegram/navigation";
@@ -47,9 +48,11 @@ function TelegramRouteNavigation(): null {
 export default function App(): JSX.Element {
   useEffect(() => {
     initializeTelegramWebApp();
+    const unsubscribeTheme = subscribeTelegramThemeChanges(() => undefined);
     const unsubscribeViewport = subscribeTelegramViewportChanges(() => undefined);
     const unsubscribeFullscreen = subscribeTelegramFullscreenLock();
     return () => {
+      unsubscribeTheme();
       unsubscribeViewport();
       unsubscribeFullscreen();
     };

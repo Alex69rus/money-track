@@ -328,7 +328,7 @@ export function TransactionTagSelectorDialog({
   if (presentation === "page") {
     return (
       <section
-        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#0e1a2a] text-slate-100"
+        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-background text-foreground"
         data-testid="tx-tags-page"
       >
         {selectorBody}
@@ -339,7 +339,7 @@ export function TransactionTagSelectorDialog({
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
-        className="mt-tag-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-[#0e1a2a] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
+        className="mt-tag-selector-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 overflow-hidden rounded-t-[1.75rem] rounded-b-none border-none bg-background p-0 text-foreground shadow-[0_-24px_56px_rgba(0,0,0,0.58)] sm:top-auto sm:right-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-t-[1.75rem] sm:rounded-b-none"
         data-testid="tx-tags-dialog"
         showCloseButton={false}
       >

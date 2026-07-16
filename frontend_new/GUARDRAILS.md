@@ -76,3 +76,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Retain every populated month in the active Analytics range; the chart's horizontal scrolling handles longer ranges.
 - Exploration: A seven-month January–July fixture proved the former six-item cap silently removed January while sorting and selected-month disclosure remained correct.
 - Prevention rule: Cover the earliest month in a range longer than six in the Analytics page regression before changing trend aggregation or display limits.
+
+## Shared color-scheme palette — 2026-07-16
+
+- Takeaway: Resolve canvas, card, input, border, and text through shared semantic tokens, then synchronize `data-mt-theme` from Telegram's color scheme.
+- Exploration: Verify every primary and nested full-page surface in all phone fixtures under both dark and light palettes; visual inspection ruled out a surface-specific mismatch.
+- Prevention rule: Extend the two-scheme mobile matrix and use a computed-style assertion whenever adding a structural surface or changing a theme token.

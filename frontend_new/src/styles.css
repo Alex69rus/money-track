@@ -1,30 +1,41 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: var(--tg-theme-bg-color, #f6f7f8);
-  --color-foreground: var(--tg-theme-text-color, #0f172a);
-  --color-card: var(--tg-theme-secondary-bg-color, #ffffff);
-  --color-card-foreground: var(--color-foreground);
-  --color-popover: var(--color-card);
-  --color-popover-foreground: var(--color-foreground);
-  --color-muted: color-mix(in srgb, var(--color-background) 88%, #cbd5e1 12%);
-  --color-muted-foreground: color-mix(in srgb, var(--color-foreground) 58%, white 42%);
-  --color-secondary: color-mix(in srgb, var(--color-card) 90%, #e2e8f0 10%);
-  --color-secondary-foreground: var(--color-foreground);
-  --color-accent: color-mix(in srgb, var(--color-card) 84%, #e2e8f0 16%);
-  --color-accent-foreground: var(--color-foreground);
-  --color-border: color-mix(in srgb, var(--color-foreground) 18%, var(--color-background) 82%);
-  --color-input: color-mix(in srgb, var(--color-card) 92%, #e2e8f0 8%);
-  --color-ring: color-mix(in srgb, var(--color-primary) 72%, white 28%);
+  --color-background: var(--mt-color-background);
+  --color-foreground: var(--mt-color-foreground);
+  --color-card: var(--mt-color-card);
+  --color-card-foreground: var(--mt-color-foreground);
+  --color-popover: var(--mt-color-popover);
+  --color-popover-foreground: var(--mt-color-foreground);
+  --color-muted: var(--mt-color-muted);
+  --color-muted-foreground: var(--mt-color-muted-foreground);
+  --color-secondary: var(--mt-color-secondary);
+  --color-secondary-foreground: var(--mt-color-foreground);
+  --color-accent: var(--mt-color-accent);
+  --color-accent-foreground: var(--mt-color-foreground);
+  --color-border: var(--mt-color-border);
+  --color-input: var(--mt-color-input);
+  --color-ring: var(--mt-color-ring);
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-primary: var(--tg-theme-button-color, #137fec);
-  --color-primary-foreground: var(--tg-theme-button-text-color, #ffffff);
+  --color-primary: #137fec;
+  --color-primary-foreground: #ffffff;
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --mt-color-background: #f6f8fb;
+  --mt-color-foreground: #0f172a;
+  --mt-color-card: #ffffff;
+  --mt-color-popover: #ffffff;
+  --mt-color-muted: #eef3f8;
+  --mt-color-muted-foreground: #64748b;
+  --mt-color-secondary: #edf2f7;
+  --mt-color-accent: #e7edf5;
+  --mt-color-border: #d7e0ea;
+  --mt-color-input: #e7edf5;
+  --mt-color-ring: #57a7ff;
   --mt-safe-area-inset-bottom: var(
     --tg-content-safe-area-inset-bottom,
     var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
@@ -34,6 +45,86 @@
     var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px))
   );
   --mt-twa-host-controls-inset-top: max(5rem, var(--mt-safe-area-inset-top));
+}
+
+:root[data-mt-theme="dark"] {
+  color-scheme: dark;
+  --mt-color-background: #0d1821;
+  --mt-color-foreground: #f5f7fa;
+  --mt-color-card: #172334;
+  --mt-color-popover: #172334;
+  --mt-color-muted: #1f2d40;
+  --mt-color-muted-foreground: #8294ae;
+  --mt-color-secondary: #22334a;
+  --mt-color-accent: #22334a;
+  --mt-color-border: #20344f;
+  --mt-color-input: #35435a;
+  --mt-color-ring: #57a7ff;
+}
+
+:root[data-mt-theme="light"] [class~="text-slate-50"],
+:root[data-mt-theme="light"] [class~="text-slate-100"],
+:root[data-mt-theme="light"] [class~="text-slate-200"] {
+  color: var(--mt-color-foreground);
+}
+
+:root[data-mt-theme="light"] [class~="text-slate-300"] {
+  color: #334155;
+}
+
+:root[data-mt-theme="light"] [class~="text-slate-400"],
+:root[data-mt-theme="light"] [class~="text-slate-500"] {
+  color: var(--mt-color-muted-foreground);
+}
+
+:root[data-mt-theme="light"] [class~="border-white/10"],
+:root[data-mt-theme="light"] [class~="border-white/25"] {
+  border-color: var(--mt-color-border);
+}
+
+:root[data-mt-theme="light"] [class~="bg-white/5"],
+:root[data-mt-theme="light"] [class~="bg-white/6"],
+:root[data-mt-theme="light"] [class~="bg-white/10"] {
+  background-color: var(--mt-color-secondary);
+}
+
+:root[data-mt-theme="light"] [class*="bg-[#16253a]"],
+:root[data-mt-theme="light"] [class*="bg-[#0f1d2f]"],
+:root[data-mt-theme="light"] [class*="bg-[#0f1b2a]"],
+:root[data-mt-theme="light"] [class*="bg-[#16263b]"],
+:root[data-mt-theme="light"] [class*="bg-[#162337]"],
+:root[data-mt-theme="light"] [class*="bg-[#162237]"],
+:root[data-mt-theme="light"] [class*="bg-[#12151f]"] {
+  background-color: var(--mt-color-card);
+}
+
+:root[data-mt-theme="light"] [class*="bg-[#1a2b43]"],
+:root[data-mt-theme="light"] [class*="bg-[#1a2a40]"],
+:root[data-mt-theme="light"] [class*="bg-[#1b2b43]"],
+:root[data-mt-theme="light"] [class*="bg-[#22334a]"],
+:root[data-mt-theme="light"] [class*="bg-[#102e57]"] {
+  background-color: var(--mt-color-secondary);
+}
+
+:root[data-mt-theme="light"] [class*="bg-[#0b1624]"] {
+  background-color: var(--mt-color-background);
+}
+
+:root[data-mt-theme="light"] [class*="bg-[#143450]"] {
+  background-color: var(--mt-color-accent);
+}
+
+:root[data-mt-theme="light"] [class*="bg-[#1d2b42]"],
+:root[data-mt-theme="light"] [class*="bg-[#32445e]"] {
+  background-color: var(--mt-color-border);
+}
+
+:root[data-mt-theme="light"] [class*="border-[#20344f]"],
+:root[data-mt-theme="light"] [class*="border-[#22334a]"],
+:root[data-mt-theme="light"] [class*="border-[#2a3b52]"],
+:root[data-mt-theme="light"] [class*="border-[#2a3c56]"],
+:root[data-mt-theme="light"] [class*="border-[#1d2b42]"] {
+  border-color: var(--mt-color-border);
 }
 
 * {
@@ -48,10 +139,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 560px at -10% -20%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 68%),
-    radial-gradient(1000px 480px at 120% -20%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 64%),
-    var(--color-background);
+  background: var(--color-background);
   color: var(--color-foreground);
 }
 

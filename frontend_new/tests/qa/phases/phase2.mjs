@@ -193,13 +193,20 @@ export const phase2Definition = {
     await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
     await page.locator('[data-testid="tx-edit-delete-trigger"]').click();
     await page.waitForSelector('[data-testid="tx-edit-delete-confirm-dialog"]', { timeout: 15000 });
-    const deleteDialogMatchesEditor = await page
+    const deleteDialogMatchesTheme = await page
       .locator('[data-testid="tx-edit-delete-confirm-dialog"]')
-      .evaluate((element) => element.classList.contains("bg-[#171923]"));
+      .evaluate((element) => {
+        const shell = document.querySelector('[data-testid="app-shell-root"]');
+        if (!shell) {
+          return false;
+        }
+
+        return window.getComputedStyle(element).backgroundColor === window.getComputedStyle(shell).backgroundColor;
+      });
     fr["FR-015"] = pass("Delete flow uses explicit confirmation dialog before destructive action.");
 
-    if (!deleteDialogMatchesEditor) {
-      throw new Error("Transaction deletion confirmation must use the editor's dark surface.");
+    if (!deleteDialogMatchesTheme) {
+      throw new Error("Transaction deletion confirmation must use the active application canvas.");
     }
 
     const labelsPresent =

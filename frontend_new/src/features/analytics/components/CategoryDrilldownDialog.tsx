@@ -266,7 +266,7 @@ export function CategoryDrilldownDialog({
   if (presentation === "page") {
     return (
       <section
-        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#0d172b] text-slate-100"
+        className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-background text-foreground"
         data-testid="analytics-drilldown-page"
       >
         {summary}
@@ -285,7 +285,7 @@ export function CategoryDrilldownDialog({
       open={drilldown !== null}
     >
       <DialogContent
-        className="max-h-[92dvh] max-w-[calc(100%-1rem)] gap-0 overflow-hidden border-[#1d2b42] bg-[#0d172b] p-0 text-slate-100 sm:max-w-2xl"
+        className="max-h-[92dvh] max-w-[calc(100%-1rem)] gap-0 overflow-hidden border-border bg-background p-0 text-foreground sm:max-w-2xl"
         data-testid="analytics-drilldown-dialog"
         showCloseButton={false}
       >

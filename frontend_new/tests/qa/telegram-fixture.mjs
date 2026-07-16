@@ -1,4 +1,5 @@
 const DEFAULT_PROFILE = {
+  colorScheme: "light",
   platform: "ios",
   viewportHeight: 844,
   viewportStableHeight: 844,
@@ -28,6 +29,7 @@ export async function installTelegramFixture(context, profile = {}) {
     const state = {
       backButtonHideCalls: 0,
       backButtonShowCalls: 0,
+      colorScheme: initialSettings.colorScheme,
       disableVerticalSwipesCalls: 0,
       events: [],
       expandCalls: 0,
@@ -61,7 +63,7 @@ export async function installTelegramFixture(context, profile = {}) {
     };
 
     const webApp = {
-      colorScheme: "light",
+      colorScheme: state.colorScheme,
       initData: "user=%7B%22id%22%3A123456789%7D&hash=qa-telegram-fixture",
       initDataUnsafe: { user: { id: 123456789, username: "qa_telegram" } },
       platform: initialSettings.platform,
@@ -115,6 +117,15 @@ export async function installTelegramFixture(context, profile = {}) {
         backButtonListenerCount: backButtonHandlers.size,
         registeredEvents: [...handlers.keys()].sort(),
       }),
+      setColorScheme: (colorScheme) => {
+        if (colorScheme !== "dark" && colorScheme !== "light") {
+          return;
+        }
+
+        state.colorScheme = colorScheme;
+        webApp.colorScheme = colorScheme;
+        emit("themeChanged");
+      },
       setViewport: ({ safeAreaBottom, safeAreaTop, viewportHeight, viewportStableHeight }) => {
         if (typeof safeAreaBottom === "number") {
           state.safeAreaBottom = safeAreaBottom;

@@ -9,8 +9,21 @@ const PROFILES = [
   { id: "iphone-15-pro-max", width: 430, height: 932, safeAreaBottom: 34, safeAreaTop: 48 },
   { id: "iphone-se", width: 375, height: 667, safeAreaBottom: 0, safeAreaTop: 24 },
 ];
+const COLOR_SCHEMES = ["dark", "light"];
 const TELEGRAM_HOST_CONTROLS_MIN_TOP_PX = 96;
 const FOCUSED_FIELD_MAX_TOP_PX = 192;
+const THEME_PALETTES = {
+  dark: {
+    canvas: "rgb(13, 24, 33)",
+    foreground: "rgb(245, 247, 250)",
+    surface: "rgb(23, 35, 52)",
+  },
+  light: {
+    canvas: "rgb(246, 248, 251)",
+    foreground: "rgb(15, 23, 42)",
+    surface: "rgb(255, 255, 255)",
+  },
+};
 
 function buildFixtures() {
   const createdAt = new Date().toISOString();
@@ -170,6 +183,29 @@ async function assertNoHorizontalOverflow(page, label) {
   }
 }
 
+async function assertThemeSurface(page, selector, expectedColor, label) {
+  const actualColor = await page.locator(selector).evaluate((element) => window.getComputedStyle(element).backgroundColor);
+  if (actualColor !== expectedColor) {
+    throw new Error(`${label}: expected ${expectedColor}, received ${actualColor}.`);
+  }
+}
+
+async function assertThemePalette(page, colorScheme) {
+  const palette = THEME_PALETTES[colorScheme];
+  const root = await page.locator('[data-testid="app-shell-root"]').evaluate((element) => {
+    const styles = window.getComputedStyle(element);
+    return {
+      backgroundColor: styles.backgroundColor,
+      color: styles.color,
+      theme: document.documentElement.dataset.mtTheme,
+    };
+  });
+
+  if (root.theme !== colorScheme || root.backgroundColor !== palette.canvas || root.color !== palette.foreground) {
+    throw new Error(`Shared ${colorScheme} palette is not applied to the application shell: ${JSON.stringify(root)}.`);
+  }
+}
+
 async function assertNativeDateControlContained(page, selector, label) {
   const result = await page.locator(selector).evaluate((input) => {
     const owner = input.closest("[data-native-date-control]");
@@ -317,7 +353,7 @@ async function assertScrollable(page, selector, label, required = true) {
   return canScroll;
 }
 
-async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) {
+async function runProfile(browser, profile, colorScheme, artifactDirectory, frontendBaseUrl) {
   const context = await browser.newContext({
     deviceScaleFactor: 3,
     hasTouch: true,
@@ -325,6 +361,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     viewport: { width: profile.width, height: profile.height },
   });
   await installTelegramFixture(context, {
+    colorScheme,
     safeAreaBottom: profile.safeAreaBottom,
     safeAreaTop: profile.safeAreaTop,
     viewportHeight: profile.height,
@@ -332,7 +369,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
   });
 
   const page = await context.newPage();
-  const profileDirectory = resolve(artifactDirectory, profile.id);
+  const profileDirectory = resolve(artifactDirectory, colorScheme, profile.id);
   mkdirSync(profileDirectory, { recursive: true });
   const consoleErrors = [];
   const failedRequests = [];
@@ -350,6 +387,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="tx-mobile-row-9001"]', { timeout: 30000 });
+    await assertThemePalette(page, colorScheme);
     await assertNoHorizontalOverflow(page, "transactions");
     const customNavCount = await page.locator('[data-testid="app-shell-nav"]').count();
     if (customNavCount !== 1) {
@@ -416,6 +454,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.click('[data-testid="tx-mobile-category-9001"]');
     await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    await assertThemeSurface(page, '[data-testid="tx-category-page"]', THEME_PALETTES[colorScheme].canvas, "Category selector canvas");
     if (await page.locator('[data-testid="app-shell-nav"]').count()) {
       throw new Error("Nested full-page routes must use Telegram BackButton instead of the primary navigation.");
     }
@@ -438,6 +477,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.click('[data-testid="tx-mobile-tags-9001"]');
     await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
+    await assertThemeSurface(page, '[data-testid="tx-tags-page"]', THEME_PALETTES[colorScheme].canvas, "Tag selector canvas");
     await assertBelowTelegramTopInset(page, '[data-testid="tx-tags-search"]', "tag selector");
     await assertNoHorizontalOverflow(page, "tag selector");
     await assertScrollable(page, '[data-testid="tx-tags-scroll"]', "tag selector");
@@ -448,6 +488,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.click('[data-testid="tx-mobile-edit-9001"]');
     await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
+    await assertThemeSurface(page, '[data-testid="tx-edit-page"]', THEME_PALETTES[colorScheme].canvas, "Transaction editor canvas");
     await assertBelowTelegramTopInset(page, '#transaction-edit-currency', "transaction editor");
     await assertNoHorizontalOverflow(page, "transaction editor");
     await assertScrollable(page, '[data-testid="tx-edit-scroll"]', "transaction editor", false);
@@ -479,6 +520,8 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.goto(`${frontendBaseUrl}/analytics`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
+    await assertThemePalette(page, colorScheme);
+    await assertThemeSurface(page, '[data-testid="analytics-summary-card"]', THEME_PALETTES[colorScheme].surface, "Analytics card surface");
     await assertNoHorizontalOverflow(page, "analytics");
     await assertNativeDateControlContained(page, "#analytics-from-date", "analytics from-date control");
     await assertNativeDateControlContained(page, "#analytics-to-date", "analytics to-date control");
@@ -561,6 +604,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.click('[data-testid^="analytics-category-item-"]');
     await page.waitForSelector('[data-testid="analytics-drilldown-page"]', { timeout: 15000 });
+    await assertThemeSurface(page, '[data-testid="analytics-drilldown-page"]', THEME_PALETTES[colorScheme].canvas, "Analytics drilldown canvas");
     if (await page.locator('[data-testid="app-shell-nav"]').count()) {
       throw new Error("Analytics drilldown must hide primary navigation while Telegram BackButton is active.");
     }
@@ -578,6 +622,7 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.click('[data-testid="analytics-category-view-all"]');
     await page.waitForSelector('[data-testid="analytics-category-breakdown-page"]', { timeout: 15000 });
+    await assertThemeSurface(page, '[data-testid="analytics-category-breakdown-page"]', THEME_PALETTES[colorScheme].canvas, "Analytics breakdown canvas");
     await assertNoHorizontalOverflow(page, "analytics category breakdown");
     await screenshot(page, profileDirectory, "analytics-category-breakdown");
     await page.evaluate(() => window.__qaTelegram.pressBack());
@@ -626,11 +671,13 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
 
     await page.goto(`${frontendBaseUrl}/settings`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="settings-page"]', { timeout: 30000 });
+    await assertThemePalette(page, colorScheme);
     await assertBelowTelegramTopInset(page, '[data-testid="settings-page"]', "settings primary page");
     await screenshot(page, profileDirectory, "settings");
 
     await page.goto(`${frontendBaseUrl}/chat`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="ai-chat-page"]', { timeout: 30000 });
+    await assertThemePalette(page, colorScheme);
     await assertBelowTelegramTopInset(page, '[data-testid="ai-chat-page"]', "AI Chat primary page");
     await screenshot(page, profileDirectory, "ai-chat");
 
@@ -670,7 +717,9 @@ async function main() {
   const results = [];
   try {
     for (const profile of profiles) {
-      results.push(await runProfile(browser, profile, artifactDirectory, frontendBaseUrl));
+      for (const colorScheme of COLOR_SCHEMES) {
+        results.push(await runProfile(browser, profile, colorScheme, artifactDirectory, frontendBaseUrl));
+      }
     }
   } finally {
     await browser.close();
@@ -680,7 +729,12 @@ async function main() {
     all_pass: results.every((result) => result.pass),
     artifact_directory: artifactDirectory,
     frontend_url: frontendBaseUrl,
-    profiles: Object.fromEntries(profiles.map((profile, index) => [profile.id, results[index]])),
+    profiles: Object.fromEntries(
+      profiles.map((profile, index) => [
+        profile.id,
+        Object.fromEntries(COLOR_SCHEMES.map((colorScheme, schemeIndex) => [colorScheme, results[index * COLOR_SCHEMES.length + schemeIndex]])),
+      ]),
+    ),
   };
   const reportFile = process.env.QA_MOBILE_REPORT_FILE;
   if (reportFile) {

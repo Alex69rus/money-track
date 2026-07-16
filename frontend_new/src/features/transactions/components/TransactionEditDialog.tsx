@@ -597,7 +597,7 @@ export function TransactionEditDialog({
     <>
       {presentation === "page" ? (
         <section
-          className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#171923] text-slate-100"
+          className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-background text-foreground"
           data-transaction-id={transaction?.id}
           data-testid="tx-edit-page"
         >
@@ -606,7 +606,7 @@ export function TransactionEditDialog({
       ) : (
         <Dialog onOpenChange={onOpenChange} open={open}>
           <DialogContent
-            className="mt-transaction-editor-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-[#171923] p-0 text-slate-100 shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
+            className="mt-transaction-editor-sheet top-auto right-0 bottom-0 left-0 !flex w-full max-w-none translate-x-0 translate-y-0 !flex-col gap-0 rounded-t-[2rem] rounded-b-none border-none bg-background p-0 text-foreground shadow-[0_-24px_56px_rgba(0,0,0,0.55)] sm:max-w-md sm:rounded-t-[2.25rem] sm:rounded-b-none"
             data-testid="tx-edit-dialog"
             showCloseButton={false}
           >
@@ -617,7 +617,7 @@ export function TransactionEditDialog({
 
       <AlertDialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
         <AlertDialogContent
-          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-3xl border border-white/10 bg-[#171923] p-0 text-slate-100 shadow-[0_24px_60px_rgba(0,0,0,0.58)] sm:max-w-md"
+          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-3xl border border-border bg-background p-0 text-foreground shadow-[0_24px_60px_rgba(0,0,0,0.58)] sm:max-w-md"
           data-testid="tx-edit-delete-confirm-dialog"
         >
           <AlertDialogHeader className="px-6 pt-6 text-left sm:text-left">

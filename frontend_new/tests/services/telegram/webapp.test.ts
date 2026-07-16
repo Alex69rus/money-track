@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   initializeTelegramWebApp,
   subscribeTelegramFullscreenLock,
+  subscribeTelegramThemeChanges,
   type TelegramWebApp,
 } from "@/services/telegram/webapp";
 
@@ -44,6 +45,7 @@ describe("Telegram WebApp adapter", () => {
     delete telegramTestWindow().Telegram;
     document.documentElement.style.removeProperty("--mt-viewport-current-height");
     document.documentElement.style.removeProperty("--mt-viewport-stable-height");
+    delete document.documentElement.dataset.mtTheme;
   });
 
   it("requests fullscreen, disables vertical swipes, and restores fullscreen after a host exit", () => {
@@ -112,5 +114,31 @@ describe("Telegram WebApp adapter", () => {
     expect(readyCalls).toBe(1);
     expect(expandCalls).toBe(1);
     expect(subscribeTelegramFullscreenLock()).toBeTypeOf("function");
+  });
+
+  it("keeps the document palette synchronized with Telegram theme changes", () => {
+    const events = createEventRegistry();
+    const webApp: TelegramWebApp = {
+      colorScheme: "dark",
+      expand: () => undefined,
+      initData: "",
+      offEvent: events.offEvent,
+      onEvent: events.onEvent,
+      ready: () => undefined,
+    };
+    telegramTestWindow().Telegram = { WebApp: webApp };
+
+    initializeTelegramWebApp();
+    const unsubscribe = subscribeTelegramThemeChanges(() => undefined);
+
+    expect(document.documentElement.dataset.mtTheme).toBe("dark");
+
+    webApp.colorScheme = "light";
+    events.emit("themeChanged");
+
+    expect(document.documentElement.dataset.mtTheme).toBe("light");
+
+    unsubscribe();
+    expect(events.size("themeChanged")).toBe(0);
   });
 });

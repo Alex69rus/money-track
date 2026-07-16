@@ -266,7 +266,7 @@ export function AnalyticsPage(): JSX.Element {
       className="relative flex min-h-full shrink-0 flex-col gap-5 overflow-x-hidden"
       data-testid="analytics-page"
     >
-      <div className="rounded-[1.6rem] border border-[#20344f]/80 bg-[#0f1d2f]/88 p-4 shadow-[0_14px_28px_rgba(0,0,0,0.2)]">
+      <div className="rounded-[1.6rem] border border-border bg-card p-4 shadow-[0_14px_28px_rgba(0,0,0,0.2)]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-7 items-center justify-center rounded-md bg-[#2d8cff] text-[#071a2c]">
@@ -274,11 +274,11 @@ export function AnalyticsPage(): JSX.Element {
                 bar_chart
               </span>
             </div>
-            <h2 className="text-[1.75rem] font-semibold tracking-tight text-slate-100">Analytics</h2>
+            <h2 className="text-[1.75rem] font-semibold tracking-tight text-foreground">Analytics</h2>
           </div>
           <Button
             aria-label="Date range controls"
-            className="size-9 rounded-full border border-white/10 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+            className="size-9 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
             size="icon-sm"
             type="button"
             variant="ghost"
@@ -296,7 +296,7 @@ export function AnalyticsPage(): JSX.Element {
               className={
                 activePreset === preset.id
                   ? "h-9 shrink-0 rounded-full bg-[#2d8cff] px-4 text-sm font-semibold text-white hover:bg-[#2d8cff]/90"
-                  : "h-9 shrink-0 rounded-full bg-[#1b2b43] px-4 text-sm font-medium text-slate-200 hover:bg-[#24354f]"
+                  : "h-9 shrink-0 rounded-full bg-secondary px-4 text-sm font-medium text-secondary-foreground hover:bg-accent"
               }
               data-testid={`analytics-preset-${preset.id}`}
               key={preset.id}
@@ -317,12 +317,12 @@ export function AnalyticsPage(): JSX.Element {
           data-testid="analytics-date-range-card"
         >
           <div className="min-w-0 flex flex-col gap-1">
-            <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-slate-400 uppercase" htmlFor="analytics-from-date">
+            <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase" htmlFor="analytics-from-date">
               From
             </label>
             <NativeDateField
               ariaLabel="Analytics from date"
-              className="rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-within:border-[#2d8cff] focus-within:ring-1 focus-within:ring-[#2d8cff]/55"
+              className="rounded-xl border-input bg-input text-sm text-foreground focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/55"
               id="analytics-from-date"
               inputTestId="analytics-from-date"
               onChange={(event) => {
@@ -337,12 +337,12 @@ export function AnalyticsPage(): JSX.Element {
             />
           </div>
           <div className="min-w-0 flex flex-col gap-1">
-            <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-slate-400 uppercase" htmlFor="analytics-to-date">
+            <label className="px-1 text-[0.68rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase" htmlFor="analytics-to-date">
               To
             </label>
             <NativeDateField
               ariaLabel="Analytics to date"
-              className="rounded-xl border-[#2a3b52] bg-[#16263b] text-sm text-slate-100 focus-within:border-[#2d8cff] focus-within:ring-1 focus-within:ring-[#2d8cff]/55"
+              className="rounded-xl border-input bg-input text-sm text-foreground focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/55"
               id="analytics-to-date"
               inputTestId="analytics-to-date"
               onChange={(event) => {
@@ -387,37 +387,37 @@ export function AnalyticsPage(): JSX.Element {
           ) : null}
 
           <Card
-            className="gap-0 overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
+            className="gap-0 overflow-hidden rounded-[1.45rem] border-border bg-card text-card-foreground shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
             data-testid="analytics-summary-card"
           >
-            <CardHeader className="gap-2 border-b border-[#20344f]/70 pb-3">
-              <CardTitle className="flex items-center justify-center gap-2 text-[0.88rem] font-bold tracking-[0.09em] text-slate-400 uppercase">
+            <CardHeader className="gap-2 border-b border-border pb-3">
+              <CardTitle className="flex items-center justify-center gap-2 text-[0.88rem] font-bold tracking-[0.09em] text-muted-foreground uppercase">
                 <TrendingUpIcon />
                 Balance Snapshot
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 pt-3" data-testid="analytics-summary-content">
               <div className="flex flex-col items-center gap-1.5">
-                <p className="text-sm font-medium text-slate-400">Net Cash Flow</p>
+                <p className="text-sm font-medium text-muted-foreground">Net Cash Flow</p>
                 <p
                   className="w-full overflow-hidden px-1 text-center text-[clamp(1.9rem,10.3vw,3.2rem)] leading-[0.95] font-bold tracking-tight text-[#2d8cff]"
                   data-testid="analytics-balance-value"
                 >
                   {formatSignedMoney(analytics.summary.balance, currencyDisplay.currency)}
                 </p>
-                <p className="text-xs text-slate-500" data-testid="analytics-summary-count">
+                <p className="text-xs text-muted-foreground" data-testid="analytics-summary-count">
                   {analytics.summary.transactionCount.toString()} transaction
                   {analytics.summary.transactionCount === 1 ? "" : "s"}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-0 border-t border-[#20344f]/70 pt-3">
-                <div className="border-r border-[#20344f]/70 pr-3 text-center">
+              <div className="grid grid-cols-2 gap-0 border-t border-border pt-3">
+                <div className="border-r border-border pr-3 text-center">
                   <p className="flex items-center justify-center gap-1.5 text-xs font-semibold tracking-[0.09em] text-emerald-400 uppercase">
                     <ArrowDownIcon className="size-4" />
                     Income
                   </p>
-                  <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-slate-100">
+                  <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-foreground">
                     {formatMoney(analytics.summary.totalIncome, currencyDisplay.currency)}
                   </p>
                   <p className="text-xs font-semibold text-emerald-400">Total in range</p>
@@ -427,16 +427,16 @@ export function AnalyticsPage(): JSX.Element {
                     <ArrowUpIcon className="size-4" />
                     Expense
                   </p>
-                  <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-slate-100">
+                  <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-foreground">
                     {formatMoney(analytics.summary.totalExpenses, currencyDisplay.currency)}
                   </p>
                   <p className="text-xs font-semibold text-rose-400">Total in range</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 border-t border-[#20344f]/70 pt-3">
-                <p className="text-xs font-semibold tracking-[0.08em] text-slate-400 uppercase">Average transaction</p>
-                <p className="shrink-0 text-base font-semibold text-slate-100 tabular-nums">
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                <p className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">Average transaction</p>
+                <p className="shrink-0 text-base font-semibold text-foreground tabular-nums">
                   {formatMoney(analytics.summary.averageTransaction, currencyDisplay.currency)}
                 </p>
               </div>
@@ -445,11 +445,11 @@ export function AnalyticsPage(): JSX.Element {
 
           <div className="flex flex-col gap-4">
             <Card
-              className="overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
+              className="overflow-hidden rounded-[1.45rem] border-border bg-card text-card-foreground shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
               data-testid="analytics-category-card"
             >
-              <CardHeader className="flex flex-row items-center justify-between border-b border-[#20344f]/70 pb-4">
-                <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-slate-100">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
+                <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-foreground">
                   Spendings by Category
                 </CardTitle>
                 <Button
@@ -474,7 +474,7 @@ export function AnalyticsPage(): JSX.Element {
 
                     return (
                       <button
-                        className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-[#20344f]/65 p-4 text-left transition-colors last:border-b-0 hover:bg-[#1b2e47]"
+                        className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-border p-4 text-left transition-colors last:border-b-0 hover:bg-accent"
                         data-testid={`analytics-category-item-${categoryItem.key}`}
                         key={categoryItem.key}
                         onClick={() => {
@@ -508,7 +508,7 @@ export function AnalyticsPage(): JSX.Element {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-lg font-semibold">{categoryItem.categoryName}</p>
-                            <div className="mt-1.5 h-2 w-full max-w-40 rounded-full bg-[#3c4f67]">
+                            <div className="mt-1.5 h-2 w-full max-w-40 rounded-full bg-secondary">
                               <div
                                 className="h-full rounded-full"
                                 style={{
@@ -529,7 +529,7 @@ export function AnalyticsPage(): JSX.Element {
                     );
                   })
                 ) : (
-                  <p className="p-4 text-sm text-slate-400" data-testid="analytics-category-empty">
+                  <p className="p-4 text-sm text-muted-foreground" data-testid="analytics-category-empty">
                     No expense categories in this range.
                   </p>
                 )}
@@ -537,11 +537,11 @@ export function AnalyticsPage(): JSX.Element {
             </Card>
 
             <Card
-              className="overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
+              className="overflow-hidden rounded-[1.45rem] border-border bg-card text-card-foreground shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
               data-testid="analytics-tags-card"
             >
-              <CardHeader className="flex flex-row items-center justify-between border-b border-[#20344f]/70 pb-4">
-                <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-slate-100">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
+                <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-foreground">
                   Spendings by Tags
                 </CardTitle>
                 <Button
@@ -561,7 +561,7 @@ export function AnalyticsPage(): JSX.Element {
                 {tagPreview.length > 0 ? (
                   tagPreview.map((tagItem, index) => (
                     <button
-                      className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-[#20344f]/65 p-4 text-left transition-colors last:border-b-0 hover:bg-[#1b2e47]"
+                      className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-border p-4 text-left transition-colors last:border-b-0 hover:bg-accent"
                       data-testid={`analytics-tag-item-${toTestIdSegment(tagItem.key)}`}
                       key={tagItem.key}
                       onClick={() => {
@@ -575,8 +575,8 @@ export function AnalyticsPage(): JSX.Element {
                         <div
                           className="flex size-11 shrink-0 items-center justify-center rounded-xl"
                           style={{
-                            backgroundColor: index === 0 ? "rgba(45, 140, 255, 0.2)" : "#30445e",
-                            color: index === 0 ? "#2d8cff" : "#8ea4bd",
+                            backgroundColor: index === 0 ? "rgba(45, 140, 255, 0.2)" : "var(--mt-color-secondary)",
+                            color: index === 0 ? "#2d8cff" : "var(--mt-color-muted-foreground)",
                           }}
                         >
                           <span aria-hidden className="material-symbols-outlined text-[1.2rem] leading-none">
@@ -585,12 +585,12 @@ export function AnalyticsPage(): JSX.Element {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-semibold">#{tagItem.tag}</p>
-                          <div className="mt-1.5 h-1.5 w-28 rounded-full bg-[#4a5e76]">
+                          <div className="mt-1.5 h-1.5 w-28 rounded-full bg-secondary">
                             <div
                               className="h-full rounded-full"
                               style={{
                                 width: `${Math.max(2, tagItem.share * 100).toFixed(2)}%`,
-                                backgroundColor: index === 0 ? "#2d8cff" : "#a9bad0",
+                                backgroundColor: index === 0 ? "#2d8cff" : "var(--mt-color-muted-foreground)",
                               }}
                             />
                           </div>
@@ -602,7 +602,7 @@ export function AnalyticsPage(): JSX.Element {
                     </button>
                   ))
                 ) : (
-                  <p className="p-4 text-sm text-slate-400" data-testid="analytics-tags-empty">
+                  <p className="p-4 text-sm text-muted-foreground" data-testid="analytics-tags-empty">
                     No tagged expenses in this range.
                   </p>
                 )}
@@ -611,12 +611,12 @@ export function AnalyticsPage(): JSX.Element {
           </div>
 
           <Card
-            className="gap-0 overflow-hidden rounded-[1.45rem] border-[#20344f]/80 bg-[#16253a]/92 text-slate-100 shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
+            className="gap-0 overflow-hidden rounded-[1.45rem] border-border bg-card text-card-foreground shadow-[0_14px_28px_rgba(0,0,0,0.15)]"
             data-testid="analytics-trends-card"
           >
-            <CardHeader className="flex flex-row items-center justify-between border-b border-[#20344f]/70 pb-4">
-              <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-slate-100">Monthly Trends</CardTitle>
-              <div className="flex items-center gap-4 text-xs font-semibold tracking-[0.08em] text-slate-200 uppercase">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
+              <CardTitle className="text-[1.65rem] font-semibold tracking-tight text-foreground">Monthly Trends</CardTitle>
+              <div className="flex items-center gap-4 text-xs font-semibold tracking-[0.08em] text-secondary-foreground uppercase">
                 <div className="flex items-center gap-1.5">
                   <span className="size-2.5 rounded-full bg-[#2d8cff]" />
                   Income
@@ -631,12 +631,12 @@ export function AnalyticsPage(): JSX.Element {
               {analytics.monthlyTrends.length > 0 ? (
                 <>
                   {selectedTrend ? (
-                    <div className="mb-4 rounded-xl border border-[#20344f]/70 bg-[#1a2b43]/75 px-3 py-2.5" data-testid="analytics-trend-summary">
+                    <div className="mb-4 rounded-xl border border-border bg-secondary px-3 py-2.5" data-testid="analytics-trend-summary">
                       <div
-                        className="mb-2 flex items-baseline justify-between gap-3 border-b border-[#20344f]/70 pb-2"
+                        className="mb-2 flex items-baseline justify-between gap-3 border-b border-border pb-2"
                         data-testid="analytics-trend-summary-header"
                       >
-                        <p className="text-sm font-semibold text-slate-100" data-testid="analytics-trend-summary-month">
+                        <p className="text-sm font-semibold text-foreground" data-testid="analytics-trend-summary-month">
                           {formatTrendSummaryMonth(selectedTrend.key)}
                         </p>
                         <p
@@ -649,13 +649,13 @@ export function AnalyticsPage(): JSX.Element {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                         <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-emerald-400 uppercase">Income</p>
-                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-slate-100 tabular-nums" data-testid="analytics-trend-summary-income">
+                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-foreground tabular-nums" data-testid="analytics-trend-summary-income">
                           {formatMoney(selectedTrend.income, currencyDisplay.currency)}
                         </p>
                         </div>
-                        <div className="border-l border-[#20344f]/70 pl-3">
+                        <div className="border-l border-border pl-3">
                         <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-rose-400 uppercase">Expense</p>
-                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-slate-100 tabular-nums" data-testid="analytics-trend-summary-expense">
+                        <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-foreground tabular-nums" data-testid="analytics-trend-summary-expense">
                           {formatMoney(selectedTrend.expenses, currencyDisplay.currency)}
                         </p>
                         </div>
@@ -675,13 +675,13 @@ export function AnalyticsPage(): JSX.Element {
                       <button
                         aria-label={`Select ${monthItem.monthLabel}: income ${formatMoney(monthItem.income, currencyDisplay.currency)}, expense ${formatMoney(monthItem.expenses, currencyDisplay.currency)}`}
                         aria-pressed={isActive}
-                        className="flex w-16 shrink-0 flex-col items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-[#2d8cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16253a]"
+                        className="flex w-16 shrink-0 flex-col items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                         data-testid={`analytics-trend-item-${monthItem.key}`}
                         key={monthItem.key}
                         onClick={() => setSelectedTrendKey(monthItem.key)}
                         type="button"
                       >
-                        <div className={isActive ? "flex h-28 w-full items-end gap-1 rounded-lg bg-[#1d314a] px-1.5 pb-1.5" : "flex h-28 w-full items-end gap-1 px-1.5 pb-1.5"}>
+                        <div className={isActive ? "flex h-28 w-full items-end gap-1 rounded-lg bg-secondary px-1.5 pb-1.5" : "flex h-28 w-full items-end gap-1 px-1.5 pb-1.5"}>
                           <div className="flex h-full flex-1 items-end">
                             <div
                               className={isActive ? "w-full rounded-sm bg-[#2d8cff]" : "w-full rounded-sm bg-[#2d8cff]/55"}
@@ -704,7 +704,7 @@ export function AnalyticsPage(): JSX.Element {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-slate-400" data-testid="analytics-trends-empty">
+                <p className="text-sm text-muted-foreground" data-testid="analytics-trends-empty">
                   No monthly trend data in this range.
                 </p>
               )}

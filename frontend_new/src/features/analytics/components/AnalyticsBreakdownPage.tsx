@@ -108,10 +108,10 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
 
   return (
     <section
-      className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-[#0d172b] text-slate-100"
+      className="mt-twa-page-safe-top fixed inset-0 z-30 flex min-h-0 w-full flex-col overflow-hidden bg-background text-foreground"
       data-testid={`analytics-${props.kind}-breakdown-page`}
     >
-      <header className="relative shrink-0 border-b border-[#1d2b42] px-5 pt-4 pb-5 text-center">
+      <header className="relative shrink-0 border-b border-border px-5 pt-4 pb-5 text-center">
         {!isTelegramHost ? (
           <Button
             aria-label={`Close ${props.kind} breakdown`}
@@ -125,12 +125,12 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
             <XIcon />
           </Button>
         ) : null}
-        <p className="text-xs font-bold tracking-[0.1em] text-slate-400 uppercase">{description}</p>
-        <h1 className="mt-1 text-[1.8rem] font-bold tracking-tight text-slate-50">{title}</h1>
-        <p className="mt-1 text-sm font-medium text-slate-500" data-testid="analytics-breakdown-range">
+        <p className="text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">{description}</p>
+        <h1 className="mt-1 text-[1.8rem] font-bold tracking-tight text-foreground">{title}</h1>
+        <p className="mt-1 text-sm font-medium text-muted-foreground" data-testid="analytics-breakdown-range">
           {props.rangeLabel}
         </p>
-        <p className="mt-2 text-xs font-semibold tracking-[0.08em] text-slate-400 uppercase" data-testid="analytics-breakdown-count">
+        <p className="mt-2 text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase" data-testid="analytics-breakdown-count">
           {props.items.length} {props.items.length === 1 ? "item" : "items"}
         </p>
       </header>
@@ -139,11 +139,11 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
         className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         data-testid="analytics-breakdown-scroll"
       >
-        <div className="overflow-hidden rounded-2xl border border-[#20344f]/80 bg-[#16253a]/92">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {rows.map((row) => {
             return (
               <button
-                className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-[#20344f]/65 p-4 text-left transition-colors last:border-b-0 hover:bg-[#1b2e47]"
+                className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-border p-4 text-left transition-colors last:border-b-0 hover:bg-accent"
                 data-testid={`analytics-breakdown-item-${props.kind}-${row.testId}`}
                 key={row.key}
                 onClick={row.onSelect}
@@ -171,13 +171,13 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-lg font-semibold text-slate-100">{row.name}</p>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
+                    <p className="truncate text-lg font-semibold text-foreground">{row.name}</p>
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">
                       {row.transactionCount} transaction{row.transactionCount === 1 ? "" : "s"}
                     </p>
                   </div>
                 </div>
-                <p className="shrink-0 whitespace-nowrap pl-2 text-right text-lg font-bold tracking-tight text-slate-100 tabular-nums">
+                <p className="shrink-0 whitespace-nowrap pl-2 text-right text-lg font-bold tracking-tight text-foreground tabular-nums">
                   {formatMoney(row.amount, props.currency)}
                 </p>
               </button>

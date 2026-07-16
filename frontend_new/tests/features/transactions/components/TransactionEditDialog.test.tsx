@@ -107,7 +107,7 @@ describe("TransactionEditDialog", () => {
     expect(screen.getByTestId("tx-edit-sign-income")).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("uses the editor's dark surface for destructive confirmation", () => {
+  it("uses the shared theme surface for destructive confirmation", () => {
     render(
       <TransactionEditDialog
         activeSubpage="none"
@@ -123,7 +123,7 @@ describe("TransactionEditDialog", () => {
     );
 
     fireEvent.click(screen.getByTestId("tx-edit-delete-trigger"));
-    expect(screen.getByTestId("tx-edit-delete-confirm-dialog")).toHaveClass("bg-[#171923]");
+    expect(screen.getByTestId("tx-edit-delete-confirm-dialog")).toHaveClass("bg-background");
     expect(screen.getByTestId("tx-edit-delete-confirm")).toHaveClass("bg-[#ff5465]");
   });
 });
