@@ -25,6 +25,17 @@ function monthKey(date: Date): string {
   return `${year}-${month}`;
 }
 
+function compareMonthKeys(first: string, second: string): number {
+  const [firstYear = 0, firstMonth = 0] = first.split("-").map(Number);
+  const [secondYear = 0, secondMonth = 0] = second.split("-").map(Number);
+
+  if (firstYear !== secondYear) {
+    return firstYear - secondYear;
+  }
+
+  return firstMonth - secondMonth;
+}
+
 function humanizeMonth(key: string): string {
   const [year, month] = key.split("-").map(Number);
   if (!year || !month) {
@@ -287,7 +298,7 @@ export function buildAnalyticsModel(transactions: Transaction[]): AnalyticsModel
   }
 
   const monthlyTrends = [...monthMap.values()]
-    .sort((first, second) => first.key.localeCompare(second.key))
+    .sort((first, second) => compareMonthKeys(first.key, second.key))
     .slice(-6);
 
   return {

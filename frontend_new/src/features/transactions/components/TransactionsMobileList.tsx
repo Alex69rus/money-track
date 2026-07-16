@@ -43,7 +43,7 @@ export function TransactionsMobileList({
 
           <Card className="overflow-hidden rounded-xl border-border/70 bg-card/70 py-0">
             <CardContent className="p-0">
-              <ul className="divide-y">
+              <ul className="divide-y divide-[#253a56]/75">
                 {group.transactions.map((transaction) => {
                   const hasSelectedCategory = transaction.categoryId !== null;
                   return (

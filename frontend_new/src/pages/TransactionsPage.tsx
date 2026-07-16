@@ -206,10 +206,15 @@ function readRouteTransaction(
 function parseTransactionRoute(pathname: string): {
   editTransactionId?: number;
   editSubpage: "none" | "category" | "tags";
+  filterCategory?: boolean;
   filterTags?: boolean;
   quickCategoryTransactionId?: number;
   quickTagTransactionId?: number;
 } {
+  if (pathname === "/transactions/filters/category") {
+    return { editSubpage: "none", filterCategory: true };
+  }
+
   if (pathname === "/transactions/filters/tags") {
     return { editSubpage: "none", filterTags: true };
   }
@@ -245,7 +250,6 @@ export function TransactionsPage(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
   const [filtersDraft, setFiltersDraft] = useState<TransactionFilterDraft>(DEFAULT_FILTERS);
-  const [categorySearch, setCategorySearch] = useState("");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -544,12 +548,15 @@ export function TransactionsPage(): JSX.Element {
       <TransactionsFiltersCard
         activeFiltersCount={activeFiltersCount}
         categories={categories}
-        categorySearch={categorySearch}
         draft={filtersDraft}
         expanded={filtersExpanded}
         isDebouncing={isDebouncing}
-        onCategorySearchChange={setCategorySearch}
         onDraftChange={setFiltersDraft}
+        onOpenCategorySelector={() => {
+          navigate("/transactions/filters/category", {
+            state: { mtReturnPath: location.pathname } satisfies TransactionRouteState,
+          });
+        }}
         onOpenTagSelector={() => {
           navigate("/transactions/filters/tags", {
             state: { mtReturnPath: location.pathname } satisfies TransactionRouteState,
@@ -559,7 +566,6 @@ export function TransactionsPage(): JSX.Element {
         onSetExpanded={setFiltersExpanded}
         optionsError={optionsError}
         optionsLoading={optionsLoading}
-        tags={tags}
       />
 
       {loading && !error ? <TransactionsListSkeleton /> : null}
@@ -672,6 +678,30 @@ export function TransactionsPage(): JSX.Element {
         pending={tagUpdatePending}
         presentation="page"
         title="Add tags"
+      />
+
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        currentCategoryId={filtersDraft.categoryId ? Number(filtersDraft.categoryId) : null}
+        description="Choose a category to filter the list"
+        error={null}
+        nullOptionLabel="All categories"
+        onConfirm={(nextCategoryId) => {
+          setFiltersDraft((current) => ({
+            ...current,
+            categoryId: nextCategoryId === null ? "" : String(nextCategoryId),
+          }));
+          navigateBack();
+        }}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            navigateBack();
+          }
+        }}
+        open={transactionRoute.filterCategory === true}
+        pending={false}
+        presentation="page"
+        title="Filter category"
       />
 
       <TransactionTagSelectorDialog

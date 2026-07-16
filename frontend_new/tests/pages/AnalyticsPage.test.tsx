@@ -67,6 +67,10 @@ describe("AnalyticsPage", () => {
     expect(screen.getByTestId("analytics-from-date")).toHaveClass("max-w-full");
     expect(screen.getByTestId("analytics-summary-card")).not.toHaveClass("min-h-[21rem]");
     expect(screen.getByTestId("analytics-trends-card")).not.toHaveClass("min-h-[18rem]");
+    expect(screen.getAllByTestId(/^analytics-trend-item-/).map((item) => item.dataset.testid)).toEqual([
+      "analytics-trend-item-2026-06",
+      "analytics-trend-item-2026-07",
+    ]);
 
     fireEvent.click(screen.getByTestId("analytics-trend-item-2026-06"));
     expect(screen.getByTestId("analytics-trend-item-2026-06")).toHaveAttribute("aria-pressed", "true");

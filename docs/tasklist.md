@@ -26,6 +26,12 @@
 | BR-010 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-011 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P3 | Fixed — verification pending | Remove the Transactions list's retired section label and record-count badge without affecting date groups or pagination; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-012 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P1 | Fixed — verification pending | Align Transactions and Analytics current-month snapshot calculations and add a shared-boundary regression; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-013 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Replace competing compact category/tag controls with focused Transactions filter selector pages; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-014 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use dark-theme-appropriate separators within same-day Transactions groups; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-015 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Restyle transaction deletion confirmation to match the editor surface and actions; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-016 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Guarantee chronological left-to-right Monthly Trends order; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-017 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Accept iPhone locale decimal entry in the transaction amount field; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-018 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Make amount sign selection possible without an iPhone keypad minus key; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 
 ## TWA-1 — Telegram-native route and viewport validation
 
@@ -263,6 +269,17 @@ YAML parsing, deployment-script shell parsing, Compose rendering, and the comple
 - Replaced the paginated Transactions-list reduction with the complete current-month Analytics query and its shared model, so filters and pagination cannot affect the monthly snapshot.
 - The widget now exposes loading and retry states and refreshes after an editor save or deletion.
 - Verification: Transactions-page regression test confirms the current-month range/model; final targeted browser QA observed matching Transactions and Analytics values (`+AED 80.00`, income `+100.00`, expense `-20.00`); Phase-2, Phase-3, and four-profile mobile QA passed. The Phase-3 500 console entry was its intentional error-and-retry probe.
+
+## BR-013 through BR-018 — Filters, editor, and Analytics refinement
+
+### Delivery record — 2026-07-15
+
+- Replaced the compact category search/select and tag-chip maze with two concise filter summaries. Each opens the established searchable, full-page selector and has a single clear-selection action.
+- Muted same-day Transaction dividers to `#253a56` for dark-theme contrast instead of the bright default divider.
+- Restyled deletion confirmation with the editor's dark surface, a destructive icon, and equally reachable Cancel/Delete actions.
+- Sorted Monthly Trends by parsed year and month, so their left-to-right order is deterministic.
+- Changed the amount editor to locale-safe text entry: `,` normalizes to `.`, whole amounts still format to two digits, and explicit Income/Expense controls replace the unavailable iPhone minus key.
+- Verification: lint, typecheck, production build, and 33 unit tests passed. Phase-2, Phase-3, Phase-5, and four-profile mobile QA passed. Targeted 390×844/DPR3 proof report: `frontend_new/.codex-tmp/followup-proofs/report.json` confirms `12,32` became `-12.32` and trends rendered Apr → May → Jun → Jul. Physical Telegram verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
 ## Device verification exception — 2026-07-15
 

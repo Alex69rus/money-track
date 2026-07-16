@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react";
+import { ChevronRightIcon, FolderIcon, SearchIcon, SlidersHorizontalIcon, TagsIcon, XIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types/transactions";
@@ -36,72 +28,33 @@ type DraftStringField = Exclude<keyof TransactionFilterDraft, "tags">;
 
 interface TransactionsFiltersCardProps {
   categories: Category[];
-  tags: string[];
   draft: TransactionFilterDraft;
   activeFiltersCount: number;
-  categorySearch: string;
   expanded: boolean;
   optionsLoading: boolean;
   optionsError: string | null;
   isDebouncing: boolean;
   onSetExpanded: (expanded: boolean) => void;
   onDraftChange: (next: TransactionFilterDraft) => void;
-  onCategorySearchChange: (value: string) => void;
+  onOpenCategorySelector: () => void;
   onOpenTagSelector: () => void;
   onRetryOptions: () => void;
 }
 
-function normalize(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function toTestIdSegment(value: string): string {
-  return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
-
-function toggleTag(currentTags: string[], tag: string): string[] {
-  const normalizedTag = normalize(tag);
-  if (currentTags.some((item) => normalize(item) === normalizedTag)) {
-    return currentTags.filter((item) => normalize(item) !== normalizedTag);
-  }
-
-  return [...currentTags, tag];
-}
-
 export function TransactionsFiltersCard({
   categories,
-  tags,
   draft,
   activeFiltersCount,
-  categorySearch,
   expanded,
   optionsLoading,
   optionsError,
   isDebouncing,
   onSetExpanded,
   onDraftChange,
-  onCategorySearchChange,
+  onOpenCategorySelector,
   onOpenTagSelector,
   onRetryOptions,
 }: TransactionsFiltersCardProps): JSX.Element {
-  const filteredCategories = useMemo(() => {
-    const query = normalize(categorySearch);
-    if (query.length === 0) {
-      return categories;
-    }
-
-    return categories.filter((category) => {
-      return normalize(category.name).includes(query);
-    });
-  }, [categories, categorySearch]);
-
-  const selectedTagSet = useMemo(() => new Set(draft.tags.map(normalize)), [draft.tags]);
-  const selectedTags = useMemo(() => draft.tags.slice(0, 5), [draft.tags]);
-  const suggestedTags = useMemo(
-    () => tags.filter((tag) => !selectedTagSet.has(normalize(tag))).slice(0, 5),
-    [selectedTagSet, tags],
-  );
-
   const selectedCategoryLabel = useMemo(() => {
     if (!draft.categoryId) {
       return undefined;
@@ -111,36 +64,10 @@ export function TransactionsFiltersCard({
     return categories.find((category) => category.id === categoryId)?.name;
   }, [categories, draft.categoryId]);
 
-  const categoriesForSelect = useMemo(() => {
-    if (!draft.categoryId) {
-      return filteredCategories;
-    }
-
-    const selectedCategoryId = Number(draft.categoryId);
-    const isPresent = filteredCategories.some((category) => category.id === selectedCategoryId);
-    if (isPresent) {
-      return filteredCategories;
-    }
-
-    const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
-    if (!selectedCategory) {
-      return filteredCategories;
-    }
-
-    return [selectedCategory, ...filteredCategories];
-  }, [categories, draft.categoryId, filteredCategories]);
-
   const onFieldChange = (field: DraftStringField, value: string): void => {
     onDraftChange({
       ...draft,
       [field]: value,
-    });
-  };
-
-  const onTagToggle = (tag: string): void => {
-    onDraftChange({
-      ...draft,
-      tags: toggleTag(draft.tags, tag),
     });
   };
 
@@ -154,11 +81,10 @@ export function TransactionsFiltersCard({
       maxAmount: "",
       tags: [],
     });
-    onCategorySearchChange("");
   };
 
   return (
-    <Card className="rounded-xl border-border/70 bg-card/70 py-0">
+    <Card className="rounded-xl border-border/70 bg-card/70 py-0" data-testid="transactions-filters-card">
       <CardHeader className="gap-3 px-4 pt-4 pb-3">
         <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-background/80 p-1.5">
           <Button
@@ -281,133 +207,92 @@ export function TransactionsFiltersCard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="transactions-category-search">
-              Category
-            </label>
-
-            <Input
-              id="transactions-category-search"
-              onChange={(event) => onCategorySearchChange(event.target.value)}
-              placeholder="Search categories"
-              type="search"
-              value={categorySearch}
-            />
-
-            {optionsLoading ? (
-              <Skeleton className="h-9 w-full" />
-            ) : (
-              <Select
-                onValueChange={(value) => onFieldChange("categoryId", value === "all" ? "" : value)}
-                value={draft.categoryId || "all"}
-              >
-                <SelectTrigger aria-label="Select category" className="w-full">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">All categories</SelectItem>
-                    {categoriesForSelect.map((category) => (
-                      <SelectItem key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                    {!optionsLoading && categoriesForSelect.length === 0 ? (
-                      <SelectItem disabled value="no-categories-found">
-                        No categories found
-                      </SelectItem>
-                    ) : null}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
-
-            {selectedCategoryLabel ? (
-              <p className="text-xs text-muted-foreground">Selected category: {selectedCategoryLabel}</p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">Tags</p>
-              <Button
-                className="h-auto px-1 text-xs font-semibold text-primary hover:text-primary"
-                data-testid="tx-filter-edit-tags"
-                onClick={onOpenTagSelector}
-                size="xs"
-                type="button"
-                variant="ghost"
-              >
-                Edit tags
-              </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Category</p>
+                {draft.categoryId ? (
+                  <Button
+                    aria-label="Clear category filter"
+                    className="size-7 rounded-full text-muted-foreground"
+                    onClick={() => onFieldChange("categoryId", "")}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <XIcon aria-hidden />
+                  </Button>
+                ) : null}
+              </div>
+              {optionsLoading ? (
+                <Skeleton className="h-14 w-full rounded-xl" />
+              ) : (
+                <button
+                  aria-label="Choose category filter"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-border/80 bg-background/80 px-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  data-testid="tx-filter-open-category"
+                  onClick={onOpenCategorySelector}
+                  type="button"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <FolderIcon aria-hidden className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {selectedCategoryLabel ?? "All categories"}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {selectedCategoryLabel ? "Tap to change category" : "Choose one category"}
+                    </span>
+                  </span>
+                  <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                </button>
+              )}
             </div>
 
-            {optionsLoading ? (
-              <div className="grid grid-cols-3 gap-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3" data-testid="tx-filter-tags-compact">
-                {selectedTags.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {selectedTags.map((tag) => (
-                      <Button
-                        aria-label={`Remove ${tag} filter tag`}
-                        aria-pressed
-                        className="max-w-40"
-                        data-testid={`tx-filter-selected-tag-${toTestIdSegment(tag)}`}
-                        key={tag}
-                        onClick={() => onTagToggle(tag)}
-                        size="xs"
-                        type="button"
-                      >
-                        <span className="truncate">{tag}</span>
-                      </Button>
-                    ))}
-                    {draft.tags.length > selectedTags.length ? (
-                      <Button
-                        aria-label={`Edit ${draft.tags.length} selected filter tags`}
-                        className="max-w-40"
-                        data-testid="tx-filter-selected-tags-count"
-                        onClick={onOpenTagSelector}
-                        size="xs"
-                        type="button"
-                        variant="outline"
-                      >
-                        +{draft.tags.length - selectedTags.length} selected
-                      </Button>
-                    ) : null}
-                  </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Tags</p>
+                {draft.tags.length > 0 ? (
+                  <Button
+                    aria-label="Clear tag filters"
+                    className="size-7 rounded-full text-muted-foreground"
+                    onClick={() => onDraftChange({ ...draft, tags: [] })}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <XIcon aria-hidden />
+                  </Button>
                 ) : null}
-
-                {suggestedTags.length > 0 ? (
-                  <div>
-                    <p className="mb-2 text-xs text-muted-foreground">Suggested tags</p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedTags.map((tag) => (
-                        <Button
-                          aria-label={`Add ${tag} filter tag`}
-                          className="max-w-40"
-                          data-testid={`tx-filter-suggested-tag-${toTestIdSegment(tag)}`}
-                          key={tag}
-                          onClick={() => onTagToggle(tag)}
-                          size="xs"
-                          type="button"
-                          variant="outline"
-                        >
-                          <span className="truncate">{tag}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No additional tags to suggest.</p>
-                )}
               </div>
-            )}
+              {optionsLoading ? (
+                <Skeleton className="h-14 w-full rounded-xl" />
+              ) : (
+                <button
+                  aria-label="Choose tag filters"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-border/80 bg-background/80 px-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  data-testid="tx-filter-open-tags"
+                  onClick={onOpenTagSelector}
+                  type="button"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <TagsIcon aria-hidden className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {draft.tags.length === 0
+                        ? "All tags"
+                        : `${draft.tags.length} ${draft.tags.length === 1 ? "tag" : "tags"} selected`}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {draft.tags.length > 0 ? draft.tags.join(", ") : "Choose one or more tags"}
+                    </span>
+                  </span>
+                  <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

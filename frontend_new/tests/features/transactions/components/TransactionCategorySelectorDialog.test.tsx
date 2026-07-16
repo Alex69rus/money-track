@@ -62,4 +62,25 @@ describe("TransactionCategorySelectorDialog", () => {
     expect(screen.queryByTestId("tx-category-expand-3")).not.toBeInTheDocument();
     expect(screen.getByTestId("tx-category-selection-marker-3")).toBeInTheDocument();
   });
+
+  it("can label the empty selector state as all categories for filtering", () => {
+    render(
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        currentCategoryId={null}
+        description="Filter categories"
+        error={null}
+        nullOptionLabel="All categories"
+        onConfirm={vi.fn()}
+        onOpenChange={vi.fn()}
+        open
+        pending={false}
+        presentation="page"
+        title="Filter category"
+      />,
+    );
+
+    expect(screen.getByTestId("tx-category-option-uncategorized")).toHaveTextContent("All categories");
+    expect(screen.getByTestId("tx-category-option-uncategorized")).toHaveAccessibleName("Clear category filter");
+  });
 });

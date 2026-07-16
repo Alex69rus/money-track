@@ -5,9 +5,7 @@ import {
   TransactionsFiltersCard,
 } from "@/features/transactions/components/TransactionsFiltersCard";
 
-const tags = Array.from({ length: 100 }, (_, index) =>
-  index === 20 ? "very-long-system-generated-tag-that-must-not-overflow-the-phone-filter-card" : `tag-${index + 1}`,
-);
+const tags = Array.from({ length: 7 }, (_, index) => `tag-${index + 1}`);
 const draft: TransactionFilterDraft = {
   categoryId: "",
   fromDate: "",
@@ -19,41 +17,43 @@ const draft: TransactionFilterDraft = {
 };
 
 describe("TransactionsFiltersCard", () => {
-  it("bounds default tag chips while preserving a route to edit all selected and available tags", () => {
+  it("opens dedicated category and tag selectors instead of combining search, chips, and native selects", () => {
     const onDraftChange = vi.fn();
+    const onOpenCategorySelector = vi.fn();
     const onOpenTagSelector = vi.fn();
 
     render(
       <TransactionsFiltersCard
         activeFiltersCount={1}
-        categories={[]}
-        categorySearch=""
-        draft={draft}
+        categories={[{ id: 12, name: "Groceries", type: "EXPENSE", color: "#2d8cff", icon: null, parentCategoryId: null, orderIndex: 0, createdAt: new Date() }]}
+        draft={{ ...draft, categoryId: "12" }}
         expanded
         isDebouncing={false}
-        onCategorySearchChange={vi.fn()}
         onDraftChange={onDraftChange}
+        onOpenCategorySelector={onOpenCategorySelector}
         onOpenTagSelector={onOpenTagSelector}
         onRetryOptions={vi.fn()}
         onSetExpanded={vi.fn()}
         optionsError={null}
         optionsLoading={false}
-        tags={tags}
       />,
     );
 
-    expect(screen.getAllByTestId(/^tx-filter-selected-tag-/)).toHaveLength(5);
-    expect(screen.getAllByTestId(/^tx-filter-suggested-tag-/)).toHaveLength(5);
-    expect(screen.getByTestId("tx-filter-selected-tags-count")).toHaveTextContent("+2 selected");
+    expect(screen.getByTestId("tx-filter-open-category")).toHaveTextContent("Groceries");
+    expect(screen.getByTestId("tx-filter-open-tags")).toHaveTextContent("7 tags selected");
     expect(screen.getByTestId("transactions-filters-toggle")).toHaveTextContent("Filters");
-    expect(screen.queryByText("Changes apply automatically after a short debounce.")).not.toBeInTheDocument();
-    expect(screen.queryByText("tag-100", { exact: true })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("tx-filter-selected-tag-tag-1"));
-    expect(onDraftChange).toHaveBeenCalledWith({ ...draft, tags: tags.slice(1, 7) });
+    expect(screen.queryByTestId("transactions-category-search")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tx-filter-tags-compact")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("tx-filter-selected-tags-count"));
-    fireEvent.click(screen.getByTestId("tx-filter-edit-tags"));
-    expect(onOpenTagSelector).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByTestId("tx-filter-open-category"));
+    fireEvent.click(screen.getByTestId("tx-filter-open-tags"));
+    expect(onOpenCategorySelector).toHaveBeenCalledOnce();
+    expect(onOpenTagSelector).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear category filter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear tag filters" }));
+    expect(onDraftChange).toHaveBeenNthCalledWith(1, { ...draft, categoryId: "", tags: draft.tags });
+    expect(onDraftChange).toHaveBeenNthCalledWith(2, { ...draft, categoryId: "12", tags: [] });
   });
 
   it("wraps each native date input in its own containment owner", () => {
@@ -63,18 +63,16 @@ describe("TransactionsFiltersCard", () => {
       <TransactionsFiltersCard
         activeFiltersCount={0}
         categories={[]}
-        categorySearch=""
         draft={draft}
         expanded
         isDebouncing={false}
-        onCategorySearchChange={vi.fn()}
         onDraftChange={onDraftChange}
+        onOpenCategorySelector={vi.fn()}
         onOpenTagSelector={vi.fn()}
         onRetryOptions={vi.fn()}
         onSetExpanded={vi.fn()}
         optionsError={null}
         optionsLoading={false}
-        tags={tags}
       />,
     );
 
@@ -106,18 +104,16 @@ describe("TransactionsFiltersCard", () => {
       <TransactionsFiltersCard
         activeFiltersCount={2}
         categories={[]}
-        categorySearch=""
         draft={populatedDraft}
         expanded
         isDebouncing={false}
-        onCategorySearchChange={vi.fn()}
         onDraftChange={onDraftChange}
+        onOpenCategorySelector={vi.fn()}
         onOpenTagSelector={vi.fn()}
         onRetryOptions={vi.fn()}
         onSetExpanded={vi.fn()}
         optionsError={null}
         optionsLoading={false}
-        tags={tags}
       />,
     );
 

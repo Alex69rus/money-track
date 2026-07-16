@@ -137,7 +137,18 @@ export const phase2Definition = {
     await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     await page.locator('[data-testid="transactions-filters-toggle"]').click();
-    await page.locator('[data-testid="tx-filter-edit-tags"]').click();
+    await page.locator('[data-testid="tx-filter-open-category"]').click();
+    await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    const filterCategoryOptions = page.locator('[data-testid^="tx-category-option-"]');
+    if ((await filterCategoryOptions.count()) < 2) {
+      throw new Error("Filter category selector must expose searchable category choices.");
+    }
+    await filterCategoryOptions.nth(1).click();
+    await page.locator('[data-testid="tx-category-update"]').click();
+    await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
+    await page.locator('[aria-label="Clear category filter"]').click();
+
+    await page.locator('[data-testid="tx-filter-open-tags"]').click();
     await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
     await page.fill('[data-testid="tx-tags-search"]', `not-a-real-filter-tag-${Date.now()}`);
     const filterCanCreateTag = await page.locator('[data-testid="tx-tags-add-from-search"]').count();
@@ -167,6 +178,12 @@ export const phase2Definition = {
       ? pass("Required-field validation blocks zero amount and shows a clear validation error.")
       : fail("Expected required validation for zero amount was not shown.");
 
+    await page.fill("#transaction-edit-amount", "12,34");
+    await page.locator('[data-testid="tx-edit-sign-expense"]').click();
+    const localeSafeAmount = await page.locator("#transaction-edit-amount").inputValue();
+    if (localeSafeAmount !== "-12.34") {
+      throw new Error(`Transaction amount must normalize a decimal comma and support an expense sign; received ${localeSafeAmount}.`);
+    }
     await page.fill("#transaction-edit-amount", "2.34");
     await page.fill("#transaction-edit-note", `${qaNote}-updated`);
     await page.locator('[data-testid="tx-edit-save"]').click();
@@ -176,7 +193,14 @@ export const phase2Definition = {
     await page.waitForSelector('[data-testid="tx-edit-page"]', { timeout: 15000 });
     await page.locator('[data-testid="tx-edit-delete-trigger"]').click();
     await page.waitForSelector('[data-testid="tx-edit-delete-confirm-dialog"]', { timeout: 15000 });
+    const deleteDialogMatchesEditor = await page
+      .locator('[data-testid="tx-edit-delete-confirm-dialog"]')
+      .evaluate((element) => element.classList.contains("bg-[#171923]"));
     fr["FR-015"] = pass("Delete flow uses explicit confirmation dialog before destructive action.");
+
+    if (!deleteDialogMatchesEditor) {
+      throw new Error("Transaction deletion confirmation must use the editor's dark surface.");
+    }
 
     const labelsPresent =
       (await page.locator('input[aria-label="Transaction amount"]').count()) > 0 &&

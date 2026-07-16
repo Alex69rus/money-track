@@ -22,6 +22,7 @@ interface TransactionCategorySelectorDialogProps {
   error: string | null;
   title: string;
   description: string;
+  nullOptionLabel?: string;
   instantApply?: boolean;
   presentation?: "dialog" | "page";
   onOpenChange: (open: boolean) => void;
@@ -90,6 +91,7 @@ export function TransactionCategorySelectorDialog({
   error,
   title,
   description,
+  nullOptionLabel = "Uncategorized",
   instantApply = false,
   presentation = "dialog",
   onOpenChange,
@@ -252,7 +254,7 @@ export function TransactionCategorySelectorDialog({
           >
             <div className="flex flex-col border-b border-[#22334a]/80">
               <button
-                aria-label="Remove category"
+                aria-label={nullOptionLabel === "All categories" ? "Clear category filter" : "Remove category"}
                 className={cn(
                   "flex w-full items-center justify-between border-b border-[#22334a]/80 py-3 text-left text-base font-semibold transition-colors",
                   selectedCategoryId === null
@@ -263,7 +265,7 @@ export function TransactionCategorySelectorDialog({
                 onClick={() => void handleCategorySelect(null)}
                 type="button"
               >
-                <span className="truncate">Uncategorized</span>
+                <span className="truncate">{nullOptionLabel}</span>
                 {selectedCategoryId === null ? <CheckCircle2Icon aria-hidden className="size-6 shrink-0" /> : null}
               </button>
 
