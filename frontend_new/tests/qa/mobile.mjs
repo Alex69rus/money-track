@@ -392,10 +392,19 @@ async function runProfile(browser, profile, artifactDirectory, frontendBaseUrl) 
     if (await page.inputValue('#transactions-from-date')) {
       throw new Error("Transactions date clear action must reset its own date field.");
     }
-    if ((await page.locator('[data-testid^="tx-filter-suggested-tag-"]').count()) !== 5) {
-      throw new Error("Transactions filter must render exactly five suggested tags from a large catalogue.");
+    if (
+      (await page.locator('[data-testid="tx-filter-open-category"]').count()) !== 1 ||
+      (await page.locator('[data-testid="tx-filter-open-tags"]').count()) !== 1
+    ) {
+      throw new Error("Transactions filters must expose one clear category selector and one clear tag selector.");
     }
-    await page.click('[data-testid="tx-filter-edit-tags"]');
+    await page.click('[data-testid="tx-filter-open-category"]');
+    await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    await assertNoHorizontalOverflow(page, "filter category selector");
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
+
+    await page.click('[data-testid="tx-filter-open-tags"]');
     await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
     await page.fill('[data-testid="tx-tags-search"]', "very-long-system-generated-filter-tag");
     await assertNoHorizontalOverflow(page, "filter tag selector");

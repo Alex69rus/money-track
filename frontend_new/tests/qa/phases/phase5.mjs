@@ -10,10 +10,6 @@ function normalizeToTestIdSegment(value) {
     .replace(/-+$/, "");
 }
 
-function filterTagButton(page, tag) {
-  return page.getByRole("button", { name: `Add ${tag} filter tag` });
-}
-
 function buildTransactionsResponse() {
   const createdAt = new Date().toISOString();
 
@@ -109,8 +105,8 @@ export const phase5Definition = {
       : fail("Did not capture X-Telegram-Init-Data header on transactions requests.");
 
     await page.click('button[aria-label="Show filters"]');
-    const backendFilterTag = filterTagButton(page, "phase5backendtag");
-    await backendFilterTag.waitFor({ state: "visible", timeout: 15000 });
+    const filterTagSelector = page.locator('[data-testid="tx-filter-open-tags"]');
+    await filterTagSelector.waitFor({ state: "visible", timeout: 15000 });
 
     const tagEditor = page.locator(`[data-testid="tx-${transactionLayout}-tags-98501"]`);
     await tagEditor.scrollIntoViewIfNeeded();
@@ -164,13 +160,20 @@ export const phase5Definition = {
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
-    const tagInFiltersVisible = await backendFilterTag.isVisible().catch(() => false);
+    await filterTagSelector.click();
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { timeout: 15000 });
+    const tagInFilterSelectorVisible = await page
+      .locator(`[data-testid="tx-tag-option-${normalizeToTestIdSegment("phase5backendtag")}"]`)
+      .isVisible()
+      .catch(() => false);
+    await page.evaluate(() => window.__qaTelegram.pressBack());
+    await page.waitForSelector('[data-testid="tx-tags-page"]', { state: "hidden", timeout: 15000 });
 
     fr["FR-030"] =
-      tagsRequestCount > 0 && tagInFiltersVisible && tagInSelectorVisible
+      tagsRequestCount > 0 && tagInFilterSelectorVisible && tagInSelectorVisible
         ? pass("Tag options are loaded from /api/tags and reused in filters and edit selector.")
         : fail(
-            `Tag integration check failed (tagsRequestCount=${tagsRequestCount}, filterTagVisible=${tagInFiltersVisible}, selectorTagVisible=${tagInSelectorVisible}).`,
+            `Tag integration check failed (tagsRequestCount=${tagsRequestCount}, filterTagSelectorVisible=${tagInFilterSelectorVisible}, selectorTagVisible=${tagInSelectorVisible}).`,
           );
 
     await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });

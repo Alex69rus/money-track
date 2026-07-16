@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CategoryDrilldownDialog } from "@/features/analytics/components/CategoryDrilldownDialog";
 import type { AnalyticsDrilldownItem } from "@/features/analytics/types";
+import type { Transaction } from "@/types/transactions";
 
 const category: AnalyticsDrilldownItem = {
   kind: "category",
@@ -105,6 +106,61 @@ describe("CategoryDrilldownDialog", () => {
     expect(screen.getByTestId("analytics-drilldown-label")).toHaveTextContent("Spendings by Tag");
     expect(screen.getByTestId("analytics-drilldown-subject")).toHaveTextContent("#coffee");
     expect(screen.getByTestId("analytics-drilldown-transaction-category-91")).toHaveAccessibleName("Category Food & Drinks");
+  });
+
+  it("uses category initials in category and tag drilldown rows when a category icon is missing", () => {
+    const originalTransaction = category.item.transactions[0];
+    if (!originalTransaction?.category) {
+      throw new Error("The category fixture must include a categorized transaction.");
+    }
+
+    const missingIconTransaction: Transaction = {
+      ...originalTransaction,
+      category: {
+        ...originalTransaction.category,
+        icon: null,
+        name: "Eating Out",
+      },
+    };
+    const missingIconCategory: AnalyticsDrilldownItem = {
+      kind: "category",
+      item: {
+        ...category.item,
+        categoryName: "Eating Out",
+        icon: null,
+        transactions: [missingIconTransaction],
+      },
+    };
+    const missingIconTag: AnalyticsDrilldownItem = {
+      kind: "tag",
+      item: {
+        ...tag.item,
+        transactions: [missingIconTransaction],
+      },
+    };
+
+    const categoryView = render(
+      <CategoryDrilldownDialog
+        currency="AED"
+        drilldown={missingIconCategory}
+        onClose={() => undefined}
+        presentation="page"
+        rangeLabel="Jul 1 - Jul 31, 2026"
+      />,
+    );
+    expect(screen.getByTestId("analytics-drilldown-transaction-category-91")).toHaveTextContent("EO");
+
+    categoryView.unmount();
+    render(
+      <CategoryDrilldownDialog
+        currency="AED"
+        drilldown={missingIconTag}
+        onClose={() => undefined}
+        presentation="page"
+        rangeLabel="Jul 1 - Jul 31, 2026"
+      />,
+    );
+    expect(screen.getByTestId("analytics-drilldown-transaction-category-91")).toHaveTextContent("EO");
   });
 
   it("exposes an explicit edit action for each drilldown transaction", () => {

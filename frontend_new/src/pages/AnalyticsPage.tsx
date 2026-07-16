@@ -3,6 +3,7 @@ import { ArrowDownIcon, ArrowUpIcon, CalendarDaysIcon, TrendingUpIcon } from "lu
 import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeDateField } from "@/components/ui/native-date-field";
 import { AnalyticsBreakdownPage } from "@/features/analytics/components/AnalyticsBreakdownPage";
@@ -486,18 +487,24 @@ export function AnalyticsPage(): JSX.Element {
                         <div className="flex min-w-0 flex-1 items-center gap-3">
                           <div
                             className="flex size-12 shrink-0 items-center justify-center rounded-xl"
+                            data-testid={`analytics-category-icon-${categoryItem.key}`}
                             style={{
                               backgroundColor: withAlpha(categoryColor, 0.24, "rgba(45, 140, 255, 0.18)"),
                               color: iconForeground,
                             }}
                           >
-                            {categoryItem.icon ? (
-                              <span aria-hidden className="material-symbols-outlined text-[1.45rem] leading-none">
-                                {categoryItem.icon}
-                              </span>
-                            ) : (
-                              <span className="text-lg font-semibold">#</span>
-                            )}
+                            <CategoryIconGlyph
+                              category={
+                                categoryItem.categoryId === null
+                                  ? null
+                                  : {
+                                      icon: categoryItem.icon,
+                                      name: categoryItem.categoryName,
+                                    }
+                              }
+                              className="material-symbols-outlined text-[1.45rem] leading-none"
+                              fallbackClassName="text-lg font-semibold"
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-lg font-semibold">{categoryItem.categoryName}</p>

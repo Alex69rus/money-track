@@ -2,9 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAnalyticsTransactions } from "@/features/analytics/hooks/useAnalyticsTransactions";
+import {
+  buildAnalyticsModel,
+  formatMoney,
+  formatSignedMoney,
+  getCurrentMonthDateRange,
+  resolveCurrencyDisplay,
+} from "@/features/analytics/utils";
 import { TransactionCategorySelectorDialog } from "@/features/transactions/components/TransactionCategorySelectorDialog";
 import { TransactionEditDialog } from "@/features/transactions/components/TransactionEditDialog";
 import {
@@ -199,10 +206,15 @@ function readRouteTransaction(
 function parseTransactionRoute(pathname: string): {
   editTransactionId?: number;
   editSubpage: "none" | "category" | "tags";
+  filterCategory?: boolean;
   filterTags?: boolean;
   quickCategoryTransactionId?: number;
   quickTagTransactionId?: number;
 } {
+  if (pathname === "/transactions/filters/category") {
+    return { editSubpage: "none", filterCategory: true };
+  }
+
   if (pathname === "/transactions/filters/tags") {
     return { editSubpage: "none", filterTags: true };
   }
@@ -238,7 +250,6 @@ export function TransactionsPage(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
   const [filtersDraft, setFiltersDraft] = useState<TransactionFilterDraft>(DEFAULT_FILTERS);
-  const [categorySearch, setCategorySearch] = useState("");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -256,7 +267,6 @@ export function TransactionsPage(): JSX.Element {
 
   const {
     transactions,
-    totalCount,
     hasMore,
     loading,
     loadingMore,
@@ -268,6 +278,18 @@ export function TransactionsPage(): JSX.Element {
     replaceTransaction,
     removeTransaction,
   } = useTransactionsList(requestFilters);
+  const currentMonthDateRange = getCurrentMonthDateRange();
+  const {
+    transactions: currentMonthTransactions,
+    loading: currentMonthSnapshotLoading,
+    error: currentMonthSnapshotError,
+    retry: retryCurrentMonthSnapshot,
+  } = useAnalyticsTransactions(currentMonthDateRange);
+  const currentMonthSnapshot = useMemo(() => buildAnalyticsModel(currentMonthTransactions).summary, [currentMonthTransactions]);
+  const currentMonthCurrency = useMemo(
+    () => resolveCurrencyDisplay(currentMonthTransactions).currency,
+    [currentMonthTransactions],
+  );
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -468,57 +490,57 @@ export function TransactionsPage(): JSX.Element {
   );
 
   const hasEmptyState = !loading && !error && transactions.length === 0;
-  const totals = useMemo(() => {
-    return transactions.reduce(
-      (accumulator, transaction) => {
-        if (transaction.amount >= 0) {
-          accumulator.income += transaction.amount;
-        } else {
-          accumulator.expense += Math.abs(transaction.amount);
-        }
-
-        return accumulator;
-      },
-      { income: 0, expense: 0 },
-    );
-  }, [transactions]);
-  const balance = totals.income - totals.expense;
-  const displayCurrency = transactions[0]?.currency ?? "AED";
-  const moneyFormatter = useMemo(() => {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: displayCurrency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }, [displayCurrency]);
-
   return (
     <section className="relative flex min-h-full shrink-0 flex-col gap-4">
       <Card className="mt-balance-card overflow-hidden border-0 py-0 text-primary-foreground">
         <CardContent className="relative flex flex-col gap-5 p-5">
           <div className="mt-balance-glow mt-balance-glow-top" />
           <div className="mt-balance-glow mt-balance-glow-bottom" />
-          <div className="relative z-10 flex flex-col gap-5">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-primary-foreground/80">Balance Snapshot</p>
-              <p className="text-3xl font-bold tracking-tight">{moneyFormatter.format(balance)}</p>
-            </div>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              <div className="flex flex-col">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
-                  Monthly Income
-                </span>
-                <span className="text-sm font-semibold">+{moneyFormatter.format(totals.income)}</span>
+          <div className="relative z-10 flex flex-col gap-5" aria-live="polite">
+            {currentMonthSnapshotLoading ? (
+              <p className="py-5 text-sm font-medium text-primary-foreground/80">Loading current-month snapshot...</p>
+            ) : currentMonthSnapshotError ? (
+              <div className="flex flex-col gap-3 py-1">
+                <p className="text-sm font-medium text-primary-foreground/80">Could not load the current-month snapshot.</p>
+                <Button
+                  className="w-fit border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+                  onClick={retryCurrentMonthSnapshot}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Retry snapshot
+                </Button>
               </div>
-              <div className="h-8 w-px bg-primary-foreground/20" />
-              <div className="flex flex-col text-right">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
-                  Monthly Expense
-                </span>
-                <span className="text-sm font-semibold">-{moneyFormatter.format(totals.expense)}</span>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-medium text-primary-foreground/80">Balance Snapshot</p>
+                  <p className="text-3xl font-bold tracking-tight" data-testid="transactions-balance-value">
+                    {formatSignedMoney(currentMonthSnapshot.balance, currentMonthCurrency)}
+                  </p>
+                </div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
+                      Monthly Income
+                    </span>
+                    <span className="text-sm font-semibold" data-testid="transactions-monthly-income">
+                      {formatSignedMoney(currentMonthSnapshot.totalIncome, currentMonthCurrency)}
+                    </span>
+                  </div>
+                  <div className="h-8 w-px bg-primary-foreground/20" />
+                  <div className="flex flex-col text-right">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-primary-foreground/75">
+                      Monthly Expense
+                    </span>
+                    <span className="text-sm font-semibold" data-testid="transactions-monthly-expense">
+                      -{formatMoney(currentMonthSnapshot.totalExpenses, currentMonthCurrency)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -526,12 +548,15 @@ export function TransactionsPage(): JSX.Element {
       <TransactionsFiltersCard
         activeFiltersCount={activeFiltersCount}
         categories={categories}
-        categorySearch={categorySearch}
         draft={filtersDraft}
         expanded={filtersExpanded}
         isDebouncing={isDebouncing}
-        onCategorySearchChange={setCategorySearch}
         onDraftChange={setFiltersDraft}
+        onOpenCategorySelector={() => {
+          navigate("/transactions/filters/category", {
+            state: { mtReturnPath: location.pathname } satisfies TransactionRouteState,
+          });
+        }}
         onOpenTagSelector={() => {
           navigate("/transactions/filters/tags", {
             state: { mtReturnPath: location.pathname } satisfies TransactionRouteState,
@@ -541,15 +566,7 @@ export function TransactionsPage(): JSX.Element {
         onSetExpanded={setFiltersExpanded}
         optionsError={optionsError}
         optionsLoading={optionsLoading}
-        tags={tags}
       />
-
-      <div className="flex items-center justify-between gap-2 px-1">
-        <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Recent Transactions</h2>
-        <Badge className="rounded-full px-2 text-[10px]" variant="outline">
-          {totalCount} records
-        </Badge>
-      </div>
 
       {loading && !error ? <TransactionsListSkeleton /> : null}
 
@@ -663,6 +680,30 @@ export function TransactionsPage(): JSX.Element {
         title="Add tags"
       />
 
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        currentCategoryId={filtersDraft.categoryId ? Number(filtersDraft.categoryId) : null}
+        description="Choose a category to filter the list"
+        error={null}
+        nullOptionLabel="All categories"
+        onConfirm={(nextCategoryId) => {
+          setFiltersDraft((current) => ({
+            ...current,
+            categoryId: nextCategoryId === null ? "" : String(nextCategoryId),
+          }));
+          navigateBack();
+        }}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            navigateBack();
+          }
+        }}
+        open={transactionRoute.filterCategory === true}
+        pending={false}
+        presentation="page"
+        title="Filter category"
+      />
+
       <TransactionTagSelectorDialog
         allowCreate={false}
         availableTags={tags}
@@ -689,6 +730,7 @@ export function TransactionsPage(): JSX.Element {
         categories={categories}
         onDeleted={(transactionId) => {
           removeTransaction(transactionId);
+          retryCurrentMonthSnapshot();
         }}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
@@ -697,6 +739,7 @@ export function TransactionsPage(): JSX.Element {
         }}
         onSaved={(updatedTransaction) => {
           replaceTransaction(updatedTransaction);
+          retryCurrentMonthSnapshot();
         }}
         activeSubpage={transactionRoute.editSubpage}
         onOpenCategoryPage={() => {

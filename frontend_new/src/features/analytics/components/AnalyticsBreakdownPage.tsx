@@ -1,5 +1,6 @@
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph, type CategoryIconData } from "@/components/category-icon-glyph";
 import type { CategorySpendingItem, TagSpendingItem } from "@/features/analytics/types";
 import { formatMoney, toTestIdSegment } from "@/features/analytics/utils";
 import { isTelegramWebAppAvailable } from "@/services/telegram/webapp";
@@ -25,9 +26,9 @@ type AnalyticsBreakdownPageProps =
 interface BreakdownRow {
   amount: number;
   backgroundColor: string;
+  category?: CategoryIconData | null;
   foregroundColor: string;
-  icon: string;
-  isFallbackIcon: boolean;
+  icon?: string;
   key: string;
   name: string;
   onSelect: () => void;
@@ -74,14 +75,17 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
     props.kind === "category"
       ? props.items.map((item) => {
           const color = normalizeHexColor(item.color);
-          const icon = item.icon?.trim() || "?";
-
           return {
             amount: item.amount,
             backgroundColor: withAlpha(color, 0.24, "rgba(45, 140, 255, 0.18)"),
+            category:
+              item.categoryId === null
+                ? null
+                : {
+                    icon: item.icon,
+                    name: item.categoryName,
+                  },
             foregroundColor: color ? `#${color}` : "#2d8cff",
-            icon,
-            isFallbackIcon: icon === "?",
             key: item.key,
             name: item.categoryName,
             onSelect: () => props.onSelect(item),
@@ -92,9 +96,9 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
       : props.items.map((item, index) => ({
           amount: item.amount,
           backgroundColor: index === 0 ? "rgba(45, 140, 255, 0.2)" : "#30445e",
+          category: undefined,
           foregroundColor: index === 0 ? "#2d8cff" : "#8ea4bd",
           icon: "sell",
-          isFallbackIcon: false,
           key: item.key,
           name: `#${item.tag}`,
           onSelect: () => props.onSelect(item),
@@ -153,10 +157,13 @@ export function AnalyticsBreakdownPage(props: AnalyticsBreakdownPageProps): JSX.
                       color: row.foregroundColor,
                     }}
                   >
-                    {row.isFallbackIcon ? (
-                      <span aria-hidden className="text-lg font-semibold">
-                        ?
-                      </span>
+                    {row.category !== undefined ? (
+                      <CategoryIconGlyph
+                        category={row.category}
+                        className="material-symbols-outlined text-[1.2rem] leading-none"
+                        dataTestId={`analytics-breakdown-category-icon-${row.testId}`}
+                        fallbackClassName="text-lg font-semibold"
+                      />
                     ) : (
                       <span aria-hidden className="material-symbols-outlined text-[1.2rem] leading-none">
                         {row.icon}

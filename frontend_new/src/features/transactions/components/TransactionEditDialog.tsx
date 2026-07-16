@@ -4,7 +4,6 @@ import {
   ChevronRightIcon,
   FolderPenIcon,
   LoaderCircleIcon,
-  PlusCircleIcon,
   TagsIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TransactionCategorySelectorDialog } from "@/features/transactions/components/TransactionCategorySelectorDialog";
 import { TransactionTagSelectorDialog } from "@/features/transactions/components/TransactionTagSelectorDialog";
+import { cn } from "@/lib/utils";
 import aedSymbol from "@/assets/aed-symbol.png";
 import { ApiRequestError } from "@/services/api/client";
 import { deleteTransaction, updateTransaction } from "@/services/api/transactions";
@@ -110,6 +111,33 @@ function formatDateTimePreview(dateTimeValue: string): string {
   }).format(parsedDate);
 }
 
+function formatEditableAmount(amount: number): string {
+  const rendered = amount.toString();
+  const decimalIndex = rendered.indexOf(".");
+
+  if (decimalIndex === -1) {
+    return `${rendered}.00`;
+  }
+
+  return rendered.length - decimalIndex === 2 ? `${rendered}0` : rendered;
+}
+
+function normalizeEditableAmount(value: string): string | null {
+  const normalized = value.replace(/,/g, ".");
+  return /^-?\d*(?:\.\d*)?$/.test(normalized) ? normalized : null;
+}
+
+function withAmountSign(value: string, sign: "income" | "expense"): string {
+  const normalized = normalizeEditableAmount(value) ?? "";
+  const magnitude = normalized.replace(/^-/, "");
+
+  if (!magnitude) {
+    return sign === "expense" ? "-" : "";
+  }
+
+  return sign === "expense" ? `-${magnitude}` : magnitude;
+}
+
 export function TransactionEditDialog({
   open,
   transaction,
@@ -150,7 +178,7 @@ export function TransactionEditDialog({
     }
 
     initializedTransactionIdRef.current = transaction.id;
-    setAmount(String(transaction.amount));
+    setAmount(formatEditableAmount(transaction.amount));
     setTransactionDate(toDateTimeLocalValue(transaction.transactionDate));
     setCurrency(transaction.currency);
     setCategoryId(transaction.categoryId);
@@ -168,10 +196,10 @@ export function TransactionEditDialog({
 
   const selectedCategory = categoryId === null ? null : (categoryById.get(categoryId) ?? null);
   const selectedCategoryLabel = selectedCategory?.name ?? (categoryId === null ? "Uncategorized" : "Unknown");
-  const selectedCategoryIcon = selectedCategory?.icon?.trim() || null;
   const normalizedCurrency = normalizeCurrency(currency);
   const currencySymbol = resolveCurrencySymbol(currency);
   const transactionDateLabel = formatDateTimePreview(transactionDate);
+  const isExpense = amount.trim().startsWith("-");
 
   const hasChanges = useMemo(() => {
     if (!transaction) {
@@ -179,7 +207,7 @@ export function TransactionEditDialog({
     }
 
     return (
-      amount !== String(transaction.amount) ||
+      Number(amount) !== transaction.amount ||
       transactionDate !== toDateTimeLocalValue(transaction.transactionDate) ||
       currency.trim() !== transaction.currency ||
       categoryId !== transaction.categoryId ||
@@ -349,10 +377,55 @@ export function TransactionEditDialog({
                   className="h-auto w-56 border-none bg-transparent p-0 text-center text-6xl font-bold text-slate-100 outline-none [appearance:textfield] [background:transparent] [-webkit-appearance:none] focus:ring-0 focus:outline-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   id="transaction-edit-amount"
                   inputMode="decimal"
-                  onChange={(event) => setAmount(event.target.value)}
-                  type="number"
+                  onBlur={(event) => {
+                    const normalizedAmount = normalizeEditableAmount(event.target.value);
+                    if (!normalizedAmount?.trim()) {
+                      return;
+                    }
+
+                    const parsedAmount = Number(normalizedAmount);
+                    if (Number.isFinite(parsedAmount)) {
+                      setAmount(formatEditableAmount(parsedAmount));
+                    }
+                  }}
+                  onChange={(event) => {
+                    const normalizedAmount = normalizeEditableAmount(event.target.value);
+                    if (normalizedAmount !== null) {
+                      setAmount(normalizedAmount);
+                    }
+                  }}
+                  pattern="-?[0-9]*[.,]?[0-9]*"
+                  type="text"
                   value={amount}
                 />
+              </div>
+              <div aria-label="Transaction direction" className="mt-3 inline-flex rounded-xl border border-white/10 bg-white/5 p-1" role="group">
+                <button
+                  aria-pressed={!isExpense}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                    !isExpense ? "text-white shadow-sm" : "text-slate-400 hover:text-slate-100",
+                  )}
+                  data-testid="tx-edit-sign-income"
+                  onClick={() => setAmount((current) => withAmountSign(current, "income"))}
+                  style={{ backgroundColor: !isExpense ? "#2d8cff" : "transparent" }}
+                  type="button"
+                >
+                  Income
+                </button>
+                <button
+                  aria-pressed={isExpense}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                    isExpense ? "text-white shadow-sm" : "text-slate-400 hover:text-slate-100",
+                  )}
+                  data-testid="tx-edit-sign-expense"
+                  onClick={() => setAmount((current) => withAmountSign(current, "expense"))}
+                  style={{ backgroundColor: isExpense ? "#ff5465" : "transparent" }}
+                  type="button"
+                >
+                  Expense
+                </button>
               </div>
               <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-400">
                 <Input
@@ -382,10 +455,12 @@ export function TransactionEditDialog({
             >
               <div className="flex items-center gap-3">
                 <div className="flex size-11 items-center justify-center rounded-xl bg-[#2d8cff] text-white shadow-[0_10px_22px_rgba(45,140,255,0.28)]">
-                  {selectedCategoryIcon ? (
-                    <span aria-hidden className="material-symbols-outlined text-[20px]">
-                      {selectedCategoryIcon}
-                    </span>
+                  {selectedCategory ? (
+                    <CategoryIconGlyph
+                      category={selectedCategory}
+                      className="material-symbols-outlined text-[20px]"
+                      fallbackClassName="text-base font-semibold"
+                    />
                   ) : (
                     <FolderPenIcon aria-hidden className="size-5" />
                   )}
@@ -439,11 +514,8 @@ export function TransactionEditDialog({
               }}
               type="button"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <p className="text-xs font-medium text-slate-400">Tags</p>
-                <span className="text-[#2d8cff]">
-                  <PlusCircleIcon aria-hidden className="size-5" />
-                </span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {tags.length === 0 ? (
@@ -544,17 +616,28 @@ export function TransactionEditDialog({
       )}
 
       <AlertDialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
-        <AlertDialogContent data-testid="tx-edit-delete-confirm-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent
+          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-3xl border border-white/10 bg-[#171923] p-0 text-slate-100 shadow-[0_24px_60px_rgba(0,0,0,0.58)] sm:max-w-md"
+          data-testid="tx-edit-delete-confirm-dialog"
+        >
+          <AlertDialogHeader className="px-6 pt-6 text-left sm:text-left">
+            <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-[#ff5465]/15 text-[#ff7180]">
+              <Trash2Icon aria-hidden className="size-6" />
+            </div>
+            <AlertDialogTitle className="text-xl font-semibold tracking-tight text-slate-50">Delete this transaction?</AlertDialogTitle>
+            <AlertDialogDescription className="pt-2 text-sm leading-6 text-slate-400">
               This action cannot be undone. The transaction will be removed from your history.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="mt-6 flex-row gap-3 border-t border-white/10 bg-[#12151f] px-6 py-4 sm:flex-row">
+            <AlertDialogCancel
+              className="mt-0 h-12 flex-1 rounded-xl border border-white/10 bg-white/5 text-base font-semibold text-slate-200 hover:bg-white/10 hover:text-white"
+              disabled={deleting}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-12 flex-1 rounded-xl bg-[#ff5465] text-base font-semibold text-white hover:bg-[#eb4657]"
               data-testid="tx-edit-delete-confirm"
               disabled={deleting}
               onClick={(event) => {

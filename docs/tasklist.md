@@ -22,6 +22,16 @@
 | BE-001 | `origin/main` checkpoint, 2026-05-07 | P3 | Verified | Add Telegram callback diagnostics to distinguish delivery, parsing, validation, and action failures. |
 | DEP-1 | User request, deployment audit 2026-07-13 | P1 | Ready — uncommitted | Deploy the Vite redesign automatically after a merge to `main`, retaining the legacy frontend as rollback. |
 | BR-008 | `frontend_new/bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
+| BR-009 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use the Transactions category fallback consistently in category, tag, and View all Analytics drilldowns; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-010 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-011 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P3 | Fixed — verification pending | Remove the Transactions list's retired section label and record-count badge without affecting date groups or pagination; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-012 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P1 | Fixed — verification pending | Align Transactions and Analytics current-month snapshot calculations and add a shared-boundary regression; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-013 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Replace competing compact category/tag controls with focused Transactions filter selector pages; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-014 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use dark-theme-appropriate separators within same-day Transactions groups; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-015 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Restyle transaction deletion confirmation to match the editor surface and actions; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-016 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Guarantee chronological left-to-right Monthly Trends order; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-017 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Accept iPhone locale decimal entry in the transaction amount field; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-018 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Make amount sign selection possible without an iPhone keypad minus key; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 
 ## TWA-1 — Telegram-native route and viewport validation
 
@@ -228,6 +238,52 @@ The production workflow still validated, built, and deployed frozen `frontend/`.
 `frontend_new` now contains a Node 20/Vite build image, Nginx SPA fallback, immutable asset caching, and a non-sensitive `/version.json` revision probe. The production workflow validates lint, typecheck, tests, build, and a Docker image build before publishing `ghcr.io/alex69rus/money-track/frontend-new:<commit-sha>`. Its deployment script derives `TELEGRAM_WEB_APP_URL` and `CORS_ALLOW_ORIGINS` from `DOMAIN`, saves the prior frontend digest, avoids a full-stack shutdown, and restores only the frontend if its revision or client route check fails. Deployment documentation and an untracked `.env.prod` template replace the legacy CRA configuration.
 
 YAML parsing, deployment-script shell parsing, Compose rendering, and the complete frontend quality suite passed: lint, typecheck, 27 unit tests, and production build. The user also completed the local Docker smoke check: the image served the supplied revision from `/version.json` and returned HTTP 200 for `/transactions`. The initial request was made before Nginx had finished starting; the deployment script already waits for the revision probe. No production deployment has run because these changes are intentionally uncommitted.
+
+## BR-009 — Analytics category-icon fallback parity
+
+### Delivery record — 2026-07-15
+
+- Added one shared `CategoryIconGlyph`: configured category icons remain unchanged, categories with no icon display up to two readable initials, and uncategorized transactions retain `?`.
+- Applied it to Transactions, the editor, category selector, Analytics category overview, category and tag drilldown rows, category drilldown summary, and Category View all.
+- Verification: `npm test` — 31 passed; `npm run lint`, `npm run typecheck`, and `npm run build` — passed; `npm run qa:phase3` and `npm run qa:phase5` — passed; final 390×844/DPR3 targeted report and screenshots: `.codex-tmp/targeted-transaction-analytics/report.json`; four-profile mobile QA passed.
+
+## BR-010 — Transaction editor decimal and Tags affordance
+
+### Delivery record — 2026-07-15
+
+- Editor whole-number amounts now initialize and restore on blur with two fractional digits, without treating presentation-only zeroes as an unsaved change; existing fractional precision is retained.
+- Removed the redundant Tags plus control; the whole Tags card, including its no-tags state, remains the single tag-selector action.
+- Verification: component regression tests cover initialization, blur formatting, unchanged-save state, and tag selection; Phase-2 passed; final targeted and four-profile mobile QA passed.
+
+## BR-011 — Retired Transactions results header
+
+### Delivery record — 2026-07-15
+
+- Removed both `RECENT TRANSACTIONS` and the total-record badge, preserving date-group totals and incremental list behavior.
+- Verification: Transactions-page regression test, final 390×844/DPR3 targeted browser QA, and four-profile mobile QA passed.
+
+## BR-012 — Current-month balance snapshot parity
+
+### Delivery record — 2026-07-15
+
+- Replaced the paginated Transactions-list reduction with the complete current-month Analytics query and its shared model, so filters and pagination cannot affect the monthly snapshot.
+- The widget now exposes loading and retry states and refreshes after an editor save or deletion.
+- Verification: Transactions-page regression test confirms the current-month range/model; final targeted browser QA observed matching Transactions and Analytics values (`+AED 80.00`, income `+100.00`, expense `-20.00`); Phase-2, Phase-3, and four-profile mobile QA passed. The Phase-3 500 console entry was its intentional error-and-retry probe.
+
+## BR-013 through BR-018 — Filters, editor, and Analytics refinement
+
+### Delivery record — 2026-07-15
+
+- Replaced the compact category search/select and tag-chip maze with two concise filter summaries. Each opens the established searchable, full-page selector and has a single clear-selection action.
+- Muted same-day Transaction dividers to `#253a56` for dark-theme contrast instead of the bright default divider.
+- Restyled deletion confirmation with the editor's dark surface, a destructive icon, and equally reachable Cancel/Delete actions.
+- Sorted Monthly Trends by parsed year and month, so their left-to-right order is deterministic.
+- Changed the amount editor to locale-safe text entry: `,` normalizes to `.`, whole amounts still format to two digits, and explicit Income/Expense controls replace the unavailable iPhone minus key.
+- Verification: lint, typecheck, production build, and 33 unit tests passed. Phase-2, Phase-3, Phase-5, and four-profile mobile QA passed. Targeted 390×844/DPR3 proof report: `frontend_new/.codex-tmp/followup-proofs/report.json` confirms `12,32` became `-12.32` and trends rendered Apr → May → Jun → Jul. Physical Telegram verification remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
+
+## Device verification exception — 2026-07-15
+
+The physical Telegram iPhone smoke test remains pending because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured. The initial sandbox mobile startup hit a macOS `uv` system-configuration access panic; the identical elevated runner passed.
 
 ## Operating rules
 

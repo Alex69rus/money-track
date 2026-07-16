@@ -10,7 +10,7 @@ const categories: Category[] = Array.from({ length: 7 }, (_, index) => ({
   name: `Category ${index + 1}`,
   type: "EXPENSE",
   color: "#2d8cff",
-  icon: "category",
+  icon: index === 0 ? null : "category",
   parentCategoryId: null,
   orderIndex: index,
   createdAt,
@@ -60,12 +60,17 @@ describe("AnalyticsPage", () => {
 
     expect(screen.getAllByTestId(/^analytics-category-item-/)).toHaveLength(5);
     expect(screen.getAllByTestId(/^analytics-tag-item-/)).toHaveLength(5);
+    expect(screen.getByTestId("analytics-category-icon-category-1")).toHaveTextContent("C");
     expect(screen.getByTestId("analytics-date-presets")).toHaveClass("[scrollbar-width:none]");
     expect(screen.getByTestId("analytics-trend-summary")).toBeInTheDocument();
     expect(screen.getByTestId("analytics-date-range-card")).toHaveClass("overflow-hidden");
     expect(screen.getByTestId("analytics-from-date")).toHaveClass("max-w-full");
     expect(screen.getByTestId("analytics-summary-card")).not.toHaveClass("min-h-[21rem]");
     expect(screen.getByTestId("analytics-trends-card")).not.toHaveClass("min-h-[18rem]");
+    expect(screen.getAllByTestId(/^analytics-trend-item-/).map((item) => item.dataset.testid)).toEqual([
+      "analytics-trend-item-2026-06",
+      "analytics-trend-item-2026-07",
+    ]);
 
     fireEvent.click(screen.getByTestId("analytics-trend-item-2026-06"));
     expect(screen.getByTestId("analytics-trend-item-2026-06")).toHaveAttribute("aria-pressed", "true");
@@ -85,6 +90,7 @@ describe("AnalyticsPage", () => {
     fireEvent.click(screen.getByTestId("analytics-category-view-all"));
     expect(screen.getByTestId("analytics-category-breakdown-page")).toBeInTheDocument();
     expect(screen.getAllByTestId(/^analytics-breakdown-item-category-/)).toHaveLength(7);
+    expect(screen.getByTestId("analytics-breakdown-category-icon-category-1")).toHaveTextContent("C");
 
     fireEvent.click(screen.getByTestId("analytics-breakdown-close"));
     fireEvent.click(screen.getByTestId("analytics-tag-view-all"));

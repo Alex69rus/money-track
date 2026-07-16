@@ -1,6 +1,7 @@
 import { PencilIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CategoryIconGlyph, type CategoryIconData } from "@/components/category-icon-glyph";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +78,6 @@ function withAlpha(hexColor: string | null, alpha: number, fallback: string): st
 function TransactionCategoryAffordance({ transaction }: { transaction: Transaction }): JSX.Element {
   const category = transaction.category;
   const color = normalizeHexColor(category?.color ?? null);
-  const icon = category?.icon?.trim();
   const foreground = color ? `#${color}` : "#2d8cff";
 
   return (
@@ -87,15 +87,11 @@ function TransactionCategoryAffordance({ transaction }: { transaction: Transacti
       data-testid={`analytics-drilldown-transaction-category-${transaction.id}`}
       style={{ backgroundColor: withAlpha(color, 0.22, "rgba(45, 140, 255, 0.18)"), color: foreground }}
     >
-      {icon ? (
-        <span aria-hidden className="material-symbols-outlined text-[1.25rem] leading-none">
-          {icon}
-        </span>
-      ) : (
-        <span aria-hidden className="text-base font-semibold">
-          ?
-        </span>
-      )}
+      <CategoryIconGlyph
+        category={category}
+        className="material-symbols-outlined text-[1.25rem] leading-none"
+        fallbackClassName="text-base font-semibold"
+      />
     </div>
   );
 }
@@ -116,6 +112,7 @@ export function CategoryDrilldownDialog({
     drilldown?.kind === "tag"
       ? {
           emptyLabel: "tag",
+          subjectCategory: null,
           subjectAmount: drilldown.item.amount,
           subjectColor: "#2d8cff",
           subjectIcon: "sell",
@@ -125,16 +122,21 @@ export function CategoryDrilldownDialog({
         }
       : drilldown
         ? {
-            emptyLabel: "category",
+          emptyLabel: "category",
+            subjectCategory: {
+              icon: drilldown.item.icon,
+              name: drilldown.item.categoryName,
+            } satisfies CategoryIconData,
             subjectAmount: drilldown.item.amount,
             subjectColor: drilldown.item.color?.trim() || "#2d8cff",
-            subjectIcon: drilldown.item.icon?.trim() || "category",
+            subjectIcon: drilldown.item.icon?.trim() || null,
             subjectLabel: "Spendings by Category",
             subjectName: drilldown.item.categoryName,
             transactions: drilldown.item.transactions,
           }
         : {
             emptyLabel: "category",
+            subjectCategory: null,
             subjectAmount: 0,
             subjectColor: "#2d8cff",
             subjectIcon: "category",
@@ -164,9 +166,17 @@ export function CategoryDrilldownDialog({
         data-testid="analytics-drilldown-icon"
         style={{ color: drilldownSummary.subjectColor }}
       >
-        <span aria-hidden className="material-symbols-outlined text-[2rem] leading-none">
-          {drilldownSummary.subjectIcon}
-        </span>
+        {drilldownSummary.subjectIcon ? (
+          <span aria-hidden className="material-symbols-outlined text-[2rem] leading-none">
+            {drilldownSummary.subjectIcon}
+          </span>
+        ) : (
+          <CategoryIconGlyph
+            category={drilldownSummary.subjectCategory}
+            className="material-symbols-outlined text-[2rem] leading-none"
+            fallbackClassName="text-xl font-semibold"
+          />
+        )}
       </div>
       <p className="mt-4 text-sm font-bold tracking-[0.1em] text-slate-400 uppercase" data-testid="analytics-drilldown-label">
         {drilldownSummary.subjectLabel}
