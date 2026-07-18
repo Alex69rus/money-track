@@ -392,7 +392,7 @@ def test_transactions_filter_by_tags_any_match(
     )
 
     unknown_tag = _unique_value(db_helper.namespace, "unknown")
-    path = f"/api/transactions/?tags={keep_tag},{unknown_tag}&take=100"
+    path = f"/api/transactions/?fromDate=2025-09-21&toDate=2025-09-21&tags={keep_tag},{unknown_tag}&take=100"
     response, body = perform_request(http_client, "GET", base_url, path)
 
     assert response.status_code == 200
@@ -1155,3 +1155,224 @@ def test_transactions_text_search_does_not_match_sms_text_only(
     assert response.status_code == 200
     notes = {item.get("note") for item in body["data"]}
     assert sms_only_note not in notes
+
+
+def test_transaction_analytics_resources_are_aed_scoped_and_business_local(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_other_user_id: int,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    category_a_id = asyncio.run(
+        db_helper.insert_category(name=_unique_value(db_helper.namespace, "AnalyticsCategoryA"))
+    )
+    category_b_id = asyncio.run(
+        db_helper.insert_category(name=_unique_value(db_helper.namespace, "AnalyticsCategoryB"))
+    )
+    analytics_tag = _unique_value(db_helper.namespace, "analytics-food")
+    home_tag = _unique_value(db_helper.namespace, "analytics-home")
+    range_from = "2099-04-01"
+    range_to = "2099-04-30"
+
+    seeded_transactions = [
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 3, 31, 20, 30, tzinfo=UTC),  # 00:30 on 1 Apr in Dubai
+            amount=Decimal("100.00"),
+            note=_unique_value(db_helper.namespace, "analytics-income"),
+            category_id=category_a_id,
+            tags=[_unique_value(db_helper.namespace, "analytics-salary")],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-income"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-income"),
+        ),
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 4, 2, 8, 0, tzinfo=UTC),
+            amount=Decimal("-40.00"),
+            note=_unique_value(db_helper.namespace, "analytics-category-a"),
+            category_id=category_a_id,
+            tags=[analytics_tag, home_tag],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-category-a"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-category-a"),
+        ),
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 4, 3, 8, 0, tzinfo=UTC),
+            amount=Decimal("-10.00"),
+            note=_unique_value(db_helper.namespace, "analytics-category-b"),
+            category_id=category_b_id,
+            tags=[analytics_tag],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-category-b"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-category-b"),
+        ),
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 4, 4, 8, 0, tzinfo=UTC),
+            amount=Decimal("-5.00"),
+            note=_unique_value(db_helper.namespace, "analytics-uncategorized"),
+            category_id=None,
+            tags=[],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-uncategorized"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-uncategorized"),
+        ),
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 4, 5, 8, 0, tzinfo=UTC),
+            amount=Decimal("0.00"),
+            note=_unique_value(db_helper.namespace, "analytics-zero"),
+            category_id=None,
+            tags=[],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-zero"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-zero"),
+        ),
+        SeedTransaction(
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 4, 6, 8, 0, tzinfo=UTC),
+            amount=Decimal("-99.00"),
+            note=_unique_value(db_helper.namespace, "analytics-usd"),
+            category_id=category_a_id,
+            tags=[analytics_tag],
+            currency="USD",
+            sms_text=_unique_value(db_helper.namespace, "analytics-usd"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-usd"),
+        ),
+        SeedTransaction(
+            user_id=test_other_user_id,
+            transaction_date=datetime(2099, 4, 7, 8, 0, tzinfo=UTC),
+            amount=Decimal("1000.00"),
+            note=_unique_value(db_helper.namespace, "analytics-other-user"),
+            category_id=category_a_id,
+            tags=[analytics_tag],
+            currency="AED",
+            sms_text=_unique_value(db_helper.namespace, "analytics-other-user"),
+            message_id=_unique_value(db_helper.namespace, "msg-analytics-other-user"),
+        ),
+    ]
+    for transaction in seeded_transactions:
+        asyncio.run(db_helper.insert_transaction(transaction))
+
+    query = f"?fromDate={range_from}&toDate={range_to}"
+    summary_response, summary = perform_request(http_client, "GET", base_url, f"/api/transactions/summary{query}")
+    categories_response, categories = perform_request(
+        http_client, "GET", base_url, f"/api/transactions/by-categories{query}"
+    )
+    tags_response, tags = perform_request(http_client, "GET", base_url, f"/api/transactions/by-tags{query}")
+    months_response, months = perform_request(http_client, "GET", base_url, f"/api/transactions/by-months{query}")
+
+    assert summary_response.status_code == 200
+    assert summary == {
+        "totalIncome": "100.00",
+        "totalExpenses": "55.00",
+        "balance": "45.00",
+        "transactionCount": 5,
+    }
+    assert categories_response.status_code == 200
+    assert [item["amount"] for item in categories["data"]] == ["40.00", "10.00", "5.00"]
+    assert categories["data"][0]["categoryId"] == category_a_id
+    assert categories["data"][0]["share"] == pytest.approx(40 / 55)
+    assert categories["data"][2]["categoryId"] is None
+    assert categories["data"][2]["categoryName"] == "Uncategorized"
+    assert tags_response.status_code == 200
+    assert tags["data"] == [
+        {
+            "tag": analytics_tag,
+            "amount": "50.00",
+            "transactionCount": 2,
+            "share": pytest.approx(50 / 55),
+        },
+        {
+            "tag": home_tag,
+            "amount": "40.00",
+            "transactionCount": 1,
+            "share": pytest.approx(40 / 55),
+        },
+    ]
+    assert months_response.status_code == 200
+    assert months == {
+        "data": [
+            {
+                "month": "2099-04",
+                "income": "100.00",
+                "expenses": "55.00",
+                "balance": "45.00",
+            }
+        ]
+    }
+
+
+def test_transaction_analytics_drilldown_filters_match_aggregate_population(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    category_id = asyncio.run(db_helper.insert_category(name=_unique_value(db_helper.namespace, "DrilldownCategory")))
+    drilldown_tag = _unique_value(db_helper.namespace, "drilldown-tag")
+    range_from = "2098-05-01"
+    range_to = "2098-05-31"
+
+    for amount, category, tags, currency, suffix in [
+        (Decimal("-20.00"), category_id, [drilldown_tag], "AED", "expense-match"),
+        (Decimal("10.00"), category_id, [drilldown_tag], "AED", "income-excluded"),
+        (Decimal("-30.00"), category_id, [drilldown_tag], "USD", "currency-excluded"),
+        (Decimal("-5.00"), None, [drilldown_tag], "AED", "uncategorized-match"),
+    ]:
+        note = _unique_value(db_helper.namespace, f"drilldown-{suffix}")
+        asyncio.run(
+            db_helper.insert_transaction(
+                SeedTransaction(
+                    user_id=test_user_id,
+                    transaction_date=datetime(2098, 5, 2, 8, 0, tzinfo=UTC),
+                    amount=amount,
+                    note=note,
+                    category_id=category,
+                    tags=tags,
+                    currency=currency,
+                    sms_text=note,
+                    message_id=_unique_value(db_helper.namespace, f"msg-drilldown-{suffix}"),
+                )
+            )
+        )
+
+    base_query = f"fromDate={range_from}&toDate={range_to}&flow=expense&calculationCurrencyOnly=true&take=100"
+    category_response, category_body = perform_request(
+        http_client, "GET", base_url, f"/api/transactions/?{base_query}&categoryId={category_id}"
+    )
+    tag_response, tag_body = perform_request(
+        http_client, "GET", base_url, f"/api/transactions/?{base_query}&tag={drilldown_tag}"
+    )
+    uncategorized_response, uncategorized_body = perform_request(
+        http_client, "GET", base_url, f"/api/transactions/?{base_query}&uncategorized=true"
+    )
+    conflict_response, _ = perform_request(
+        http_client,
+        "GET",
+        base_url,
+        f"/api/transactions/?{base_query}&categoryId={category_id}&uncategorized=true",
+    )
+    inverted_response, _ = perform_request(
+        http_client,
+        "GET",
+        base_url,
+        "/api/transactions/summary?fromDate=2098-05-31&toDate=2098-05-01",
+    )
+
+    assert category_response.status_code == 200
+    assert category_body["totalCount"] == 1
+    assert category_body["data"][0]["amount"] == -20
+    assert tag_response.status_code == 200
+    assert tag_body["totalCount"] == 2
+    assert {item["amount"] for item in tag_body["data"]} == {-20, -5}
+    assert uncategorized_response.status_code == 200
+    assert uncategorized_body["totalCount"] == 1
+    assert uncategorized_body["data"][0]["amount"] == -5
+    assert conflict_response.status_code == 422
+    assert inverted_response.status_code == 422

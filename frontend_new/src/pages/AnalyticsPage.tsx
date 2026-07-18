@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownIcon, ArrowUpIcon, CalendarDaysIcon, TrendingUpIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,17 +9,21 @@ import { NativeDateField } from "@/components/ui/native-date-field";
 import { AnalyticsBreakdownPage } from "@/features/analytics/components/AnalyticsBreakdownPage";
 import { CategoryDrilldownDialog } from "@/features/analytics/components/CategoryDrilldownDialog";
 import { AnalyticsLoadingState } from "@/features/analytics/components/AnalyticsLoadingState";
-import { useAnalyticsTransactions } from "@/features/analytics/hooks/useAnalyticsTransactions";
+import {
+  useCategoryBreakdown,
+  useMonthlyBreakdown,
+  useTagBreakdown,
+  useTransactionSummary,
+} from "@/features/analytics/hooks/useAnalyticsResources";
 import type { AnalyticsDrilldownItem } from "@/features/analytics/types";
 import type { Transaction } from "@/types/transactions";
 import {
-  buildAnalyticsModel,
   formatDateRangeLabel,
   formatMoney,
   formatSignedMoney,
   getCurrentMonthDateRange,
   getLastDaysDateRange,
-  resolveCurrencyDisplay,
+  moneyToChartMagnitude,
   toTestIdSegment,
 } from "@/features/analytics/utils";
 
@@ -52,6 +56,8 @@ const DATE_PRESET_DEFINITIONS: Array<{
     getRange: () => getLastDaysDateRange(30),
   },
 ];
+
+const ANALYTICS_DISPLAY_CURRENCY = "AED";
 
 function updateFromDate(currentToDate: string, nextFromDate: string): { fromDate: string; toDate: string } {
   if (!nextFromDate) {
@@ -173,12 +179,25 @@ export function AnalyticsPage(): JSX.Element {
     return null;
   }, [location.pathname]);
 
-  const { transactions, loading, error, retry } = useAnalyticsTransactions(dateRange);
-
-  const analytics = useMemo(() => buildAnalyticsModel(transactions), [transactions]);
-  const currencyDisplay = useMemo(() => resolveCurrencyDisplay(transactions), [transactions]);
-  const categoryPreview = useMemo(() => analytics.categorySpending.slice(0, 5), [analytics.categorySpending]);
-  const tagPreview = useMemo(() => analytics.tagSpending.slice(0, 5), [analytics.tagSpending]);
+  const summaryResource = useTransactionSummary(dateRange);
+  const categoryResource = useCategoryBreakdown(dateRange);
+  const tagResource = useTagBreakdown(dateRange);
+  const monthlyResource = useMonthlyBreakdown(dateRange);
+  const loading =
+    summaryResource.loading || categoryResource.loading || tagResource.loading || monthlyResource.loading;
+  const error =
+    summaryResource.error ?? categoryResource.error ?? tagResource.error ?? monthlyResource.error;
+  const retry = useCallback(() => {
+    summaryResource.retry();
+    categoryResource.retry();
+    tagResource.retry();
+    monthlyResource.retry();
+  }, [categoryResource, monthlyResource, summaryResource, tagResource]);
+  const categorySpending = categoryResource.data;
+  const tagSpending = tagResource.data;
+  const monthlyTrends = monthlyResource.data;
+  const categoryPreview = useMemo(() => categorySpending.slice(0, 5), [categorySpending]);
+  const tagPreview = useMemo(() => tagSpending.slice(0, 5), [tagSpending]);
 
   const selectedDrilldown = useMemo<AnalyticsDrilldownItem | null>(() => {
     if (!drilldownRoute) {
@@ -186,13 +205,13 @@ export function AnalyticsPage(): JSX.Element {
     }
 
     if (drilldownRoute.kind === "category") {
-      const item = analytics.categorySpending.find((categoryItem) => categoryItem.key === drilldownRoute.key);
+      const item = categorySpending.find((categoryItem) => categoryItem.key === drilldownRoute.key);
       return item ? { kind: "category", item } : null;
     }
 
-    const item = analytics.tagSpending.find((tagItem) => tagItem.key === drilldownRoute.key);
+    const item = tagSpending.find((tagItem) => tagItem.key === drilldownRoute.key);
     return item ? { kind: "tag", item } : null;
-  }, [analytics.categorySpending, analytics.tagSpending, drilldownRoute]);
+  }, [categorySpending, drilldownRoute, tagSpending]);
 
   useEffect(() => {
     if (!loading && drilldownRoute && !selectedDrilldown) {
@@ -211,30 +230,31 @@ export function AnalyticsPage(): JSX.Element {
   };
 
   const trendMaxValue = useMemo(() => {
-    const maxSeriesValue = analytics.monthlyTrends.reduce(
-      (maxValue, monthItem) => Math.max(maxValue, monthItem.expenses, monthItem.income),
+    const maxSeriesValue = monthlyTrends.reduce(
+      (maxValue, monthItem) =>
+        Math.max(maxValue, moneyToChartMagnitude(monthItem.expenses), moneyToChartMagnitude(monthItem.income)),
       0,
     );
 
     return Math.max(1, maxSeriesValue);
-  }, [analytics.monthlyTrends]);
+  }, [monthlyTrends]);
 
   useEffect(() => {
     setSelectedTrendKey((current) => {
-      if (current && analytics.monthlyTrends.some((monthItem) => monthItem.key === current)) {
+      if (current && monthlyTrends.some((monthItem) => monthItem.key === current)) {
         return current;
       }
 
-      return analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.key ?? null;
+      return monthlyTrends[monthlyTrends.length - 1]?.key ?? null;
     });
-  }, [analytics.monthlyTrends]);
+  }, [monthlyTrends]);
 
   const selectedTrend = useMemo(
-    () => analytics.monthlyTrends.find((monthItem) => monthItem.key === selectedTrendKey) ?? null,
-    [analytics.monthlyTrends, selectedTrendKey],
+    () => monthlyTrends.find((monthItem) => monthItem.key === selectedTrendKey) ?? null,
+    [monthlyTrends, selectedTrendKey],
   );
 
-  const hasNoData = !loading && !error && analytics.summary.transactionCount === 0;
+  const hasNoData = !loading && !error && summaryResource.data.transactionCount === 0;
 
   const applyPreset = (preset: Exclude<DatePreset, "custom">): void => {
     const presetConfig = DATE_PRESET_DEFINITIONS.find((entry) => entry.id === preset);
@@ -403,11 +423,11 @@ export function AnalyticsPage(): JSX.Element {
                   className="w-full overflow-hidden px-1 text-center text-[clamp(1.9rem,10.3vw,3.2rem)] leading-[0.95] font-bold tracking-tight text-[#2d8cff]"
                   data-testid="analytics-balance-value"
                 >
-                  {formatSignedMoney(analytics.summary.balance, currencyDisplay.currency)}
+                  {formatSignedMoney(summaryResource.data.balance, ANALYTICS_DISPLAY_CURRENCY)}
                 </p>
                 <p className="text-xs text-muted-foreground" data-testid="analytics-summary-count">
-                  {analytics.summary.transactionCount.toString()} transaction
-                  {analytics.summary.transactionCount === 1 ? "" : "s"}
+                  {summaryResource.data.transactionCount.toString()} transaction
+                  {summaryResource.data.transactionCount === 1 ? "" : "s"}
                 </p>
               </div>
 
@@ -418,7 +438,7 @@ export function AnalyticsPage(): JSX.Element {
                     Income
                   </p>
                   <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-foreground">
-                    {formatMoney(analytics.summary.totalIncome, currencyDisplay.currency)}
+                    {formatMoney(summaryResource.data.totalIncome, ANALYTICS_DISPLAY_CURRENCY)}
                   </p>
                   <p className="text-xs font-semibold text-emerald-400">Total in range</p>
                 </div>
@@ -428,18 +448,12 @@ export function AnalyticsPage(): JSX.Element {
                     Expense
                   </p>
                   <p className="pt-1 text-[1.1rem] font-bold tracking-tight text-foreground">
-                    {formatMoney(analytics.summary.totalExpenses, currencyDisplay.currency)}
+                    {formatMoney(summaryResource.data.totalExpenses, ANALYTICS_DISPLAY_CURRENCY)}
                   </p>
                   <p className="text-xs font-semibold text-rose-400">Total in range</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-                <p className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">Average transaction</p>
-                <p className="shrink-0 text-base font-semibold text-foreground tabular-nums">
-                  {formatMoney(analytics.summary.averageTransaction, currencyDisplay.currency)}
-                </p>
-              </div>
             </CardContent>
           </Card>
 
@@ -455,7 +469,7 @@ export function AnalyticsPage(): JSX.Element {
                 <Button
                   className="h-auto p-0 text-[1.05rem] font-semibold text-[#2d8cff] hover:text-[#4ca0ff]"
                   data-testid="analytics-category-view-all"
-                  disabled={analytics.categorySpending.length === 0}
+                  disabled={categorySpending.length === 0}
                   onClick={() => {
                     navigate("/analytics/categories", { state: { mtReturnPath: location.pathname } });
                   }}
@@ -523,7 +537,7 @@ export function AnalyticsPage(): JSX.Element {
                           className="shrink-0 pl-2 text-right text-lg font-bold tracking-tight tabular-nums sm:text-xl"
                           data-testid={`analytics-category-amount-${categoryItem.key}`}
                         >
-                          {formatMoney(categoryItem.amount, currencyDisplay.currency)}
+                          {formatMoney(categoryItem.amount, ANALYTICS_DISPLAY_CURRENCY)}
                         </p>
                       </button>
                     );
@@ -547,7 +561,7 @@ export function AnalyticsPage(): JSX.Element {
                 <Button
                   className="h-auto p-0 text-[1.05rem] font-semibold text-[#2d8cff] hover:text-[#4ca0ff]"
                   data-testid="analytics-tag-view-all"
-                  disabled={analytics.tagSpending.length === 0}
+                  disabled={tagSpending.length === 0}
                   onClick={() => {
                     navigate("/analytics/tags", { state: { mtReturnPath: location.pathname } });
                   }}
@@ -597,7 +611,7 @@ export function AnalyticsPage(): JSX.Element {
                         </div>
                       </div>
                       <p className="shrink-0 pl-2 text-right text-lg font-bold tracking-tight tabular-nums sm:text-xl">
-                        {formatMoney(tagItem.amount, currencyDisplay.currency)}
+                        {formatMoney(tagItem.amount, ANALYTICS_DISPLAY_CURRENCY)}
                       </p>
                     </button>
                   ))
@@ -628,7 +642,7 @@ export function AnalyticsPage(): JSX.Element {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col pt-4" data-testid="analytics-trends-content">
-              {analytics.monthlyTrends.length > 0 ? (
+              {monthlyTrends.length > 0 ? (
                 <>
                   {selectedTrend ? (
                     <div className="mb-4 rounded-xl border border-border bg-secondary px-3 py-2.5" data-testid="analytics-trend-summary">
@@ -643,20 +657,20 @@ export function AnalyticsPage(): JSX.Element {
                           className="shrink-0 whitespace-nowrap text-right text-sm font-bold text-[#2d8cff] tabular-nums"
                           data-testid="analytics-trend-summary-net"
                         >
-                          {formatSignedMoney(selectedTrend.balance, currencyDisplay.currency)}
+                          {formatSignedMoney(selectedTrend.balance, ANALYTICS_DISPLAY_CURRENCY)}
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                         <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-emerald-400 uppercase">Income</p>
                         <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-foreground tabular-nums" data-testid="analytics-trend-summary-income">
-                          {formatMoney(selectedTrend.income, currencyDisplay.currency)}
+                          {formatMoney(selectedTrend.income, ANALYTICS_DISPLAY_CURRENCY)}
                         </p>
                         </div>
                         <div className="border-l border-border pl-3">
                         <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-rose-400 uppercase">Expense</p>
                         <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-foreground tabular-nums" data-testid="analytics-trend-summary-expense">
-                          {formatMoney(selectedTrend.expenses, currencyDisplay.currency)}
+                          {formatMoney(selectedTrend.expenses, ANALYTICS_DISPLAY_CURRENCY)}
                         </p>
                         </div>
                       </div>
@@ -664,16 +678,17 @@ export function AnalyticsPage(): JSX.Element {
                   ) : null}
 
                   <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {analytics.monthlyTrends.map((monthItem) => {
-                    const incomeHeight = monthItem.income > 0 ? Math.max(4, (monthItem.income / trendMaxValue) * 100) : 0;
-                    const expenseHeight =
-                      monthItem.expenses > 0 ? Math.max(4, (monthItem.expenses / trendMaxValue) * 100) : 0;
+                  {monthlyTrends.map((monthItem) => {
+                    const incomeMagnitude = moneyToChartMagnitude(monthItem.income);
+                    const expenseMagnitude = moneyToChartMagnitude(monthItem.expenses);
+                    const incomeHeight = incomeMagnitude > 0 ? Math.max(4, (incomeMagnitude / trendMaxValue) * 100) : 0;
+                    const expenseHeight = expenseMagnitude > 0 ? Math.max(4, (expenseMagnitude / trendMaxValue) * 100) : 0;
                     const monthLabel = monthItem.monthLabel.split(" ")[0] ?? monthItem.monthLabel;
                     const isActive = monthItem.key === selectedTrendKey;
 
                     return (
                       <button
-                        aria-label={`Select ${monthItem.monthLabel}: income ${formatMoney(monthItem.income, currencyDisplay.currency)}, expense ${formatMoney(monthItem.expenses, currencyDisplay.currency)}`}
+                        aria-label={`Select ${monthItem.monthLabel}: income ${formatMoney(monthItem.income, ANALYTICS_DISPLAY_CURRENCY)}, expense ${formatMoney(monthItem.expenses, ANALYTICS_DISPLAY_CURRENCY)}`}
                         aria-pressed={isActive}
                         className="flex w-16 shrink-0 flex-col items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                         data-testid={`analytics-trend-item-${monthItem.key}`}
@@ -714,7 +729,8 @@ export function AnalyticsPage(): JSX.Element {
       ) : null}
 
       <CategoryDrilldownDialog
-        currency={currencyDisplay.currency}
+        currency={ANALYTICS_DISPLAY_CURRENCY}
+        dateRange={dateRange}
         drilldown={selectedDrilldown}
         onClose={closeDrilldown}
         onEditTransaction={openTransactionEditor}
@@ -724,8 +740,8 @@ export function AnalyticsPage(): JSX.Element {
 
       {breakdownKind === "category" ? (
         <AnalyticsBreakdownPage
-          currency={currencyDisplay.currency}
-          items={analytics.categorySpending}
+          currency={ANALYTICS_DISPLAY_CURRENCY}
+          items={categorySpending}
           kind="category"
           onClose={closeDrilldown}
           onSelect={(categoryItem) => {
@@ -739,8 +755,8 @@ export function AnalyticsPage(): JSX.Element {
 
       {breakdownKind === "tag" ? (
         <AnalyticsBreakdownPage
-          currency={currencyDisplay.currency}
-          items={analytics.tagSpending}
+          currency={ANALYTICS_DISPLAY_CURRENCY}
+          items={tagSpending}
           kind="tag"
           onClose={closeDrilldown}
           onSelect={(tagItem) => {

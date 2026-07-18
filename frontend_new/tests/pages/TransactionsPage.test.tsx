@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import type { Transaction } from "@/types/transactions";
 
-const { useAnalyticsTransactions } = vi.hoisted(() => ({
-  useAnalyticsTransactions: vi.fn(),
+const { useTransactionSummary } = vi.hoisted(() => ({
+  useTransactionSummary: vi.fn(),
 }));
 
 const listedTransaction: Transaction = {
@@ -25,23 +25,8 @@ const listedTransaction: Transaction = {
 
 const listedTransactions: Transaction[] = [listedTransaction];
 
-const currentMonthTransactions: Transaction[] = [
-  {
-    ...listedTransaction,
-    id: 2,
-    transactionDate: new Date("2026-07-01T12:00:00"),
-    amount: 100,
-  },
-  {
-    ...listedTransaction,
-    id: 3,
-    transactionDate: new Date("2026-07-02T12:00:00"),
-    amount: -25.5,
-  },
-];
-
-vi.mock("@/features/analytics/hooks/useAnalyticsTransactions", () => ({
-  useAnalyticsTransactions,
+vi.mock("@/features/analytics/hooks/useAnalyticsResources", () => ({
+  useTransactionSummary,
 }));
 
 vi.mock("@/features/transactions/hooks/useTransactionsList", () => ({
@@ -68,12 +53,17 @@ describe("TransactionsPage", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-15T12:00:00"));
-    useAnalyticsTransactions.mockReset();
-    useAnalyticsTransactions.mockReturnValue({
+    useTransactionSummary.mockReset();
+    useTransactionSummary.mockReturnValue({
+      data: {
+        totalIncome: "100.00",
+        totalExpenses: "25.50",
+        balance: "74.50",
+        transactionCount: 2,
+      },
       error: null,
       loading: false,
       retry: vi.fn(),
-      transactions: currentMonthTransactions,
     });
   });
 
@@ -81,14 +71,14 @@ describe("TransactionsPage", () => {
     vi.useRealTimers();
   });
 
-  it("uses the Analytics current-month model for the snapshot and omits the retired list header", () => {
+  it("uses the shared backend current-month summary for the snapshot and omits the retired list header", () => {
     render(
       <MemoryRouter initialEntries={["/transactions"]}>
         <TransactionsPage />
       </MemoryRouter>,
     );
 
-    expect(useAnalyticsTransactions).toHaveBeenCalledWith({ fromDate: "2026-07-01", toDate: "2026-07-31" });
+    expect(useTransactionSummary).toHaveBeenCalledWith({ fromDate: "2026-07-01", toDate: "2026-07-31" });
     expect(screen.getByTestId("transactions-balance-value")).toHaveTextContent("74.50");
     expect(screen.getByTestId("transactions-monthly-income")).toHaveTextContent("100.00");
     expect(screen.getByTestId("transactions-monthly-expense")).toHaveTextContent("25.50");

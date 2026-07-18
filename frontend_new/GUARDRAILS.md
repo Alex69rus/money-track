@@ -82,3 +82,21 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Resolve canvas, card, input, border, and text through shared semantic tokens, then synchronize `data-mt-theme` from Telegram's color scheme.
 - Exploration: Verify every primary and nested full-page surface in all phone fixtures under both dark and light palettes; visual inspection ruled out a surface-specific mismatch.
 - Prevention rule: Extend the two-scheme mobile matrix and use a computed-style assertion whenever adding a structural surface or changing a theme token.
+
+## Focused Analytics resources — 2026-07-17
+
+- Takeaway: Keep calculations and calculation-currency selection on the backend; the frontend should consume one focused resource per widget and reuse the paginated list only for drilldowns.
+- Exploration: Phase-3 verified independent widget loading/error/retry, aggregate-to-drilldown filter parity, and mutation return; the mobile fixture verified all four focused API responses across phone profiles.
+- Prevention rule: When replacing a client-side aggregate, update every browser fixture to mock each new resource endpoint rather than allowing Analytics to fall through to incidental backend data.
+
+## Exact aggregate money — 2026-07-17
+
+- Takeaway: Preserve backend aggregate money as decimal strings through mapping and rendering; do not convert it to JavaScript `number`.
+- Exploration: A value beyond the safe-integer boundary retained its cents in API mapping and formatting; only chart geometry uses a capped numeric magnitude.
+- Prevention rule: Add a boundary-value mapper/formatter test whenever an endpoint introduces fixed-scale decimal money.
+
+## Database-owned Analytics aggregation — 2026-07-18
+
+- Takeaway: A focused Analytics widget renders a backend aggregate; it does not fetch a transaction collection to rebuild that value.
+- Exploration: The four focused resources and the shared snapshot preserve widget boundaries while PostgreSQL performs filtering, aggregation, ordering, and business-local month grouping.
+- Prevention rule: Reject frontend list pagination loops, `reduce`, grouping, or sorting introduced to calculate an Analytics widget; request or extend the focused backend resource instead.

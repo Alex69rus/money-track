@@ -73,6 +73,18 @@ async function readCategories(backendBaseUrl) {
   return categories.slice(0, 6);
 }
 
+async function continueRoute(route) {
+  try {
+    await route.continue();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Route is already handled")) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 export const phase3Definition = {
   id: "phase3",
   frIds: PHASE3_FR_IDS,
@@ -130,18 +142,26 @@ export const phase3Definition = {
 
     try {
       let delayedFirstRequest = true;
-      await page.route("**/api/transactions*", async (route) => {
+      const backendOrigin = new URL(backendBaseUrl).origin;
+      const transactionsApiMatcher = (url) =>
+        url.origin === backendOrigin && url.pathname.startsWith("/api/transactions");
+      await page.route(transactionsApiMatcher, async (route) => {
+        if (route.request().method() !== "GET") {
+          await continueRoute(route);
+          return;
+        }
+
         if (delayedFirstRequest) {
           delayedFirstRequest = false;
           await new Promise((resolve) => setTimeout(resolve, 900));
         }
-        await route.continue();
+        await continueRoute(route);
       });
 
       await page.goto(`${frontendBaseUrl}/analytics`, { waitUntil: "domcontentloaded", timeout: 120000 });
       await page.waitForSelector('[data-testid="analytics-from-date"]', { timeout: 30000 });
       await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
-      await page.unroute("**/api/transactions*");
+      await page.unroute(transactionsApiMatcher);
 
       let loadingVisible = false;
 
@@ -330,12 +350,17 @@ export const phase3Definition = {
           );
 
       let delayedLoadingProbe = true;
-      await page.route("**/api/transactions*", async (route) => {
+      await page.route(transactionsApiMatcher, async (route) => {
+        if (route.request().method() !== "GET") {
+          await continueRoute(route);
+          return;
+        }
+
         if (delayedLoadingProbe) {
           delayedLoadingProbe = false;
           await new Promise((resolve) => setTimeout(resolve, 1200));
         }
-        await route.continue();
+        await continueRoute(route);
       });
 
       await page.click('[data-testid="analytics-preset-last-7-days"]');
@@ -344,7 +369,7 @@ export const phase3Definition = {
         .then(() => true)
         .catch(() => false);
       await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
-      await page.unroute("**/api/transactions*");
+      await page.unroute(transactionsApiMatcher);
 
       const future = new Date();
       future.setDate(future.getDate() + 3650);
@@ -356,26 +381,28 @@ export const phase3Definition = {
       await page.waitForTimeout(500);
       const noDataVisible = await page.locator('[data-testid="analytics-no-data"]').isVisible().catch(() => false);
 
-      let forceFailure = true;
-      await page.route("**/api/transactions*", async (route) => {
-        if (forceFailure) {
-          forceFailure = false;
-          await route.fulfill({
-            status: 500,
-            contentType: "application/json",
-            body: JSON.stringify({ detail: "qa forced failure" }),
-          });
+      await page.route(transactionsApiMatcher, async (route) => {
+        if (route.request().method() !== "GET") {
+          await continueRoute(route);
           return;
         }
-        await route.continue();
+
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          headers: {
+            "Access-Control-Allow-Origin": frontendBaseUrl,
+          },
+          body: JSON.stringify({ detail: "qa forced failure" }),
+        });
       });
 
-      await page.click('[data-testid="analytics-preset-current-month"]');
+      await page.reload({ waitUntil: "domcontentloaded", timeout: 120000 });
       await page.waitForSelector('[data-testid="analytics-error"]', { timeout: 30000 });
       const errorVisible = await page.locator('[data-testid="analytics-error"]').isVisible().catch(() => false);
       const retryVisible = await page.locator('[data-testid="analytics-retry"]').isVisible().catch(() => false);
 
-      await page.unroute("**/api/transactions*");
+      await page.unroute(transactionsApiMatcher);
       await page.click('[data-testid="analytics-retry"]');
       await page.waitForSelector('[data-testid="analytics-summary-card"]', { timeout: 30000 });
       const recoveredAfterRetry = await page.locator('[data-testid="analytics-summary-card"]').isVisible();
@@ -399,6 +426,7 @@ export const phase3Definition = {
       const hostBackListenerActive = await page.evaluate(
         () => window.__qaTelegram.getState().backButtonListenerCount === 1,
       );
+      await page.locator('[data-testid^="analytics-drilldown-item-"]').first().waitFor({ timeout: 15000 });
       const drilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
       const drilldownVisualStructure = await Promise.all([
         page.locator('[data-testid="analytics-drilldown-icon"]').isVisible(),
@@ -463,6 +491,7 @@ export const phase3Definition = {
       const tagDrilldownVisible = await page.locator('[data-testid="analytics-drilldown-page"]').isVisible();
       const tagDrilldownLabel = await page.locator('[data-testid="analytics-drilldown-label"]').textContent();
       const tagDrilldownSubject = await page.locator('[data-testid="analytics-drilldown-subject"]').textContent();
+      await page.locator('[data-testid^="analytics-drilldown-item-"]').first().waitFor({ timeout: 15000 });
       const tagDrilldownListCount = await page.locator('[data-testid^="analytics-drilldown-item-"]').count();
       const tagRowAffordanceCount = await page.locator('[data-testid^="analytics-drilldown-transaction-category-"]').count();
 

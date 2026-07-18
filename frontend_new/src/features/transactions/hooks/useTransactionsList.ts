@@ -64,6 +64,10 @@ export function useTransactionsList(filters: TransactionsQueryFilters): UseTrans
       minAmount: filters.minAmount,
       maxAmount: filters.maxAmount,
       tags: tagFilters.length > 0 ? tagFilters : undefined,
+      tag: filters.tag?.trim() || undefined,
+      flow: filters.flow,
+      uncategorized: filters.uncategorized,
+      calculationCurrencyOnly: filters.calculationCurrencyOnly,
     };
   }, [
     filters.categoryId,
@@ -71,8 +75,12 @@ export function useTransactionsList(filters: TransactionsQueryFilters): UseTrans
     filters.maxAmount,
     filters.minAmount,
     filters.tags,
+    filters.tag,
     filters.text,
     filters.toDate,
+    filters.flow,
+    filters.uncategorized,
+    filters.calculationCurrencyOnly,
   ]);
 
   const loadInitialPage = useCallback(async (): Promise<void> => {

@@ -1,15 +1,31 @@
-import type {
-  AnalyticsDateRange,
-  AnalyticsModel,
-  CategorySpendingItem,
-  MonthlyTrendItem,
-  TagSpendingItem,
-} from "@/features/analytics/types";
-import type { Transaction } from "@/types/transactions";
+import type { AnalyticsDateRange, DecimalMoney } from "@/features/analytics/types";
 
-interface CurrencyDisplay {
-  currency: string;
-  isMixed: boolean;
+type MoneyValue = DecimalMoney | number;
+
+interface DecimalParts {
+  fraction: string;
+  integer: string;
+  negative: boolean;
+}
+
+const MONEY_VALUE_PATTERN = /^(-?)(\d+)(?:\.(\d+))?$/;
+const MAX_CHART_VALUE = BigInt(Number.MAX_SAFE_INTEGER);
+
+function toDecimalParts(value: MoneyValue): DecimalParts {
+  const rawValue = typeof value === "number" ? (Number.isFinite(value) ? value.toFixed(2) : "0.00") : value.trim();
+  const match = MONEY_VALUE_PATTERN.exec(rawValue);
+  if (!match) {
+    return { fraction: "00", integer: "0", negative: false };
+  }
+
+  const integer = (match[2] ?? "0").replace(/^0+(?=\d)/, "");
+  const fraction = (match[3] ?? "").padEnd(2, "0").slice(0, 2);
+  const negative = match[1] === "-" && (integer !== "0" || fraction !== "00");
+  return { fraction, integer, negative };
+}
+
+function decimalPartsToValue(parts: DecimalParts): DecimalMoney {
+  return `${parts.negative ? "-" : ""}${parts.integer}.${parts.fraction}`;
 }
 
 function asDateKey(date: Date): string {
@@ -19,52 +35,6 @@ function asDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function monthKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
-
-function compareMonthKeys(first: string, second: string): number {
-  const [firstYear = 0, firstMonth = 0] = first.split("-").map(Number);
-  const [secondYear = 0, secondMonth = 0] = second.split("-").map(Number);
-
-  if (firstYear !== secondYear) {
-    return firstYear - secondYear;
-  }
-
-  return firstMonth - secondMonth;
-}
-
-function humanizeMonth(key: string): string {
-  const [year, month] = key.split("-").map(Number);
-  if (!year || !month) {
-    return key;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    year: "2-digit",
-  }).format(new Date(year, month - 1, 1));
-}
-
-function categoryKey(transaction: Transaction): string {
-  if (transaction.categoryId === null) {
-    return "uncategorized";
-  }
-
-  return `category-${transaction.categoryId}`;
-}
-
-function normalizeTag(tag: string): string {
-  return tag.trim().toLowerCase();
-}
-
-function sortTransactionsByDateDesc(transactions: Transaction[]): Transaction[] {
-  return [...transactions].sort(
-    (first, second) => second.transactionDate.getTime() - first.transactionDate.getTime(),
-  );
-}
 
 export function getCurrentMonthDateRange(): AnalyticsDateRange {
   const now = new Date();
@@ -123,50 +93,48 @@ export function formatDateRangeLabel(range: AnalyticsDateRange): string {
   }).format(to)}`;
 }
 
-export function resolveCurrencyDisplay(transactions: Transaction[]): CurrencyDisplay {
-  const currencyUsage = new Map<string, number>();
-
-  for (const transaction of transactions) {
-    const normalizedCurrency = transaction.currency.trim().toUpperCase();
-    if (!normalizedCurrency) {
-      continue;
-    }
-
-    currencyUsage.set(normalizedCurrency, (currencyUsage.get(normalizedCurrency) ?? 0) + 1);
-  }
-
-  if (currencyUsage.size === 0) {
-    return {
-      currency: "AED",
-      isMixed: false,
-    };
-  }
-
-  const sorted = [...currencyUsage.entries()].sort((first, second) => second[1] - first[1]);
-  const primary = sorted[0]?.[0] ?? "AED";
-
-  return {
-    currency: primary,
-    isMixed: currencyUsage.size > 1,
-  };
-}
-
-export function formatMoney(value: number, currency: string): string {
+export function formatMoney(value: MoneyValue, currency: string): string {
+  const decimal = toDecimalParts(value);
   try {
-    return new Intl.NumberFormat(undefined, {
+    const formatter = new Intl.NumberFormat(undefined, {
       style: "currency",
       currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    });
+    const groupedInteger = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(BigInt(decimal.integer));
+    return formatter
+      .formatToParts(decimal.negative ? -0 : 0)
+      .map((part) => {
+        if (part.type === "integer") {
+          return groupedInteger;
+        }
+        if (part.type === "fraction") {
+          return decimal.fraction;
+        }
+        return part.value;
+      })
+      .join("");
   } catch {
-    return `${currency} ${value.toFixed(2)}`;
+    return `${decimal.negative ? "-" : ""}${currency} ${decimal.integer}.${decimal.fraction}`;
   }
 }
 
-export function formatSignedMoney(value: number, currency: string): string {
-  const sign = value >= 0 ? "+" : "-";
-  return `${sign}${formatMoney(Math.abs(value), currency)}`;
+export function formatSignedMoney(value: MoneyValue, currency: string): string {
+  const decimal = toDecimalParts(value);
+  const sign = decimal.negative ? "-" : "+";
+  return `${sign}${formatMoney(decimalPartsToValue({ ...decimal, negative: false }), currency)}`;
+}
+
+export function moneyToChartMagnitude(value: DecimalMoney): number {
+  const decimal = toDecimalParts(value);
+  const integer = BigInt(decimal.integer);
+  if (integer >= MAX_CHART_VALUE) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const magnitude = Number(`${decimal.integer}.${decimal.fraction}`);
+  return Number.isFinite(magnitude) ? magnitude : Number.MAX_SAFE_INTEGER;
 }
 
 export function formatTransactionDateTime(date: Date): string {
@@ -185,131 +153,4 @@ export function toTestIdSegment(value: string): string {
     .replace(/^-+/, "")
     .replace(/-+$/, "")
     .slice(0, 64);
-}
-
-export function buildAnalyticsModel(transactions: Transaction[]): AnalyticsModel {
-  const sortedTransactions = sortTransactionsByDateDesc(transactions);
-  const expenses = sortedTransactions.filter((transaction) => transaction.amount < 0);
-  const incomes = sortedTransactions.filter((transaction) => transaction.amount > 0);
-
-  const totalIncome = incomes.reduce((sum, transaction) => sum + transaction.amount, 0);
-  const totalExpenses = expenses.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
-  const balance = totalIncome - totalExpenses;
-
-  const averageTransaction =
-    sortedTransactions.length > 0
-      ? sortedTransactions.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0) /
-        sortedTransactions.length
-      : 0;
-
-  const categoryMap = new Map<string, CategorySpendingItem>();
-
-  for (const transaction of expenses) {
-    const key = categoryKey(transaction);
-    const existing = categoryMap.get(key);
-
-    if (existing) {
-      existing.amount += Math.abs(transaction.amount);
-      existing.transactionCount += 1;
-      existing.transactions.push(transaction);
-      continue;
-    }
-
-    categoryMap.set(key, {
-      key,
-      categoryId: transaction.categoryId,
-      categoryName: transaction.category?.name ?? "Uncategorized",
-      amount: Math.abs(transaction.amount),
-      transactionCount: 1,
-      share: 0,
-      icon: transaction.category?.icon ?? null,
-      color: transaction.category?.color ?? null,
-      transactions: [transaction],
-    });
-  }
-
-  const categorySpending = [...categoryMap.values()]
-    .map((categoryItem) => ({
-      ...categoryItem,
-      share: totalExpenses > 0 ? categoryItem.amount / totalExpenses : 0,
-      transactions: sortTransactionsByDateDesc(categoryItem.transactions),
-    }))
-    .sort((first, second) => second.amount - first.amount);
-
-  const tagMap = new Map<string, TagSpendingItem>();
-
-  for (const transaction of expenses) {
-    for (const rawTag of transaction.tags) {
-      const normalized = normalizeTag(rawTag);
-      if (!normalized) {
-        continue;
-      }
-
-      const existing = tagMap.get(normalized);
-      if (existing) {
-        existing.amount += Math.abs(transaction.amount);
-        existing.transactionCount += 1;
-        existing.transactions.push(transaction);
-        continue;
-      }
-
-      tagMap.set(normalized, {
-        key: normalized,
-        tag: rawTag.trim() || normalized,
-        amount: Math.abs(transaction.amount),
-        transactionCount: 1,
-        share: 0,
-        transactions: [transaction],
-      });
-    }
-  }
-
-  const tagSpending = [...tagMap.values()]
-    .map((tagItem) => ({
-      ...tagItem,
-      share: totalExpenses > 0 ? tagItem.amount / totalExpenses : 0,
-      transactions: sortTransactionsByDateDesc(tagItem.transactions),
-    }))
-    .sort((first, second) => second.amount - first.amount);
-
-  const monthMap = new Map<string, MonthlyTrendItem>();
-
-  for (const transaction of sortedTransactions) {
-    const key = monthKey(transaction.transactionDate);
-    const existing = monthMap.get(key);
-
-    if (existing) {
-      if (transaction.amount < 0) {
-        existing.expenses += Math.abs(transaction.amount);
-      } else {
-        existing.income += transaction.amount;
-      }
-      existing.balance = existing.income - existing.expenses;
-      continue;
-    }
-
-    monthMap.set(key, {
-      key,
-      monthLabel: humanizeMonth(key),
-      income: transaction.amount > 0 ? transaction.amount : 0,
-      expenses: transaction.amount < 0 ? Math.abs(transaction.amount) : 0,
-      balance: transaction.amount,
-    });
-  }
-
-  const monthlyTrends = [...monthMap.values()]
-    .sort((first, second) => compareMonthKeys(first.key, second.key));
-
-  return {
-    summary: {
-      totalIncome,
-      totalExpenses,
-      balance,
-      averageTransaction,
-      transactionCount: sortedTransactions.length,
-    },
-    categorySpending,
-    tagSpending,
-    monthlyTrends,
-  };
 }

@@ -4,13 +4,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAnalyticsTransactions } from "@/features/analytics/hooks/useAnalyticsTransactions";
+import { useTransactionSummary } from "@/features/analytics/hooks/useAnalyticsResources";
 import {
-  buildAnalyticsModel,
   formatMoney,
   formatSignedMoney,
   getCurrentMonthDateRange,
-  resolveCurrencyDisplay,
 } from "@/features/analytics/utils";
 import { TransactionCategorySelectorDialog } from "@/features/transactions/components/TransactionCategorySelectorDialog";
 import { TransactionEditDialog } from "@/features/transactions/components/TransactionEditDialog";
@@ -36,6 +34,7 @@ import type {
 } from "@/types/transactions";
 
 const FILTER_DEBOUNCE_MS = 500;
+const SNAPSHOT_DISPLAY_CURRENCY = "AED";
 
 const DEFAULT_FILTERS: TransactionFilterDraft = {
   text: "",
@@ -280,16 +279,11 @@ export function TransactionsPage(): JSX.Element {
   } = useTransactionsList(requestFilters);
   const currentMonthDateRange = getCurrentMonthDateRange();
   const {
-    transactions: currentMonthTransactions,
+    data: currentMonthSnapshot,
     loading: currentMonthSnapshotLoading,
     error: currentMonthSnapshotError,
     retry: retryCurrentMonthSnapshot,
-  } = useAnalyticsTransactions(currentMonthDateRange);
-  const currentMonthSnapshot = useMemo(() => buildAnalyticsModel(currentMonthTransactions).summary, [currentMonthTransactions]);
-  const currentMonthCurrency = useMemo(
-    () => resolveCurrencyDisplay(currentMonthTransactions).currency,
-    [currentMonthTransactions],
-  );
+  } = useTransactionSummary(currentMonthDateRange);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -446,6 +440,7 @@ export function TransactionsPage(): JSX.Element {
         );
 
         replaceTransaction(updatedTransaction);
+        retryCurrentMonthSnapshot();
         closeCategorySelector();
       } catch (requestError) {
         setCategoryUpdateError(toErrorMessage(requestError, "Could not update transaction category."));
@@ -453,7 +448,13 @@ export function TransactionsPage(): JSX.Element {
         setCategoryUpdatePending(false);
       }
     },
-    [categoryUpdatePending, closeCategorySelector, quickCategoryTransaction, replaceTransaction],
+    [
+      categoryUpdatePending,
+      closeCategorySelector,
+      quickCategoryTransaction,
+      replaceTransaction,
+      retryCurrentMonthSnapshot,
+    ],
   );
 
   const handleQuickTagsConfirm = useCallback(
@@ -479,6 +480,7 @@ export function TransactionsPage(): JSX.Element {
         );
 
         replaceTransaction(updatedTransaction);
+        retryCurrentMonthSnapshot();
         closeTagSelector();
       } catch (requestError) {
         setTagUpdateError(toErrorMessage(requestError, "Could not update transaction tags."));
@@ -486,7 +488,7 @@ export function TransactionsPage(): JSX.Element {
         setTagUpdatePending(false);
       }
     },
-    [closeTagSelector, quickTagTransaction, replaceTransaction, tagUpdatePending],
+    [closeTagSelector, quickTagTransaction, replaceTransaction, retryCurrentMonthSnapshot, tagUpdatePending],
   );
 
   const hasEmptyState = !loading && !error && transactions.length === 0;
@@ -517,7 +519,7 @@ export function TransactionsPage(): JSX.Element {
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-medium text-primary-foreground/80">Balance Snapshot</p>
                   <p className="text-3xl font-bold tracking-tight" data-testid="transactions-balance-value">
-                    {formatSignedMoney(currentMonthSnapshot.balance, currentMonthCurrency)}
+                    {formatSignedMoney(currentMonthSnapshot.balance, SNAPSHOT_DISPLAY_CURRENCY)}
                   </p>
                 </div>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -526,7 +528,7 @@ export function TransactionsPage(): JSX.Element {
                       Monthly Income
                     </span>
                     <span className="text-sm font-semibold" data-testid="transactions-monthly-income">
-                      {formatSignedMoney(currentMonthSnapshot.totalIncome, currentMonthCurrency)}
+                      {formatSignedMoney(currentMonthSnapshot.totalIncome, SNAPSHOT_DISPLAY_CURRENCY)}
                     </span>
                   </div>
                   <div className="h-8 w-px bg-primary-foreground/20" />
@@ -535,7 +537,7 @@ export function TransactionsPage(): JSX.Element {
                       Monthly Expense
                     </span>
                     <span className="text-sm font-semibold" data-testid="transactions-monthly-expense">
-                      -{formatMoney(currentMonthSnapshot.totalExpenses, currentMonthCurrency)}
+                      -{formatMoney(currentMonthSnapshot.totalExpenses, SNAPSHOT_DISPLAY_CURRENCY)}
                     </span>
                   </div>
                 </div>

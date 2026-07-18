@@ -26,6 +26,8 @@
 | BR-010 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-011 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P3 | Fixed — verification pending | Remove the Transactions list's retired section label and record-count badge without affecting date groups or pagination; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-012 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P1 | Fixed — verification pending | Align Transactions and Analytics current-month snapshot calculations and add a shared-boundary regression; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| API-001 | User-approved FE/BE analytics refinement, 2026-07-17 | P1 | Verified | Focused Analytics resources use backend-owned AED and PostgreSQL-side aggregation, with paginated drilldown parity. |
+| BR-021 | `frontend_new/bugs_reports/database-analytics-aggregation-findings-2026-07-18.md` | P1 | Verified | Analytics and tag aggregation run in PostgreSQL; API parity verification protects the contract. |
 | BR-013 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Replace competing compact category/tag controls with focused Transactions filter selector pages; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-014 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use dark-theme-appropriate separators within same-day Transactions groups; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-015 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Restyle transaction deletion confirmation to match the editor surface and actions; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
@@ -270,6 +272,58 @@ YAML parsing, deployment-script shell parsing, Compose rendering, and the comple
 - Replaced the paginated Transactions-list reduction with the complete current-month Analytics query and its shared model, so filters and pagination cannot affect the monthly snapshot.
 - The widget now exposes loading and retry states and refreshes after an editor save or deletion.
 - Verification: Transactions-page regression test confirms the current-month range/model; final targeted browser QA observed matching Transactions and Analytics values (`+AED 80.00`, income `+100.00`, expense `-20.00`); Phase-2, Phase-3, and four-profile mobile QA passed. The Phase-3 500 console entry was its intentional error-and-retry probe.
+
+## API-001 — Focused backend analytics resources
+
+### Approved plan — 2026-07-17
+
+1. Add `summary`, `by-categories`, `by-tags`, and `by-months` read resources under `/api/transactions`. PostgreSQL performs every multi-record calculation, and the temporary AED calculation-currency constant is backend-owned.
+2. Extend the existing transaction collection only with drilldown filters (`flow`, `calculationCurrencyOnly`, `uncategorized`, and one canonical `tag`), preserving its established list contract and pagination.
+3. Normalize currency and tags on backend writes and ingestion, add a forward migration for legacy values, and test aggregate/drilldown parity before wiring the frontend.
+4. Replace browser-side analytics pagination and aggregation with one typed hook per widget; use the same summary endpoint for both balance snapshots; retain paginated drilldown rows.
+5. Verify backend contracts, frontend unit/build checks, and affected browser/mobile QA. Record completion and any device exception here.
+
+### Initial delivery record — 2026-07-17
+
+- Added focused `summary`, `by-categories`, `by-tags`, and `by-months` resources under `/api/transactions`. The backend owns all calculation, applies inclusive Dubai-local dates, and currently limits calculated data to `AED`.
+- Added the additive paginated-list drilldown filters (`flow`, `calculationCurrencyOnly`, `uncategorized`, and singular canonical `tag`), so drilldown rows use precisely the same backend population as their aggregate widget.
+- Canonicalized currencies and tags on writes and ingestion, with a Piccolo forward migration for existing transaction values. The future user-selected calculation-currency setting is explicitly deferred without changing frontend request shapes.
+- Replaced frontend pagination/reduction with one abortable typed resource hook per widget, reused `summary` for both balance snapshots, removed the average transaction field, and kept drilldown rows paginated.
+- Review follow-up: aggregate monetary fields now remain exact decimal strings through frontend mapping and formatting; only chart geometry uses a capped numeric magnitude. Boundary tests cover a fixed-scale value beyond JavaScript's safe-integer range.
+- Verification: backend ruff format/check, mypy, and parity integration tests passed; frontend typecheck, lint, 36 unit tests, and production build passed. Phase-2, Phase-3, and Phase-5 browser QA passed. The eight-mode iPhone fixture matrix passed, and the Analytics dark iPhone 12 Pro capture was visually inspected. Physical Telegram confirmation remains tracked separately under TWA-1.
+
+### Database-side aggregation correction — 2026-07-18
+
+The first backend aggregate implementation loaded filtered transaction rows and grouped them in Python. That violated the required database-side aggregation boundary. The correction replaces those scans with static, parameterized PostgreSQL aggregates through Piccolo `Transaction.raw()`: PostgreSQL applies filtering, grouping, sums, counts, shares, timezone month bucketing, and ordering. `GET /api/tags` also derives its distinct tag list in PostgreSQL. The query-method audit found no remaining unbounded transaction read-and-calculate path; the only in-memory presentation ordering is a bounded (maximum three-item) category-suggestion helper.
+
+- Verification: `uv run ruff format app/db/queries.py` and `uv run ruff check app/db/queries.py` — passed; `uv run python -m mypy app/db/queries.py` — passed.
+- Verification: an isolated FastAPI instance on port 8010, with readiness polling, ran `BASE_URL=http://127.0.0.1:8010 uv run python -m pytest tests/integration/test_api_parity.py -ra` — 34 passed, 2 production-only checks skipped.
+- Verification: the complete backend suite passed on the same isolated instance — 67 passed, 2 production-only checks skipped.
+- Independent code review found no remaining correctness or database-boundary issue.
+
+## BR-021 — Analytics aggregation must remain database-side
+
+### Problem
+
+The focused Analytics API endpoints replaced frontend aggregation but initially fetched all matching transactions into backend memory before calculating their results. On a large history this creates the same scalability and memory anti-pattern on a different tier.
+
+### Required behavior
+
+- PostgreSQL performs all multi-record Analytics and tag calculations: filtering, grouping, sums, counts, share calculation, timezone month grouping, distinct-tag extraction, and ordering.
+- Backend code returns only the small aggregate result projection. It never loads the matching transaction row set to calculate an Analytics widget.
+- Fetching complete records uses `Entity.objects()`; `Entity.select()` is reserved for intentionally limited projections or database aggregates.
+
+### Acceptance criteria
+
+- `summary`, `by-categories`, `by-tags`, `by-months`, and `/api/tags` retain their documented response contracts while running their multi-record work in PostgreSQL.
+- Integration coverage verifies user isolation, AED filtering, Dubai-local month bucketing, category/tag totals and shares, and tag sorting.
+- Backend and frontend agent guides prevent a recurrence.
+
+### Delivery record — 2026-07-18
+
+- Replaced the application-memory source-row scans with database aggregate queries and SQL-side distinct-tag extraction.
+- Added explicit frontend and backend agent rules, corrected the API evolution plan, and documented the future backend-owned user calculation-currency setting.
+- Verification: backend static checks and isolated API parity suite passed; independent review found no remaining issue.
 
 ## BR-013 through BR-018 — Filters, editor, and Analytics refinement
 

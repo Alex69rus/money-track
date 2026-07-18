@@ -27,6 +27,7 @@ Then read only the guide relevant to the change:
 
 - Use strict TypeScript, React function components, hooks, Vite, Tailwind v4, and existing shadcn primitives.
 - Keep data access in `src/services/` and hooks; use `AbortController` cleanup for async effects.
+- Never perform complex calculations across many records in frontend memory. Request a backend aggregate resource and render its result instead.
 - Do not introduce `any`, Redux, Context as a state store, MUI, CRA variables, or hard-coded API URLs.
 - Use `VITE_API_BASE_URL`, attach `X-Telegram-Init-Data` through the shared API client, and keep fallback data restricted to development/test read paths.
 - Before adding or changing a shadcn component, run `npx shadcn@latest info --json` and `npx shadcn@latest docs <component>`.

@@ -53,9 +53,11 @@ backend_new/
 - Use explicit env contract in run commands: `BASE_URL`, `TEST_DATABASE_URL`, optional `PRODUCTION_BASE_URL`.
 - Runtime app code in `backend_new/app/**` must use Piccolo ORM only:
   - no `asyncpg` imports in runtime paths
-  - no direct SQL strings in runtime paths
+  - use normal Piccolo query builders for CRUD and simple aggregates; where Piccolo cannot express a required database aggregate (for example, PostgreSQL array `UNNEST` or a window aggregate), use `Entity.raw()` only with fixed, parameterized SQL and never interpolate user input
   - prefer typed query/object access
 - Attach filters and pagination to DB query before execution.
+- Never perform complex calculations across many records in application memory. Put filtering, grouping, sums, counts, shares, and ordering in the database query.
+- Use `Entity.objects()` when fetching rows as entities. Use `Entity.select()` only for an intentionally limited field projection or database aggregate; do not select a full entity and then cast dictionary rows back into entity-like types.
 - Preserve error contract with explicit handlers where needed.
 - When tests add third-party imports, update `pyproject.toml` dependencies in the same change.
 - Use one canonical engine factory shared by runtime and `piccolo_conf.py`.

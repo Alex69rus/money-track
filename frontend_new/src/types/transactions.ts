@@ -38,8 +38,12 @@ export interface TransactionsQueryFilters {
   toDate?: string;
   categoryId?: number;
   tags?: string[];
+  tag?: string;
   minAmount?: number;
   maxAmount?: number;
+  flow?: "expense" | "income";
+  uncategorized?: boolean;
+  calculationCurrencyOnly?: boolean;
 }
 
 export interface UpdateTransactionPayload {

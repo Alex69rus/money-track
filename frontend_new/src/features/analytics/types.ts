@@ -1,15 +1,14 @@
-import type { Transaction } from "@/types/transactions";
-
 export interface AnalyticsDateRange {
   fromDate: string;
   toDate: string;
 }
 
+export type DecimalMoney = string;
+
 export interface AnalyticsSummaryStats {
-  totalIncome: number;
-  totalExpenses: number;
-  balance: number;
-  averageTransaction: number;
+  totalIncome: DecimalMoney;
+  totalExpenses: DecimalMoney;
+  balance: DecimalMoney;
   transactionCount: number;
 }
 
@@ -17,21 +16,19 @@ export interface CategorySpendingItem {
   key: string;
   categoryId: number | null;
   categoryName: string;
-  amount: number;
+  amount: DecimalMoney;
   transactionCount: number;
   share: number;
   icon: string | null;
   color: string | null;
-  transactions: Transaction[];
 }
 
 export interface TagSpendingItem {
   key: string;
   tag: string;
-  amount: number;
+  amount: DecimalMoney;
   transactionCount: number;
   share: number;
-  transactions: Transaction[];
 }
 
 export type AnalyticsDrilldownItem =
@@ -47,14 +44,7 @@ export type AnalyticsDrilldownItem =
 export interface MonthlyTrendItem {
   key: string;
   monthLabel: string;
-  income: number;
-  expenses: number;
-  balance: number;
-}
-
-export interface AnalyticsModel {
-  summary: AnalyticsSummaryStats;
-  categorySpending: CategorySpendingItem[];
-  tagSpending: TagSpendingItem[];
-  monthlyTrends: MonthlyTrendItem[];
+  income: DecimalMoney;
+  expenses: DecimalMoney;
+  balance: DecimalMoney;
 }

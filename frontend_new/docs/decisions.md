@@ -37,3 +37,12 @@ Date: 2026-07-11
 - Editable fields scroll inside the correct page scroll container after focus and after Telegram viewport changes. Use stable/current viewport values to reserve keyboard scroll space.
 - Apply the greater of Telegram's content-safe top inset and a 5rem fullscreen host-controls reserve, followed by the normal 1rem content gutter, to primary pages and every fixed full-page surface so host controls never overlap app content.
 - On Bot API 7.7+, call `disableVerticalSwipes()`. On Bot API 8.0+, request fullscreen at startup and after a fullscreen exit. Both behaviors are version-gated requests: Telegram can still expose host controls or decline fullscreen.
+
+## Dec-005 (Analytics Calculation Currency)
+
+Date: 2026-07-17
+
+- Analytics calculations use one backend-owned calculation currency. It is `AED` until a user setting exists.
+- The frontend does not send a currency to analytics endpoints. The backend resolves the calculation currency before querying and aggregating.
+- A future user-selected calculation-currency setting replaces the backend constant without changing frontend analytics request shapes.
+- Transaction editing and listing continue to preserve each transaction's own currency.

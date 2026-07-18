@@ -1,19 +1,75 @@
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.db.queries import (
     create_transaction,
     delete_transaction,
+    fetch_transaction_summary,
     fetch_transactions,
+    fetch_transactions_by_categories,
+    fetch_transactions_by_months,
+    fetch_transactions_by_tags,
     update_transaction,
+)
+from app.schemas.analytics import (
+    CategoryBreakdownResponse,
+    MonthlyBreakdownResponse,
+    TagBreakdownResponse,
+    TransactionSummaryResponse,
 )
 from app.schemas.responses import PaginatedTransactionsResponse, TransactionResponse
 from app.schemas.transactions import CreateTransactionRequest, UpdateTransactionRequest
 from app.services.auth import get_current_user_id
 
 router = APIRouter()
+
+
+def _validate_date_range(from_date: date | None, to_date: date | None) -> None:
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="fromDate must not exceed toDate")
+
+
+@router.get("/summary")
+async def get_transaction_summary(
+    fromDate: date | None = None,
+    toDate: date | None = None,
+    user_id: int = Depends(get_current_user_id),
+) -> TransactionSummaryResponse:
+    _validate_date_range(fromDate, toDate)
+    return await fetch_transaction_summary(user_id=user_id, from_date=fromDate, to_date=toDate)
+
+
+@router.get("/by-categories")
+async def get_transactions_by_categories(
+    fromDate: date | None = None,
+    toDate: date | None = None,
+    user_id: int = Depends(get_current_user_id),
+) -> CategoryBreakdownResponse:
+    _validate_date_range(fromDate, toDate)
+    return await fetch_transactions_by_categories(user_id=user_id, from_date=fromDate, to_date=toDate)
+
+
+@router.get("/by-tags")
+async def get_transactions_by_tags(
+    fromDate: date | None = None,
+    toDate: date | None = None,
+    user_id: int = Depends(get_current_user_id),
+) -> TagBreakdownResponse:
+    _validate_date_range(fromDate, toDate)
+    return await fetch_transactions_by_tags(user_id=user_id, from_date=fromDate, to_date=toDate)
+
+
+@router.get("/by-months")
+async def get_transactions_by_months(
+    fromDate: date | None = None,
+    toDate: date | None = None,
+    user_id: int = Depends(get_current_user_id),
+) -> MonthlyBreakdownResponse:
+    _validate_date_range(fromDate, toDate)
+    return await fetch_transactions_by_months(user_id=user_id, from_date=fromDate, to_date=toDate)
 
 
 @router.get("")
@@ -25,11 +81,21 @@ async def get_transactions(
     maxAmount: Decimal | None = None,
     categoryId: int | None = None,
     tags: str | None = None,
+    tag: str | None = None,
     text: str | None = None,
+    flow: Literal["expense", "income"] | None = None,
+    uncategorized: bool = False,
+    calculationCurrencyOnly: bool = False,
     skip: int = 0,
     take: int = 50,
     user_id: int = Depends(get_current_user_id),
 ) -> PaginatedTransactionsResponse:
+    _validate_date_range(fromDate, toDate)
+    if categoryId is not None and uncategorized:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="categoryId and uncategorized cannot be used together",
+        )
     return await fetch_transactions(
         user_id=user_id,
         from_date=fromDate,
@@ -38,7 +104,11 @@ async def get_transactions(
         max_amount=maxAmount,
         category_id=categoryId,
         tags=tags,
+        tag=tag,
         text=text,
+        flow=flow,
+        uncategorized=uncategorized,
+        calculation_currency_only=calculationCurrencyOnly,
         skip=skip,
         take=take,
     )

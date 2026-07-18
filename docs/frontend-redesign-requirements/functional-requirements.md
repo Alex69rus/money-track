@@ -64,7 +64,7 @@ Analytics MUST support date-range constrained analysis.
 
 ### FR-019
 Analytics MUST display, at minimum:
-- summary statistics (income, expenses, balance, average)
+- summary statistics (income, expenses, balance)
 - spending by category
 - spending by tags
 - monthly trends

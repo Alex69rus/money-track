@@ -31,3 +31,46 @@ export interface PaginatedTransactionsDto {
   take: number;
   hasMore: boolean;
 }
+
+export interface TransactionSummaryDto {
+  totalIncome: string;
+  totalExpenses: string;
+  balance: string;
+  transactionCount: number;
+}
+
+export interface CategoryBreakdownItemDto {
+  categoryId: number | null;
+  categoryName: string;
+  categoryIcon: string | null;
+  categoryColor: string | null;
+  amount: string;
+  transactionCount: number;
+  share: number;
+}
+
+export interface CategoryBreakdownDto {
+  data: CategoryBreakdownItemDto[];
+}
+
+export interface TagBreakdownItemDto {
+  tag: string;
+  amount: string;
+  transactionCount: number;
+  share: number;
+}
+
+export interface TagBreakdownDto {
+  data: TagBreakdownItemDto[];
+}
+
+export interface MonthlyBreakdownItemDto {
+  month: string;
+  income: string;
+  expenses: string;
+  balance: string;
+}
+
+export interface MonthlyBreakdownDto {
+  data: MonthlyBreakdownItemDto[];
+}

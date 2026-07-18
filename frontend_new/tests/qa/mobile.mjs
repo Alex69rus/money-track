@@ -109,12 +109,73 @@ function buildFixtures() {
 
 async function installApiFixtures(page) {
   const { categories, transactions } = buildFixtures();
+  const month = transactions[0].transactionDate.slice(0, 7);
   const transactionResponse = {
     data: transactions,
     hasMore: false,
     skip: 0,
     take: 50,
     totalCount: transactions.length,
+  };
+  const summaryResponse = {
+    totalIncome: "17.50",
+    totalExpenses: "12128.35",
+    balance: "-12110.85",
+    transactionCount: transactions.length,
+  };
+  const categoryBreakdownResponse = {
+    data: [
+      {
+        categoryId: 401,
+        categoryName: "Transport",
+        categoryIcon: "directions_car",
+        categoryColor: "#3b82f6",
+        amount: "12000.00",
+        transactionCount: 1,
+        share: 0.9894,
+      },
+      {
+        categoryId: 402,
+        categoryName: "Groceries",
+        categoryIcon: null,
+        categoryColor: "#22c55e",
+        amount: "128.35",
+        transactionCount: 1,
+        share: 0.0106,
+      },
+    ],
+  };
+  const tagBreakdownResponse = {
+    data: [
+      {
+        tag: "commute",
+        amount: "12000.00",
+        transactionCount: 1,
+        share: 0.9894,
+      },
+      {
+        tag: "qa",
+        amount: "12000.00",
+        transactionCount: 1,
+        share: 0.9894,
+      },
+      {
+        tag: "household",
+        amount: "128.35",
+        transactionCount: 1,
+        share: 0.0106,
+      },
+    ],
+  };
+  const monthlyBreakdownResponse = {
+    data: [
+      {
+        month,
+        income: "17.50",
+        expenses: "12128.35",
+        balance: "-12110.85",
+      },
+    ],
   };
 
   await page.route(/\/api\/categories(?:\?.*)?$/, async (route) => {
@@ -135,6 +196,18 @@ async function installApiFixtures(page) {
   });
   await page.route(/\/api\/transactions(?:\?.*)?$/, async (route) => {
     await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(transactionResponse) });
+  });
+  await page.route(/\/api\/transactions\/summary(?:\?.*)?$/, async (route) => {
+    await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(summaryResponse) });
+  });
+  await page.route(/\/api\/transactions\/by-categories(?:\?.*)?$/, async (route) => {
+    await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(categoryBreakdownResponse) });
+  });
+  await page.route(/\/api\/transactions\/by-tags(?:\?.*)?$/, async (route) => {
+    await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(tagBreakdownResponse) });
+  });
+  await page.route(/\/api\/transactions\/by-months(?:\?.*)?$/, async (route) => {
+    await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(monthlyBreakdownResponse) });
   });
 }
 

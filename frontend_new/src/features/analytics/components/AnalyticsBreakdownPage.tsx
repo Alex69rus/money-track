@@ -1,7 +1,7 @@
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CategoryIconGlyph, type CategoryIconData } from "@/components/category-icon-glyph";
-import type { CategorySpendingItem, TagSpendingItem } from "@/features/analytics/types";
+import type { CategorySpendingItem, DecimalMoney, TagSpendingItem } from "@/features/analytics/types";
 import { formatMoney, toTestIdSegment } from "@/features/analytics/utils";
 import { isTelegramWebAppAvailable } from "@/services/telegram/webapp";
 
@@ -24,7 +24,7 @@ type AnalyticsBreakdownPageProps =
     };
 
 interface BreakdownRow {
-  amount: number;
+  amount: DecimalMoney;
   backgroundColor: string;
   category?: CategoryIconData | null;
   foregroundColor: string;

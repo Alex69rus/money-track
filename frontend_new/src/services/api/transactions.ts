@@ -48,6 +48,10 @@ export async function listTransactions(
     params.set("categoryId", String(options.categoryId));
   }
 
+  if (options.uncategorized) {
+    params.set("uncategorized", "true");
+  }
+
   if (options.text) {
     params.set("text", options.text);
   }
@@ -57,6 +61,18 @@ export async function listTransactions(
 
   if (options.tags && options.tags.length > 0) {
     params.set("tags", options.tags.join(","));
+  }
+
+  if (options.tag) {
+    params.set("tag", options.tag);
+  }
+
+  if (options.flow) {
+    params.set("flow", options.flow);
+  }
+
+  if (options.calculationCurrencyOnly) {
+    params.set("calculationCurrencyOnly", "true");
   }
 
   try {

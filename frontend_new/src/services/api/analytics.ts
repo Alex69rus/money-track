@@ -1,39 +1,75 @@
-import { listTransactions } from "@/services/api/transactions";
-import type { Transaction } from "@/types/transactions";
+import { apiRequest } from "@/services/api/client";
+import type {
+  CategoryBreakdownDto,
+  MonthlyBreakdownDto,
+  TagBreakdownDto,
+  TransactionSummaryDto,
+} from "@/services/api/dto";
+import {
+  mapCategoryBreakdown,
+  mapMonthlyBreakdown,
+  mapTagBreakdown,
+  mapTransactionSummary,
+} from "@/services/api/mappers";
+import type {
+  AnalyticsSummaryStats,
+  CategorySpendingItem,
+  MonthlyTrendItem,
+  TagSpendingItem,
+} from "@/features/analytics/types";
 
 interface AnalyticsTransactionsRequest {
   fromDate: string;
   toDate: string;
 }
 
-const PAGE_SIZE = 500;
+function toSearchParams(request: AnalyticsTransactionsRequest): URLSearchParams {
+  const params = new URLSearchParams();
 
-export async function fetchAnalyticsTransactions(
-  request: AnalyticsTransactionsRequest,
-  signal?: AbortSignal,
-): Promise<Transaction[]> {
-  const collected: Transaction[] = [];
-  let skip = 0;
-
-  while (true) {
-    const page = await listTransactions(
-      {
-        fromDate: request.fromDate,
-        toDate: request.toDate,
-        skip,
-        take: PAGE_SIZE,
-      },
-      signal,
-    );
-
-    collected.push(...page.data);
-
-    if (!page.hasMore || page.data.length === 0) {
-      break;
-    }
-
-    skip = page.skip + page.data.length;
+  if (request.fromDate) {
+    params.set("fromDate", request.fromDate);
   }
 
-  return collected;
+  if (request.toDate) {
+    params.set("toDate", request.toDate);
+  }
+
+  return params;
+}
+
+function analyticsPath(resource: string, request: AnalyticsTransactionsRequest): string {
+  const query = toSearchParams(request).toString();
+  return `/api/transactions/${resource}${query ? `?${query}` : ""}`;
+}
+
+export async function fetchTransactionSummary(
+  request: AnalyticsTransactionsRequest,
+  signal?: AbortSignal,
+): Promise<AnalyticsSummaryStats> {
+  const response = await apiRequest<TransactionSummaryDto>(analyticsPath("summary", request), { signal });
+  return mapTransactionSummary(response);
+}
+
+export async function fetchCategoryBreakdown(
+  request: AnalyticsTransactionsRequest,
+  signal?: AbortSignal,
+): Promise<CategorySpendingItem[]> {
+  const response = await apiRequest<CategoryBreakdownDto>(analyticsPath("by-categories", request), { signal });
+  return mapCategoryBreakdown(response);
+}
+
+export async function fetchTagBreakdown(
+  request: AnalyticsTransactionsRequest,
+  signal?: AbortSignal,
+): Promise<TagSpendingItem[]> {
+  const response = await apiRequest<TagBreakdownDto>(analyticsPath("by-tags", request), { signal });
+  return mapTagBreakdown(response);
+}
+
+export async function fetchMonthlyBreakdown(
+  request: AnalyticsTransactionsRequest,
+  signal?: AbortSignal,
+): Promise<MonthlyTrendItem[]> {
+  const response = await apiRequest<MonthlyBreakdownDto>(analyticsPath("by-months", request), { signal });
+  return mapMonthlyBreakdown(response);
 }

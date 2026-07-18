@@ -31,7 +31,7 @@ Keep entries short, actionable, and repository-specific.
 ### 2026-02-19 - ORM Boundary Discipline
 - Takeaway: mixing DB access patterns creates drift and maintenance risk.
 - Preferred fix: keep runtime CRUD/query paths on Piccolo ORM only.
-- Prevention rule: reject runtime changes that introduce direct SQL strings or non-Piccolo DB calls.
+- Prevention rule: reject non-Piccolo DB calls and dynamically constructed or unparameterized runtime SQL. Use fixed, parameterized `Entity.raw()` only when Piccolo cannot express a required PostgreSQL operation.
 
 ### 2026-02-19 - Typed Contracts
 - Takeaway: loose runtime shapes increase hidden regressions.
@@ -77,3 +77,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: running Piccolo pool operations across multiple `asyncio.run(...)` calls causes cross-loop failures (`Future attached to a different loop` / `another operation is in progress`).
 - Exploration: ruled out query logic by reproducing failures only when pool start/query/close spanned different event loops; stable behavior returned after executing the full scenario in one coroutine.
 - Prevention rule: when tests use `engine.start_connection_pool()`, run setup, business calls, and teardown in a single async coroutine with one `asyncio.run(...)` entrypoint.
+
+### 2026-07-17 - Filter Variable Safety
+- Takeaway: introducing a new filter parameter can accidentally be shadowed by an existing loop variable, silently composing an unintended second predicate.
+- Exploration: multi-tag list requests retained only the last tag; focused API tests isolated the cause to `tag` being reused as a loop variable before applying the singular tag filter.
+- Prevention rule: use distinct names for request filters and normalized loop values, and cover combined filter paths with integration tests.
+
+### 2026-07-18 - Database-side Analytics Aggregation
+- Takeaway: moving an aggregate from the frontend to Python only relocates the unbounded memory and latency cost.
+- Exploration: static parameterized PostgreSQL queries correctly covered AED/user/date filtering, category/tag shares, Dubai-local month buckets, and tag extraction; the isolated parity suite passed 34 tests with 2 production-only skips.
+- Prevention rule: reject any aggregate resource that loads matching transaction rows for Python reduction, grouping, share calculation, or ordering; return only database aggregate projections.
