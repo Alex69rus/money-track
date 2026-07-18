@@ -14,7 +14,7 @@ money-track/
 │   ├── tests/                 # Integration tests and fixtures
 │   ├── piccolo_migrations/    # DB migrations
 │   └── pyproject.toml
-├── frontend/                  # React app
+├── frontend_new/              # Production React Telegram Mini App
 ├── n8n/                       # Workflow definitions
 ├── docs/adr/                  # Architecture records
 └── docker-compose.yml         # Local stack
@@ -30,4 +30,4 @@ money-track/
 - Fewer ambiguous ownership boundaries.
 
 ## Date
-2026-03-20
+2026-07-18

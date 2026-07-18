@@ -1,12 +1,12 @@
 # `frontend_new`
 
-The current Telegram Mini App frontend. The redesign is complete; future work is an approved feature, defect, or verification slice, not a new visual-alignment program.
+The production Telegram Mini App frontend. Future work is an approved feature, defect, or verification slice.
 
 ## Current status
 
-- Functional phases 0–5, visual alignment, and planned BFX fixes are complete.
+- The released navigation, transaction, analytics, chat, and settings flows are documented in the frontend PRD.
 - Browser and Telegram-fixture verification cover the supported flows. Real Telegram iPhone verification remains pending until `TELEGRAM_DEVICE_NGROK_DOMAIN` is configured.
-- Deferred backend work—only when separately approved—is a stable `/api/chat` schema and server-side analytics aggregation.
+- Deferred backend work—only when separately approved—is a stable `/api/chat` schema.
 
 ## Daily commands
 
@@ -59,9 +59,9 @@ TELEGRAM_DEVICE_NGROK_DOMAIN=your-reserved-domain.ngrok-free.app npm run qa:tele
 
 - `AGENTS.MD`: operating rules for frontend changes
 - `GUARDRAILS.md`: compact, reusable implementation lessons
+- `../docs/frontend-prd/`: current product requirements and user-flow contract
 - `docs/decisions.md`: locked product decisions
 - `docs/telegram-mini-app-playbook.md`: Telegram lifecycle and navigation contract
 - `docs/api-evolution-plan.md`: current frontend/API boundary
 - `docs/qa-acceptance-checklist.md`: change-based QA checklist
 - `../docs/tasklist.md`: the single task and status register
-- `docs/frontend-redesign-requirements/`: functional requirements and user flows

@@ -1,6 +1,6 @@
 # Frontend API Evolution Plan
 
-Status: approved for implementation — 2026-07-17.
+Status: implemented and verified — 2026-07-18.
 
 ## Contract boundaries
 
@@ -109,14 +109,14 @@ Category and tag drilldowns send the selected resource filter plus `flow=expense
 - Runtime code uses Piccolo. For PostgreSQL operations Piccolo's query builder cannot represent safely—currently array `UNNEST`, window totals, and business-timezone month bucketing—the resource uses `Transaction.raw()` with fixed parameterized SQL. Query structure is static; only values are bound parameters.
 - Aggregate resources return their compact widget projections only; no source transaction collection is loaded into backend or frontend memory.
 
-## Frontend migration
+## Frontend implementation
 
 - Remove the paged `fetchAnalyticsTransactions` loop, `useAnalyticsTransactions`, `buildAnalyticsModel`, embedded drilldown transactions, currency inference, and average-transaction UI.
 - Add one typed API adapter and abortable hook per aggregate resource.
 - Use `summary` for both balance snapshots.
 - Keep category/tag drilldowns paginated and refresh affected widget data after transaction mutations instead of recomputing on the client.
 
-## Implementation sequence
+## Implementation record
 
 1. **Backend contract and focused calculations** — Add the four route handlers and response schemas; centralize inclusive business-local date predicates; use the backend `AED` calculation-currency constant; express each resource as a database aggregate query with all predicates, grouping, share calculation, and ordering executed before rows leave PostgreSQL.
 2. **Transaction-list drilldown compatibility** — Add the four additive filters above, canonicalize currency/tags on writes and ingestion, and add a forward data migration for existing values. Add integration tests before frontend wiring.

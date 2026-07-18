@@ -217,7 +217,6 @@ jobs:
             telegram_web_app_url="${frontend_origin}/"
             frontend_image="ghcr.io/alex69rus/money-track/frontend-new:${DEPLOY_SHA}"
             backend_image="ghcr.io/alex69rus/money-track/backend:latest"
-            legacy_frontend_image="ghcr.io/alex69rus/money-track/frontend:latest"
 
             case "$TELEGRAM_WEBHOOK_URL" in
               https://*/api/telegram/webhook) ;;
@@ -241,10 +240,7 @@ jobs:
                 previous_frontend_image="$running_digest"
               fi
             fi
-            if [ -z "$previous_frontend_image" ]; then
-              previous_frontend_image="$legacy_frontend_image"
-            fi
-            if [ -f "$previous_env" ]; then
+            if [ -n "$previous_frontend_image" ] && [ -f "$previous_env" ]; then
               printf '\nROLLBACK_FRONTEND_IMAGE=%s\n' "$previous_frontend_image" >> "$previous_env"
             fi
 

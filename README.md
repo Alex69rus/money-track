@@ -5,8 +5,7 @@ Personal money tracking application with Telegram bot integration.
 ## Architecture
 
 - **Backend**: Python FastAPI (`backend_new`) with Piccolo ORM and PostgreSQL
-- **Production frontend**: React + TypeScript + Vite in `frontend_new/`
-- **Legacy frontend**: `frontend/` is retained as a rollback-only backup and is not the production deployment target
+- **Frontend**: React + TypeScript + Vite in `frontend_new/`
 - **Database**: PostgreSQL
 - **Automation / AI**: n8n workflows
 - **Containerization**: Docker Compose
@@ -32,7 +31,7 @@ docker-compose up --build
 - Docker and Docker Compose
 - Python 3.13
 - `uv`
-- Node.js 18+
+- Node.js 20+
 
 ### Backend (`backend_new`)
 
@@ -99,8 +98,7 @@ money-track/
 │   ├── tests/                # Integration and fixtures
 │   ├── piccolo_migrations/   # Forward migrations
 │   └── pyproject.toml
-├── frontend/                 # Frozen legacy rollback source
-├── frontend_new/             # Shipped Vite redesign
+├── frontend_new/             # Production Vite frontend
 ├── n8n/                      # n8n workflows (outdated)
 ├── docs/                     # ADRs, deployment, workflow
 └── docker-compose.yml        # Local development setup

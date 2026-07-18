@@ -4,7 +4,7 @@
 
 - **SMS Processing & AI Chat**: Existing n8n workflows
 - **Backend API**: Python FastAPI (`backend_new`) for UI requests and transaction CRUD
-- **Frontend**: Create React App + MUI + Telegram Web App SDK
+- **Frontend**: React + TypeScript + Vite + Tailwind v4 + shadcn/ui + Telegram Web App SDK (`frontend_new`)
 - **Database**: PostgreSQL (shared between n8n workflows and backend API)
 - **Authentication**: Telegram Web App built-in auth (validate initData hash)
 - **API Security**: UI -> backend API via Telegram initData validation
@@ -41,7 +41,7 @@ money-track/
 │   ├── tests/                 # Integration tests and fixtures
 │   ├── piccolo_migrations/    # Migration scripts
 │   └── pyproject.toml
-├── frontend/                  # React app
+├── frontend_new/              # React Telegram Mini App
 │   └── src/
 │       ├── components/
 │       ├── pages/

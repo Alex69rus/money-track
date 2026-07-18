@@ -1,4 +1,4 @@
-# Functional Requirements for Future Frontend (Behavior Contract)
+# Frontend Product Requirements
 
 ## 1. Navigation and Layout
 ### FR-001
@@ -129,7 +129,7 @@ All recoverable failures in critical flows (transactions list, analytics load, s
 
 ## 8. Compatibility Notes and Constraints To Preserve or Resolve
 ### FR-038
-Transactions filtering UI MUST use single-category selection in redesign scope.
+Transactions filtering UI MUST use single-category selection in the current product scope.
 
 ### FR-039
 Transaction edit flow MUST keep multi-currency support across UI and API payloads.

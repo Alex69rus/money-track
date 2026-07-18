@@ -6,9 +6,9 @@ This directory contains Architecture Decision Records that document important ar
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [ADR-001](ADR-001-technology-stack.md) | Technology Stack Selection | Accepted | 2026-03-20 |
+| [ADR-001](ADR-001-technology-stack.md) | Technology Stack Selection | Accepted | 2026-07-18 |
 | [ADR-002](ADR-002-development-principles.md) | Development Principles | Accepted | 2026-03-20 |
-| [ADR-003](ADR-003-project-structure.md) | Project Structure | Accepted | 2026-03-20 |
+| [ADR-003](ADR-003-project-structure.md) | Project Structure | Accepted | 2026-07-18 |
 | [ADR-004](ADR-004-data-model.md) | Data Model Design | Accepted | 2026-03-20 |
 | [ADR-005](ADR-005-authentication-security.md) | Authentication and Security | Accepted | 2026-03-20 |
 | [ADR-006](ADR-006-llm-integration.md) | LLM Integration Strategy | Accepted | 2026-03-20 |

@@ -1,6 +1,6 @@
 # Production deployment
 
-Merges to `main` run [the production workflow](../.github/workflows/deploy.yml). It validates the Vite redesign, builds ARM64 images, and deploys the exact redesign image built from that commit.
+Merges to `main` run [the production workflow](../.github/workflows/deploy.yml). It validates `frontend_new`, builds ARM64 images, and deploys the exact frontend image built from that commit.
 
 ## Workflow stages
 
@@ -10,11 +10,11 @@ Merges to `main` run [the production workflow](../.github/workflows/deploy.yml).
 
 The server-side deployment script generates `.env.prod` and the Cloudflare Origin Certificate files from GitHub configuration; do not create or commit a production `.env.prod` file in the repository.
 
-## Frontend cutover and rollback
+## Frontend deployment and rollback
 
-Production serves the `frontend` Compose service from the separate `ghcr.io/alex69rus/money-track/frontend-new` package. The frozen `frontend/` source tree and its `ghcr.io/alex69rus/money-track/frontend` image remain unchanged as the rollback target.
+Production serves the `frontend` Compose service from `ghcr.io/alex69rus/money-track/frontend-new`. The service uses only immutable `frontend-new:<full-commit-sha>` images.
 
-The redesign image is built with an empty `VITE_API_BASE_URL`. That is intentional: browser requests remain same-origin and nginx forwards `/api/*` to the backend. No Vite API URL secret or Actions variable is required.
+The frontend image is built with an empty `VITE_API_BASE_URL`. That is intentional: browser requests remain same-origin and nginx forwards `/api/*` to the backend. No Vite API URL secret or Actions variable is required.
 
 Every deployment uses `frontend-new:<full-commit-sha>`, creates `/version.json` with that revision, and verifies all of the following before succeeding:
 
@@ -24,7 +24,7 @@ Every deployment uses `frontend-new:<full-commit-sha>`, creates `/version.json` 
 - the running `frontend` container uses the expected immutable image;
 - the default Telegram Web App menu button points to the production domain.
 
-Before replacing the frontend, the server saves `/opt/money-track/.env.prod.previous` and records the running image digest. If the new frontend revision or route check fails, the workflow recreates only the `frontend` service with that saved image.
+Before replacing the frontend, the server saves `/opt/money-track/.env.prod.previous` and records the running frontend image digest. If the new frontend revision or route check fails, the workflow recreates only the `frontend` service with the saved `frontend-new` image.
 
 ## Nginx routing and restart order
 

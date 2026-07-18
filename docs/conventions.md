@@ -15,8 +15,7 @@
 
 ## Frontend
 
-- `frontend/` is frozen legacy code; its React/MUI conventions apply only when legacy work is explicitly requested.
-- `frontend_new/` uses strict TypeScript, React function components, Vite, Tailwind v4, shadcn/ui, and Fetch-based adapters. Its scoped `AGENTS.MD` is authoritative for frontend-new work.
+- `frontend_new/` is the production frontend. It uses strict TypeScript, React function components, Vite, Tailwind v4, shadcn/ui, and Fetch-based adapters. Its scoped `AGENTS.MD` is authoritative for frontend work.
 - Keep simple component-local state and hooks. Do not use axios, Redux, or a Context state store.
 - Use only Vite-prefixed environment variables in `frontend_new`; API access goes through its typed services/hooks.
 
@@ -31,4 +30,3 @@
 
 - Add microservices, caching, or abstractions without a proven need.
 - Hard-code runtime configuration.
-- Modify the legacy frontend without explicit approval.

@@ -18,6 +18,9 @@ Rules for AI agents working in `backend_new`.
 - Validation: `Pydantic` + centralized settings in `app/core/config.py`.
 - Quality tools: `ruff`, `mypy`, `pytest`.
 - Typing: avoid `Any` in runtime service/query contracts.
+- Runtime API code uses async I/O by default.
+- Keep transaction tags as PostgreSQL arrays and use standard foreign keys.
+- For caught exceptions, log at error level with `exc_info=True` and include the exception.
 
 ## Required Layout
 

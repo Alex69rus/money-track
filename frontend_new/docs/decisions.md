@@ -1,17 +1,17 @@
-# Redesign Decisions
+# Frontend Decisions
 
-Locked product decisions for the `frontend_new` redesign kickoff.
+Locked product decisions for `frontend_new`.
 
 Date: 2026-04-04
 
-## Dec-001 (FR-038)
+## Dec-001
 
-Category filtering in transactions redesign uses single category selection.
+Category filtering in Transactions uses single category selection.
 
 - UI should present single category selection behavior.
-- Do not expose multi-category UI selection in this redesign scope.
+- Do not expose multi-category UI selection without approved product scope.
 
-## Dec-002 (FR-039)
+## Dec-002
 
 Keep multi-currency support in transaction edit flow.
 

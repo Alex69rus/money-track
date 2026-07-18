@@ -4,11 +4,10 @@ This document applies the `shadcn` skill to `frontend_new`.
 
 ## Setup Sequence
 
-1. Ensure app exists with Vite + React + TypeScript.
-2. Initialize shadcn in `frontend_new` using project package runner.
-3. Refresh project context when needed:
+1. The production app already uses Vite, React, TypeScript, and shadcn/ui.
+2. Refresh project context when needed:
    - `npx shadcn@latest info --json`
-4. Before implementing any component:
+3. Before implementing any component:
    - `npx shadcn@latest docs <component>`
 
 ## Mandatory Rules

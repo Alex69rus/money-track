@@ -1,129 +1,53 @@
 # AGENTS.md
 
-This file provides guidance to AI agents when working with code in this repository.
+## Guide Routing
 
-## Agent Guide Routing
+Read this guide first, then load the scoped guide that owns the work:
 
-Read this root guide first, then load additional scoped guides based on task location:
+- `backend_new/AGENTS.MD`: backend implementation, API contracts, database queries, migrations, and backend deployment configuration.
+- `backend_new/tests/AGENTS.md`: backend tests, API startup, readiness polling, `BASE_URL` / `TEST_DATABASE_URL`, and LLM E2E checks.
+- `frontend_new/AGENTS.MD`: frontend implementation, Tailwind, shadcn/ui, Telegram Mini App behavior, and frontend/backend contract changes.
 
-- `backend_new/AGENTS.MD`:
-  - Read before any backend implementation/refactor under `backend_new/**`.
-  - Read before changing backend runtime behavior, API contracts, DB queries, migrations, or deployment-related backend config.
-- `backend_new/tests/AGENTS.md`:
-  - Read before creating/updating/running backend tests in `backend_new/tests/**`.
-  - Read before running integration/e2e checks that require API startup, readiness polling, `BASE_URL`/`TEST_DATABASE_URL`, or LLM e2e envs (`RUN_LLM_E2E`, `OPENAI_API_KEY`).
-- `frontend_new/AGENTS.MD`:
-  - Read before any frontend redesign implementation under `frontend_new/**`.
-  - Read before touching Tailwind v4, shadcn/ui composition, Telegram Mini App lifecycle/auth handling, or FE-to-BE API contract changes driven by redesign.
-
-If multiple guides apply, follow the most specific scoped guide for that area in addition to this root guide.
+When work spans more than one area, read every applicable scoped guide and follow the most specific rule in addition to this one.
 
 ## Project Overview
 
-Money Track is a Telegram bot and web app for personal money tracking. The system processes bank SMS messages through n8n workflows and provides a React web interface for transaction management and analytics.
+Money Track is a Telegram-based personal money tracker. Bank SMS messages flow through n8n into PostgreSQL; the backend exposes product APIs and the Telegram Mini App provides transaction management and analytics.
 
-## Architecture Overview
+## High-Level Architecture
 
-**System Components:**
-- **Python FastAPI backend**: Transaction CRUD, read APIs, SMS parsing and AI chat (existing, external) in `backend_new`
-- **React + TypeScript frontend**: Legacy app in `frontend/` (frozen) and redesign app in `frontend_new/`
-- **PostgreSQL**: Shared database between n8n and backend API
-- **Telegram Web App**: Browser-based interface accessed via Telegram
+- `backend_new/`: FastAPI application, database access, and Telegram-facing backend behavior.
+- `frontend_new/`: production React + TypeScript Telegram Mini App.
+- PostgreSQL: shared transactional data store.
+- `n8n/`: SMS parsing and automation workflows.
+- Telegram Web App: authenticated product surface using Telegram `initData`.
 
-**Key Architectural Decisions:**
-- Monolithic Python backend (`backend_new`)
-- No caching layer - direct database queries only
-- Keep abstractions minimal and explicit
-- Environment variables for all configuration
+Keep the architecture monolithic and explicit. Use environment variables for runtime configuration, avoid unproven abstractions, and do not introduce caching without a demonstrated need.
 
-## Development Process
+## Repository Map
 
-**Workflow Steps:**
-1. **Plan -> Approve -> Implement -> Test -> Confirm -> Commit -> Next**
-2. Always propose solution with code snippets before implementing
-3. Use `docs/tasklist.md` only for approved multi-iteration batches that need decomposition, status tracking, or handoff; do not create a row for an isolated defect, CI failure, or small focused fix.
-4. Wait for explicit approval before moving to next iteration
+```text
+backend_new/    Backend application and tests
+frontend_new/   Production Telegram Mini App and tests
+n8n/            Workflow definitions
+docs/           Product, architecture, deployment, and task documentation
+nginx/          Reverse-proxy configuration
+scripts/        Development and QA automation
+```
 
-### Task Register Scope
+Follow `docs/conventions.md` for repository-wide conventions.
 
-- Add a task-list row only when the work is large enough to benefit from explicit substeps across iterations.
-- For an isolated bug or CI finding, keep any necessary raw evidence in the relevant `bugs_reports/` directory and record the resolution in the delivery handoff; do not create a dedicated task-list entry.
+## Work Tracking
+
+- Use `docs/tasklist.md` only for approved multi-iteration batches that need decomposition, status tracking, or handoff.
+- For an isolated defect or CI finding, keep evidence in the relevant `bugs_reports/` directory and record the resolution in the delivery handoff; do not create a task-list row.
 
 ## Bug Management
 
-- Use the repository `bug-management` skill whenever the user reports a bug, regression, UI/UX defect, smoke-test finding, or supplies bug evidence such as screenshots, videos, or logs.
-- Capture and track the bug before changing product code. Follow the skill's evidence, iteration, test-first, verification, and status rules.
-- Keep bug tracking proportionate: a raw report is sufficient for a focused fix unless the user explicitly asks to turn it into a larger batch.
+- Use the repository `bug-management` skill for reported bugs, regressions, UI/UX defects, smoke-test findings, or supplied screenshots, videos, and logs.
+- Capture the issue before changing product code. Keep the tracking proportionate: a raw report is enough for a focused fix unless the user asks for a larger batch.
 
-## Local Testing
-
-**Backend Testing:**
-- **Development Mode**: Run backend with `ENVIRONMENT=Development` to bypass Telegram authentication
-- **Backend Command**: `cd backend_new && ENVIRONMENT=Development DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/moneytrack TELEGRAM_BOT_TOKEN=test-token uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`
-- **Database**: Uses real PostgreSQL data, full API functionality available for testing
-- **Verification**: Use `/health` and API integration tests in `backend_new/tests/**`
-
-## Code Conventions
-
-Follow `docs/conventions.md` strictly.
-
-**Python Backend:**
-- FastAPI routes grouped by domain (`transactions`, `categories`, `tags`, `health`)
-- Piccolo ORM for runtime DB access
-- Async methods by default
-- Logging at info/error level only
-- If you catch an exception, always log it with `exc_info=True` and include the exception object in the message.
-- Strong typing in schemas and query/service boundaries
-
-**Database:**
-- Piccolo migrations from `backend_new`
-- PostgreSQL arrays for tags field
-- Standard FK relationships
-
-## Key Files Structure
-
-```text
-backend_new/
-├── app/
-│   ├── api/routes/
-│   ├── services/
-│   ├── schemas/
-│   ├── db/
-│   └── main.py
-├── tests/
-└── piccolo_migrations/
-```
-
-Frontend redesign structure and rules are defined in `frontend_new/AGENTS.MD`.
-
-## Data Model
-
-Core entities:
-- **Transactions**: Parsed SMS data with tags array, category FK, `user_id` as BIGINT (Telegram user ID)
-- **Categories**: Predefined global categories
-
-Currency and frontend behavior decisions: see `frontend_new/docs/decisions.md` for redesign scope.  
-Authentication: Telegram Web App initData validation  
-Note: No separate Users table - `user_id` stores Telegram user ID directly.
-
-## Never Do
-
-**Backend:**
-- Add microservices or complex architecture
-- Add unnecessary abstractions or repository patterns
-- Implement caching solutions without a proven need
-- Use `/tmp` for temporary files; use files under the current working directory
-
-- Modify frozen legacy frontend in `frontend/**` unless explicitly requested.
-
-## Always Do
-
-**Backend:**
-- Use async/await for API operations
-- Implement basic error handling and logging
-- Keep DB access on Piccolo ORM in runtime code
-
-# Log papercuts
+## Log papercuts
 
 When you encounter small friction while working—a failed tool call, confusing
 setup, flaky command, stale cache, misleading error, missing helper, or

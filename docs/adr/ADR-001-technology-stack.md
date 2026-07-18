@@ -10,7 +10,7 @@ We need a practical stack for a Telegram-based money tracking app with transacti
 We use:
 - **SMS Processing & AI Chat**: existing n8n workflows
 - **Backend API**: Python FastAPI (`backend_new`) with Piccolo ORM
-- **Frontend**: React + TypeScript + Material-UI + Telegram Web App SDK
+- **Frontend**: React + TypeScript + Vite + Tailwind v4 + shadcn/ui + Telegram Web App SDK (`frontend_new`)
 - **Database**: PostgreSQL (shared between n8n and backend API)
 - **Containerization**: Docker Compose
 - **Deployment**: Single AWS EC2 instance with Nginx reverse proxy
@@ -18,7 +18,7 @@ We use:
 ## Rationale
 - n8n already handles SMS/AI workloads.
 - FastAPI + Piccolo keeps backend simple and typed.
-- React + MUI remains productive and familiar.
+- Vite, Tailwind, and shadcn/ui provide a small, typed frontend surface that fits the Telegram Mini App.
 - PostgreSQL is reliable and shared across components.
 - Docker Compose keeps local and production topology consistent.
 
@@ -28,4 +28,4 @@ We use:
 - Monolithic backend keeps iteration speed high.
 
 ## Date
-2026-03-20
+2026-07-18

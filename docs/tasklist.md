@@ -18,9 +18,9 @@
 | BFX-7 / BR-006 | `frontend_new/bugs_reports/phase-qa-findings-2026-07-12.md` | P2 | Verified | Repair the stale Phase-5 tag integration gate. |
 | QA-1 | Iteration retrospective, 2026-07-13 | P3 | Verified | Harden local frontend QA stack startup, reuse, and cleanup contracts. |
 | TST-1 | Pending issue 1 | P3 | Verified | Move frontend tests to `frontend_new/tests/`. |
-| DOC-1 | Pending issues 2–3 | P3 | Verified | Complete the redesign audit and consolidate the frontend harness. |
+| DOC-1 | Pending issues 2–3 | P3 | Verified | Consolidate the frontend documentation and QA harness. |
 | BE-001 | `origin/main` checkpoint, 2026-05-07 | P3 | Verified | Add Telegram callback diagnostics to distinguish delivery, parsing, validation, and action failures. |
-| DEP-1 | User request, deployment audit 2026-07-13 | P1 | Ready — uncommitted | Deploy the Vite redesign automatically after a merge to `main`, retaining the legacy frontend as rollback. |
+| DEP-1 | User request, deployment audit 2026-07-13 | P1 | Verified | Deploy the Vite frontend automatically after a merge to `main`, with same-image rollback. |
 | BR-008 | `frontend_new/bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
 | BR-009 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use the Transactions category fallback consistently in category, tag, and View all Analytics drilldowns; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | BR-010 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
@@ -211,34 +211,34 @@ Both commands now source one stack helper that uses identical development authen
 
 All twelve frontend tests and shared setup moved from `src/` into the mirrored `frontend_new/tests/` tree. The browser QA runner, fixture, mobile matrix, and phase modules now live under `frontend_new/tests/qa/`; package commands and evidence references were updated. Lint, typecheck, 22 tests, build, and the complete Phase-5 matrix passed at 390×844 / DPR 3. The sandboxed backend bootstrap panicked in `uv`'s macOS system-configuration dependency; the unchanged escalated runner passed, classifying it as an environment-only exception.
 
-## DOC-1 — Redesign audit and harness consolidation
+## DOC-1 — Frontend documentation and harness consolidation
 
 ### Delivery record
 
-The redesign audit found no missing planned frontend feature. Historical visual drafts, comparison captures, duplicate task files, and stale guidance were removed. Current functional requirements and user flows are the product contract; `docs/tasklist.md` is the sole task register.
+The frontend audit found no missing planned feature. Historical visual drafts, comparison captures, duplicate task files, and stale guidance were removed. The frontend PRD and `docs/tasklist.md` are the active behavior and task references.
 
 ## BE-001 — Telegram callback diagnostics
 
 ### Delivery record
 
-`main` adds backend-owned webhook status logging at runtime startup, including pending updates, allowed update types, the last Telegram error, and a warning if callback queries are missing. This merge retains that diagnostic behavior alongside the redesign's Telegram Web App menu-button configuration.
+`main` adds backend-owned webhook status logging at runtime startup, including pending updates, allowed update types, the last Telegram error, and a warning if callback queries are missing. This merge retains that diagnostic behavior alongside the Telegram Web App menu-button configuration.
 
-## DEP-1 — Production redesign frontend cutover
+## DEP-1 — Production frontend deployment
 
 ### Problem
 
-The production workflow still validated, built, and deployed frozen `frontend/`. `frontend_new/` had no production container, the backend defaulted Telegram's Web App menu to a development tunnel, and the existing deployment could report success after a failed health check.
+The production workflow needed a deterministic build, immutable frontend image, production Telegram menu URL, and health checks before reporting success.
 
 ### Required behavior
 
-- A merge to `main` must validate the redesign and deploy a separate immutable ARM64 `frontend-new` image.
+- A merge to `main` must validate and deploy an immutable ARM64 `frontend-new` image.
 - Production must make same-origin `/api` requests, configure the Telegram Web App menu URL from the production domain, and set the explicit CORS origin.
-- The legacy source and image must remain available as a frontend-only rollback target.
+- Frontend rollback must use the previously running immutable `frontend-new` image.
 - The deployment must fail on a bad frontend revision, SPA route, backend health check, or Telegram URL registration.
 
 ### Delivery and verification record
 
-`frontend_new` now contains a Node 20/Vite build image, Nginx SPA fallback, immutable asset caching, and a non-sensitive `/version.json` revision probe. The production workflow validates lint, typecheck, tests, build, and a Docker image build before publishing `ghcr.io/alex69rus/money-track/frontend-new:<commit-sha>`. Its deployment script derives `TELEGRAM_WEB_APP_URL` and `CORS_ALLOW_ORIGINS` from `DOMAIN`, saves the prior frontend digest, avoids a full-stack shutdown, and restores only the frontend if its revision or client route check fails. Deployment documentation and an untracked `.env.prod` template replace the legacy CRA configuration.
+`frontend_new` contains a Node 20/Vite build image, Nginx SPA fallback, immutable asset caching, and a non-sensitive `/version.json` revision probe. The production workflow validates lint, typecheck, tests, build, and a Docker image build before publishing `ghcr.io/alex69rus/money-track/frontend-new:<commit-sha>`. Its deployment script derives `TELEGRAM_WEB_APP_URL` and `CORS_ALLOW_ORIGINS` from `DOMAIN`, saves the prior frontend digest, avoids a full-stack shutdown, and restores only the frontend if its revision or route check fails. Deployment documentation and an untracked `.env.prod` template describe the current Vite configuration.
 
 YAML parsing, deployment-script shell parsing, Compose rendering, and the complete frontend quality suite passed: lint, typecheck, 27 unit tests, and production build. The user also completed the local Docker smoke check: the image served the supplied revision from `/version.json` and returned HTTP 200 for `/transactions`. The initial request was made before Nginx had finished starting; the deployment script already waits for the revision probe. No production deployment has run because these changes are intentionally uncommitted.
 

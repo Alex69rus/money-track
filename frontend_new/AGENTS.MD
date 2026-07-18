@@ -2,8 +2,8 @@
 
 ## Scope
 
-- `frontend_new` is the shipped React/TypeScript frontend. The functional redesign, visual alignment, and planned bug-fix slices are complete; do not restart or re-run the redesign program by default.
-- Work only on an approved feature, defect, or verification slice. Treat `frontend/` as frozen legacy code unless the user explicitly asks otherwise.
+- `frontend_new` is the shipped React/TypeScript frontend.
+- Work only on an approved feature, defect, or verification slice.
 - Production code lives in `src/`; tests live in the mirrored `tests/` tree and import application code through `@/`. Browser QA harnesses live in `tests/qa/`.
 - The phone is the primary surface. Use 390×844 at DPR 3 as the default browser QA viewport.
 
@@ -11,8 +11,8 @@
 
 Read these before changing frontend behavior:
 
-1. `docs/frontend-redesign-requirements/functional-requirements.md`
-2. `docs/frontend-redesign-requirements/user-flows.md`
+1. `docs/frontend-prd/product-requirements.md`
+2. `docs/frontend-prd/user-flows.md`
 3. `frontend_new/docs/decisions.md`
 
 Then read only the guide relevant to the change:

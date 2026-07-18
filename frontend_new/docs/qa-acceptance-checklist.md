@@ -1,10 +1,10 @@
 # QA Acceptance Checklist
 
-Use this checklist for every redesign slice and before release.
+Use this checklist for every frontend change and before release.
 
 Execution requirement:
-- At the end of each phase, run this checklist via a dedicated QA sub-agent in browser (Chrome DevTools MCP) for the FR IDs mapped to that phase.
-- Do not mark a phase complete until QA sub-agent results are recorded with pass/fail and any console/network issues.
+- Run the relevant checklist items in a browser and record pass/fail plus any console or network issues.
+- Do not mark a change complete until the relevant verification results are recorded.
 - Preferred deterministic fallback for local runs: `npm run qa:phase -- <phase-id>` from repo root (`phase2`-`phase5` implemented).
 - For every `frontend_new` layout, sheet, input, or viewport change, run `scripts/run_frontend_mobile_qa.sh` and retain its screenshot artifact directory in the QA report.
 - Let one root QA runner own a fresh stack. Use `QA_REUSE_SERVICES=1` only for an intentional, complete backend/frontend pair; the runner rejects partial stacks and incompatible backend CORS.

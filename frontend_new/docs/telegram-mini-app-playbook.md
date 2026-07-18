@@ -4,7 +4,7 @@ This document applies the `telegram-mini-app` skill to `frontend_new`.
 
 ## Launch Context Assumptions
 
-Current redesign should assume menu/direct-link style launch for daily usage.
+The production app assumes menu/direct-link style launch for daily usage.
 
 - Do not rely on keyboard-only `sendData()` flow for core product actions.
 - If launch mode changes, re-check message return path and required bot-side integration.

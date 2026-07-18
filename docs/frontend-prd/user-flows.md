@@ -1,4 +1,4 @@
-# Current Frontend User Flows
+# Frontend User Flows
 
 ## Open and navigate
 

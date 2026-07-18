@@ -104,9 +104,8 @@ After setup, you should have these secrets configured:
 - ✅ `TELEGRAM_BOT_TOKEN` - Bot token
 - ✅ `TELEGRAM_WEBHOOK_SECRET` - Telegram webhook secret token for backend endpoint
 - ✅ `DOMAIN` - Your domain name
-- ✅ `EMAIL` - Your email address
-- ✅ `REACT_APP_API_URL` - API root URL (https://your-domain.com)
-- ✅ `REACT_APP_AI_WEBHOOK_URL` - AI webhook URL
+
+The production frontend is built with an empty `VITE_API_BASE_URL`, so it makes same-origin `/api/*` requests through Nginx. No frontend API URL or AI-webhook secret is required in GitHub configuration.
 
 Optional backend feature settings:
 
