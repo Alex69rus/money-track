@@ -11,8 +11,8 @@
 
 Read these before changing frontend behavior:
 
-1. `docs/frontend-prd/product-requirements.md`
-2. `docs/frontend-prd/user-flows.md`
+1. `docs/prds/frontend/product-requirements.md`
+2. `docs/prds/frontend/user-flows.md`
 3. `frontend_new/docs/decisions.md`
 
 Then read only the guide relevant to the change:

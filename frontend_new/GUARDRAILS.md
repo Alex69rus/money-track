@@ -1,6 +1,6 @@
 # `frontend_new` Guardrails
 
-Keep this file concise. Record only a rule that prevents a repeatable failure; keep task status in `docs/tasklist.md` and raw evidence in `bugs_reports/`.
+Keep this file concise. Record only a rule that prevents a repeatable failure; keep task status in `docs/tasklist.md` and raw evidence in `../bugs_reports/`.
 
 ## Navigation and state
 

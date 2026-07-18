@@ -59,7 +59,7 @@ TELEGRAM_DEVICE_NGROK_DOMAIN=your-reserved-domain.ngrok-free.app npm run qa:tele
 
 - `AGENTS.MD`: operating rules for frontend changes
 - `GUARDRAILS.md`: compact, reusable implementation lessons
-- `../docs/frontend-prd/`: current product requirements and user-flow contract
+- `../docs/prds/frontend/`: current product requirements and user-flow contract
 - `docs/decisions.md`: locked product decisions
 - `docs/telegram-mini-app-playbook.md`: Telegram lifecycle and navigation contract
 - `docs/api-evolution-plan.md`: current frontend/API boundary

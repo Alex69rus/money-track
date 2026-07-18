@@ -2,19 +2,19 @@
 
 ## 1. Technologies
 
-- **SMS Processing & AI Chat**: Existing n8n workflows
+- **Telegram Ingestion & AI Processing**: Python FastAPI (`backend_new`) receives Telegram updates, parses SMS messages, and suggests transaction categories
 - **Backend API**: Python FastAPI (`backend_new`) for UI requests and transaction CRUD
 - **Frontend**: React + TypeScript + Vite + Tailwind v4 + shadcn/ui + Telegram Web App SDK (`frontend_new`)
-- **Database**: PostgreSQL (shared between n8n workflows and backend API)
+- **Database**: PostgreSQL
 - **Authentication**: Telegram Web App built-in auth (validate initData hash)
 - **API Security**: UI -> backend API via Telegram initData validation
 - **Containerization**: Docker Compose for local development
 - **Deployment**: Single VPS with Docker
 
 Clean separation:
-- n8n workflows work independently (SMS parsing, AI chat)
-- Python backend serves the React UI API
-- Both systems share the same PostgreSQL database
+- Python backend owns Telegram ingestion, AI-assisted SMS processing, and the React UI API
+- React Web App owns the user interface, analytics presentation, and transaction management flows
+- PostgreSQL is the system of record
 
 ## 2. Development Principles
 
@@ -56,20 +56,18 @@ money-track/
 
 **System Overview:**
 ```text
-Telegram User -> Telegram Bot -> n8n -> PostgreSQL <- FastAPI <- React Web App (Telegram Web App)
+Telegram User -> Telegram Bot -> FastAPI -> PostgreSQL <- React Web App (Telegram Web App)
 ```
 
 **Data Flow:**
 1. User forwards bank SMS to Telegram bot.
-2. n8n parses SMS and stores transactions in PostgreSQL.
+2. FastAPI parses the SMS, stores the transaction in PostgreSQL, and replies with category actions.
 3. User opens Telegram Web App.
 4. React app calls FastAPI endpoints.
 5. FastAPI reads/writes PostgreSQL.
-6. AI questions are handled by n8n workflows.
 
 **Component Responsibilities:**
-- n8n: SMS parsing, AI chat responses
-- FastAPI backend: transaction/category/tag APIs and auth validation
+- FastAPI backend: Telegram webhook handling, SMS parsing, category suggestion, transaction/category/tag APIs, and auth validation
 - React Web App: UI, analytics, transaction management
 - PostgreSQL: single source of truth
 
@@ -99,9 +97,9 @@ Categories predefined global set: 'Medical Services','Education','Beauty','Cloth
 
 ## 6. AI Integration
 
-- AI chat remains in n8n workflows.
-- React AI screen communicates with n8n webhook.
-- Backend does not duplicate LLM orchestration logic.
+- The backend owns all current LLM integrations.
+- OpenAI structured output is used for SMS transaction extraction and category suggestion.
+- LLM integrations use backend configuration and do not bypass the product API.
 
 ## 7. Usage Scenarios
 
@@ -110,12 +108,12 @@ Categories predefined global set: 'Medical Services','Education','Beauty','Cloth
 3. User searches and filters transactions.
 4. User edits/deletes transactions and updates categories/tags.
 5. User checks analytics with date range filters.
-6. User asks AI questions about spending.
+6. User receives an AI-assisted category suggestion after a parsed SMS transaction is saved.
 
 ## 8. Deployment
 
 - Single EC2/VPS deployment with Docker Compose.
-- Services: PostgreSQL, FastAPI backend, React frontend, n8n, Nginx.
+- Services: PostgreSQL, FastAPI backend, React frontend, and Nginx.
 - CI/CD via GitHub Actions.
 - SSL via Cloudflare Origin Certificates.
 

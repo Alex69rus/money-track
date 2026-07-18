@@ -1,6 +1,6 @@
 # Bug Report Template
 
-Use one dated report for a cohesive smoke-test or feedback batch. Keep each issue independently addressable.
+Use one dated report for a cohesive smoke-test or feedback batch. Save it and its evidence in the repository-root `bugs_reports/` directory. Keep each issue independently addressable.
 
 ```markdown
 # <Surface> findings — YYYY-MM-DD
@@ -47,7 +47,7 @@ Evidence: `<filename>`; <optional user report or log reference>.
 ```markdown
 | ID | Source | Priority | State | Acceptance / verification |
 | --- | --- | --- | --- | --- |
-| BR-### | `<dated-report>.md` | P1 | Reported | <one-sentence user-visible defect and planned check> |
+| BR-### | `bugs_reports/<dated-report>.md` | P1 | Reported | <one-sentence user-visible defect and planned check> |
 ```
 
 ## Task Detail Template

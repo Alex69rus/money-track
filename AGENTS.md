@@ -12,14 +12,13 @@ When work spans more than one area, read every applicable scoped guide and follo
 
 ## Project Overview
 
-Money Track is a Telegram-based personal money tracker. Bank SMS messages flow through n8n into PostgreSQL; the backend exposes product APIs and the Telegram Mini App provides transaction management and analytics.
+Money Track is a Telegram-based personal money tracker. The FastAPI backend receives Telegram updates, parses bank SMS messages, and stores transactions in PostgreSQL; the Telegram Mini App provides transaction management and analytics.
 
 ## High-Level Architecture
 
-- `backend_new/`: FastAPI application, database access, and Telegram-facing backend behavior.
+- `backend_new/`: FastAPI application, Telegram ingestion and SMS parsing, database access, and product APIs.
 - `frontend_new/`: production React + TypeScript Telegram Mini App.
 - PostgreSQL: shared transactional data store.
-- `n8n/`: SMS parsing and automation workflows.
 - Telegram Web App: authenticated product surface using Telegram `initData`.
 
 Keep the architecture monolithic and explicit. Use environment variables for runtime configuration, avoid unproven abstractions, and do not introduce caching without a demonstrated need.
@@ -29,7 +28,6 @@ Keep the architecture monolithic and explicit. Use environment variables for run
 ```text
 backend_new/    Backend application and tests
 frontend_new/   Production Telegram Mini App and tests
-n8n/            Workflow definitions
 docs/           Product, architecture, deployment, and task documentation
 nginx/          Reverse-proxy configuration
 scripts/        Development and QA automation
@@ -40,7 +38,7 @@ Follow `docs/conventions.md` for repository-wide conventions.
 ## Work Tracking
 
 - Use `docs/tasklist.md` only for approved multi-iteration batches that need decomposition, status tracking, or handoff.
-- For an isolated defect or CI finding, keep evidence in the relevant `bugs_reports/` directory and record the resolution in the delivery handoff; do not create a task-list row.
+- For an isolated defect or CI finding, keep evidence in the root `bugs_reports/` directory and record the resolution in the delivery handoff; do not create a task-list row.
 
 ## Bug Management
 

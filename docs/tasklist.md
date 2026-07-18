@@ -1,6 +1,6 @@
 # Development Task List
 
-`docs/tasklist.md` is the repository's single task and status register. Keep raw screenshots, logs, and observation-only reports in their area-specific `bugs_reports/` directory; do not create a parallel roadmap, tracker, or TODO file.
+`docs/tasklist.md` is the repository's single task and status register. Keep raw screenshots, logs, and observation-only reports in the root `bugs_reports/` directory; do not create a parallel roadmap, tracker, or TODO file.
 
 ## Task register
 
@@ -8,33 +8,33 @@
 | --- | --- | --- | --- | --- |
 | TWA-1 | Telegram phone-fixture QA and iPhone feedback | P1 | Fixed — verification pending | Telegram-native route/navigation implementation needs a real iPhone smoke test. |
 | FE-004 | User request, pending issue 4 | P2 | Fixed — verification pending | Open the existing transaction editor from an Analytics drilldown row. |
-| BR-007 | `frontend_new/bugs_reports/native-date-control-findings-2026-07-12.md` | P2 | Fixed — verification pending | Keep datepicker opening stable and add a reliable per-field clear action. |
+| BR-007 | `bugs_reports/native-date-control-findings-2026-07-12.md` | P2 | Fixed — verification pending | Keep datepicker opening stable and add a reliable per-field clear action. |
 | BFX-1 | TEMP-001..003, BR-004 | P2 | Fixed — verification pending | Transaction-card edit interaction and category affordances. |
 | BFX-2 | TEMP-004, TEMP-005 | P2 | Fixed — verification pending | Analytics category/tag drilldown parity. |
 | BFX-3 | TEMP-006, BR-001..003 | P2 | Fixed — verification pending | Bounded Analytics widgets and functional View all routes. |
 | BFX-4 | TEMP-007 | P2 | Fixed — verification pending | Monthly Trends exact-value disclosure. |
 | BFX-5 | BR-005 | P2 | Fixed — verification pending | Bounded Transactions tag filtering. |
 | BFX-6 | FUP-001..004 | P2 | Fixed — verification pending | Follow-up filter, date-surface, and analytics sizing clarity. |
-| BFX-7 / BR-006 | `frontend_new/bugs_reports/phase-qa-findings-2026-07-12.md` | P2 | Verified | Repair the stale Phase-5 tag integration gate. |
+| BFX-7 / BR-006 | `bugs_reports/phase-qa-findings-2026-07-12.md` | P2 | Verified | Repair the stale Phase-5 tag integration gate. |
 | QA-1 | Iteration retrospective, 2026-07-13 | P3 | Verified | Harden local frontend QA stack startup, reuse, and cleanup contracts. |
 | TST-1 | Pending issue 1 | P3 | Verified | Move frontend tests to `frontend_new/tests/`. |
 | DOC-1 | Pending issues 2–3 | P3 | Verified | Consolidate the frontend documentation and QA harness. |
 | BE-001 | `origin/main` checkpoint, 2026-05-07 | P3 | Verified | Add Telegram callback diagnostics to distinguish delivery, parsing, validation, and action failures. |
 | DEP-1 | User request, deployment audit 2026-07-13 | P1 | Verified | Deploy the Vite frontend automatically after a merge to `main`, with same-image rollback. |
-| BR-008 | `frontend_new/bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
-| BR-009 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use the Transactions category fallback consistently in category, tag, and View all Analytics drilldowns; final phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-010 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-011 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P3 | Fixed — verification pending | Remove the Transactions list's retired section label and record-count badge without affecting date groups or pagination; final phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-012 | `frontend_new/bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P1 | Fixed — verification pending | Align Transactions and Analytics current-month snapshot calculations and add a shared-boundary regression; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-008 | `bugs_reports/docker-frontend-runtime-findings-2026-07-14.md` | P1 | Won't fix | Initial local smoke test raced Nginx startup; rerun verified the image, revision probe, and SPA route. |
+| BR-009 | `bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use the Transactions category fallback consistently in category, tag, and View all Analytics drilldowns; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-010 | `bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P2 | Fixed — verification pending | Format editor whole-number amounts to two decimals and remove the duplicate Tags plus control; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-011 | `bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P3 | Fixed — verification pending | Remove the Transactions list's retired section label and record-count badge without affecting date groups or pagination; final phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-012 | `bugs_reports/transactions-analytics-parity-findings-2026-07-15.md` | P1 | Fixed — verification pending | Align Transactions and Analytics current-month snapshot calculations and add a shared-boundary regression; final phone-fixture QA passed, physical Telegram verification remains pending. |
 | API-001 | User-approved FE/BE analytics refinement, 2026-07-17 | P1 | Verified | Focused Analytics resources use backend-owned AED and PostgreSQL-side aggregation, with paginated drilldown parity. |
-| BR-021 | `frontend_new/bugs_reports/database-analytics-aggregation-findings-2026-07-18.md` | P1 | Verified | Analytics and tag aggregation run in PostgreSQL; API parity verification protects the contract. |
-| BR-013 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Replace competing compact category/tag controls with focused Transactions filter selector pages; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-014 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use dark-theme-appropriate separators within same-day Transactions groups; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-015 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Restyle transaction deletion confirmation to match the editor surface and actions; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-016 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Guarantee chronological left-to-right Monthly Trends order; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-017 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Accept iPhone locale decimal entry in the transaction amount field; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-018 | `frontend_new/bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Make amount sign selection possible without an iPhone keypad minus key; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
-| BR-020 | `frontend_new/bugs_reports/dark-theme-palette-findings-2026-07-16.md` | P2 | Verified | Align dark surfaces to the supplied Stitch reference and apply a coherent light palette across every primary and nested screen. |
+| BR-021 | `bugs_reports/database-analytics-aggregation-findings-2026-07-18.md` | P1 | Verified | Analytics and tag aggregation run in PostgreSQL; API parity verification protects the contract. |
+| BR-013 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Replace competing compact category/tag controls with focused Transactions filter selector pages; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-014 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Use dark-theme-appropriate separators within same-day Transactions groups; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-015 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Restyle transaction deletion confirmation to match the editor surface and actions; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-016 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P2 | Fixed — verification pending | Guarantee chronological left-to-right Monthly Trends order; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-017 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Accept iPhone locale decimal entry in the transaction amount field; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-018 | `bugs_reports/transactions-editor-visual-polish-findings-2026-07-15.md` | P1 | Fixed — verification pending | Make amount sign selection possible without an iPhone keypad minus key; browser and phone-fixture QA passed, physical Telegram verification remains pending. |
+| BR-020 | `bugs_reports/dark-theme-palette-findings-2026-07-16.md` | P2 | Verified | Align dark surfaces to the supplied Stitch reference and apply a coherent light palette across every primary and nested screen. |
 
 ## TWA-1 — Telegram-native route and viewport validation
 
@@ -357,4 +357,4 @@ The physical Telegram iPhone smoke test remains pending because `TELEGRAM_DEVICE
 
 - Add a row and detail section only for an approved multi-iteration batch that benefits from decomposition or handoff. Do not create task-register entries for isolated defects or CI fixes.
 - Update this file when work is planned, completed, blocked, or materially re-scoped.
-- Keep raw evidence in `frontend_new/bugs_reports/`; record source ID, priority, state, acceptance summary, delivery result, and verification exception here.
+- Keep raw evidence in `bugs_reports/`; record source ID, priority, state, acceptance summary, delivery result, and verification exception here.

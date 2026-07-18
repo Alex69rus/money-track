@@ -10,7 +10,7 @@ Also, the Telegram web app will have a dedicated screen for AI Chat: "Talk to yo
 
 ## Technology Stack Decisions
 
-- **n8n workflows** for implementing a Telegram bot, which will parse SMS and answer questions about the user's money
+- **Python FastAPI backend** for Telegram bot handling, SMS parsing, transaction storage, and AI-assisted category suggestion
 - **React** for the front-end of the Telegram web app
 - **PostgreSQL** for the database
 - **Docker** for containerization

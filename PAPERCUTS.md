@@ -41,3 +41,11 @@ Inspecting files after a cancelled shell command → the login shell did not res
 ## 2026-07-18 18:15 — GPT-5.6-Terra
 
 Rewriting the root guide → an `apply_patch` add-file block omitted diff prefixes on code-block lines, so validation rejected the patch before any files changed. Prefix every line in an added file, including fenced-code content.
+
+## 2026-07-18 21:15 — GPT-5.6-Terra
+
+Removing the retired workflow directory → an ignored `.DS_Store` remained after its tracked files were deleted, so `rmdir` could not remove the directory. Inspect for ignored macOS metadata before removing an otherwise empty directory.
+
+## 2026-07-18 21:31 — GPT-5.6-Terra
+
+Validating a repository skill → the skill-creator validator imports PyYAML, which is unavailable in the system Python. Use a project-managed interpreter with PyYAML, such as `backend_new/.venv/bin/python`, to run the validator.

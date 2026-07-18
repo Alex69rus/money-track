@@ -81,7 +81,7 @@ Cloudflare should proxy the domain and use **Full (strict)** SSL with the config
 
 ## Manual frontend rollback
 
-Use this only if the automated rollback itself cannot complete. It preserves the database, backend, and n8n containers, then recreates the frontend and Nginx.
+Use this only if the automated rollback itself cannot complete. It preserves the database and backend containers, then recreates the frontend and Nginx.
 
 ```bash
 cd /opt/money-track
@@ -121,12 +121,10 @@ Before changing production Compose or Nginx configuration, validate that Compose
 ```bash
 POSTGRES_PASSWORD=verification \
 TELEGRAM_BOT_TOKEN=verification \
-N8N_ENCRYPTION_KEY=verification \
 docker compose -f docker-compose.prod.yml config -q
 
 POSTGRES_PASSWORD=verification \
 TELEGRAM_BOT_TOKEN=verification \
-N8N_ENCRYPTION_KEY=verification \
 docker compose -f docker-compose.prod.yml config | grep -F 'target: /etc/nginx/conf.d/default.conf'
 ```
 

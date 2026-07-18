@@ -9,15 +9,16 @@ Capture durable evidence before changing product code. Keep raw evidence separat
 
 ## Canonical locations
 
-- Store frontend raw evidence in `frontend_new/bugs_reports/`; reuse an existing area-specific `bugs_reports/` folder elsewhere.
+- Store every raw report and its screenshots, videos, and logs in the repository-root `bugs_reports/` directory, regardless of whether the affected surface is frontend, backend, or deployment.
+- Do not create frontend- or backend-specific report directories. When working with an older report from one of those locations, move it to `bugs_reports/` and update its repository references before continuing.
 - `docs/tasklist.md` is the sole task/status register for every area. Do not create a bug tracker, roadmap, iteration document, or other parallel task list.
 - Keep screenshots and videos beside the raw report and reference their repository-relative filenames; do not embed binary evidence in Markdown.
 
 ## Capture and triage
 
 1. Inspect every supplied image, video, and log. Inspect only enough code to identify the affected surface and reproduce the symptom.
-2. Create or extend a dated raw report using [`references/bug-report-template.md`](references/bug-report-template.md).
-3. Assign the next stable `BR-###` by checking raw reports and `docs/tasklist.md`. Preserve older IDs; never renumber them.
+2. Create or extend a dated raw report in `bugs_reports/` using [`references/bug-report-template.md`](references/bug-report-template.md).
+3. Assign the next stable `BR-###` by checking `bugs_reports/` and `docs/tasklist.md`. Preserve older IDs; never renumber them.
 4. Record facts: surface, evidence, actual behavior, expected behavior, reproduction, severity, and acceptance criteria.
 5. Add a `BR-###` row to `docs/tasklist.md` with source, priority, state, acceptance summary, and planned verification. Use exactly one state: `Reported`, `Triaged`, `Planned`, `In progress`, `Fixed — verification pending`, `Verified`, `Blocked`, `Duplicate`, or `Won't fix`.
 
