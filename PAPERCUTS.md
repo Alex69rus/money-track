@@ -49,3 +49,15 @@ Removing the retired workflow directory → an ignored `.DS_Store` remained afte
 ## 2026-07-18 21:31 — GPT-5.6-Terra
 
 Validating a repository skill → the skill-creator validator imports PyYAML, which is unavailable in the system Python. Use a project-managed interpreter with PyYAML, such as `backend_new/.venv/bin/python`, to run the validator.
+
+## 2026-07-18 21:37 — GPT-5.6-Terra
+
+Auditing documentation against runtime sources → assumed a top-level `postgres/` directory existed while searching for category seeds. Check the repository map before including optional infrastructure paths in a search command.
+
+## 2026-07-18 21:46 — GPT-5.6-Terra
+
+Running a focused backend test → used `backend_new/.venv/bin/pytest` after changing into `backend_new`, so the interpreter path did not resolve. Use `.venv/bin/pytest` from that working directory.
+
+## 2026-07-18 22:00 — GPT-5.6-Terra
+
+Updating the bug-report template → an `apply_patch` context used a four-column divider for a five-column Markdown table, so the patch was rejected. Re-read table separators before patching Markdown tables.

@@ -26,7 +26,7 @@ AI Chat is a backend-linked stub for now.
 - Do not introduce dedicated chat webhook env in `frontend_new`.
 - Full FE/BE chat implementation is deferred to a later slice.
 
-## Dec-004 (TWA-1 Native Telegram Navigation)
+## Dec-004: Native Telegram Navigation
 
 Date: 2026-07-11
 

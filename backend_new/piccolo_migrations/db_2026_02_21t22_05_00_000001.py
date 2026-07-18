@@ -3,7 +3,7 @@ from piccolo.engine import engine_finder
 
 ID = "2026-02-21T22:05:00:000001"
 VERSION = "1.32.0"
-DESCRIPTION = "Bootstrap production backend schema"
+DESCRIPTION = "Bootstrap production backend schema and category catalog"
 
 
 async def _create_schema_parity() -> None:
@@ -61,6 +61,75 @@ async def _create_schema_parity() -> None:
         """
         CREATE INDEX IF NOT EXISTS ix_transaction_user_id_transaction_date
             ON "transaction" (user_id, transaction_date)
+        """,
+        """
+        INSERT INTO category (name, type, created_at, order_index)
+        VALUES
+            ('Groceries', 'Expense', CURRENT_TIMESTAMP, 1),
+            ('Eating Out', 'Expense', CURRENT_TIMESTAMP, 2),
+            ('Entertainment', 'Expense', CURRENT_TIMESTAMP, 3),
+            ('Luda''s job', 'Expense', CURRENT_TIMESTAMP, 4),
+            ('Beauty', 'Expense', CURRENT_TIMESTAMP, 5),
+            ('Clothing & Shoes', 'Expense', CURRENT_TIMESTAMP, 6),
+            ('Home', 'Expense', CURRENT_TIMESTAMP, 7),
+            ('Car', 'Expense', CURRENT_TIMESTAMP, 13),
+            ('Kids', 'Expense', CURRENT_TIMESTAMP, 17),
+            ('Healthcare', 'Expense', CURRENT_TIMESTAMP, 21),
+            ('Communication', 'Expense', CURRENT_TIMESTAMP, 24),
+            ('Alcohol', 'Expense', CURRENT_TIMESTAMP, 27),
+            ('Transport', 'Expense', CURRENT_TIMESTAMP, 28),
+            ('Pets', 'Expense', CURRENT_TIMESTAMP, 32),
+            ('Education', 'Expense', CURRENT_TIMESTAMP, 36),
+            ('Travel', 'Expense', CURRENT_TIMESTAMP, 37),
+            ('Etc.', 'Expense', CURRENT_TIMESTAMP, 40),
+            ('Hardware', 'Expense', CURRENT_TIMESTAMP, 43),
+            ('Legalisation', 'Expense', CURRENT_TIMESTAMP, 44),
+            ('Apique salary', 'Income', CURRENT_TIMESTAMP, 1),
+            ('Luda''s income', 'Income', CURRENT_TIMESTAMP, 2),
+            ('Savings interests', 'Income', CURRENT_TIMESTAMP, 3),
+            ('Apique salary Transfer from USD', 'Income', CURRENT_TIMESTAMP, 4),
+            ('Rus transfer', 'Income', CURRENT_TIMESTAMP, 5),
+            ('Other income', 'Income', CURRENT_TIMESTAMP, 6)
+        ON CONFLICT (name) DO NOTHING
+        """,
+        """
+        INSERT INTO category (name, type, parent_category_id, created_at, order_index)
+        SELECT
+            seeded_category.name,
+            seeded_category.type,
+            parent.id,
+            CURRENT_TIMESTAMP,
+            seeded_category.order_index
+        FROM (
+            VALUES
+                ('Furniture', 'Expense', 'Home', 8),
+                ('Household Goods', 'Expense', 'Home', 9),
+                ('Maintenance & Renovation', 'Expense', 'Home', 10),
+                ('Rent', 'Expense', 'Home', 11),
+                ('Utility', 'Expense', 'Home', 12),
+                ('Fuel', 'Expense', 'Car', 14),
+                ('Car Wash', 'Expense', 'Car', 15),
+                ('Parking & Toll roads', 'Expense', 'Car', 16),
+                ('Toys', 'Expense', 'Kids', 18),
+                ('Classes', 'Expense', 'Kids', 19),
+                ('Baby Clothes', 'Expense', 'Kids', 20),
+                ('Medical Services', 'Expense', 'Healthcare', 22),
+                ('Medicines', 'Expense', 'Healthcare', 23),
+                ('Cellular', 'Expense', 'Communication', 25),
+                ('Internet-Services', 'Expense', 'Communication', 26),
+                ('Public transport', 'Expense', 'Transport', 29),
+                ('Taxis', 'Expense', 'Transport', 30),
+                ('Carsharing', 'Expense', 'Transport', 31),
+                ('Pet Food', 'Expense', 'Pets', 33),
+                ('Veterinary Services', 'Expense', 'Pets', 34),
+                ('Accessories & Toys', 'Expense', 'Pets', 35),
+                ('Tickets', 'Expense', 'Travel', 38),
+                ('Hotel', 'Expense', 'Travel', 39),
+                ('Gifts', 'Expense', 'Etc.', 41),
+                ('Charity', 'Expense', 'Etc.', 42)
+        ) AS seeded_category(name, type, parent_name, order_index)
+        JOIN category AS parent ON parent.name = seeded_category.parent_name
+        ON CONFLICT (name) DO NOTHING
         """,
     ]
     for statement in statements:

@@ -21,7 +21,7 @@ Then read only the guide relevant to the change:
 - API adapters or backend contract: `docs/api-evolution-plan.md`
 - UI composition or a shadcn component: `docs/shadcn-tailwind-playbook.md`
 - Verification: `docs/qa-acceptance-checklist.md`
-- Defect work: its linked raw report and `docs/tasklist.md`
+- Defect work: its linked raw report; consult `docs/tasklist.md` only for an approved multi-iteration batch.
 
 ## Stack and Implementation Rules
 
@@ -53,5 +53,5 @@ Then read only the guide relevant to the change:
 ## Completion
 
 - Record bug evidence and its tracker state before changing behavior.
-- After each completed iteration, update `docs/tasklist.md` and capture only reusable rules in `GUARDRAILS.md`.
+- Update `docs/tasklist.md` only for active approved multi-iteration work; capture only reusable rules in `GUARDRAILS.md` after each completed iteration.
 - Keep raw bug evidence; do not recreate historical visual references or completed-slice plans.

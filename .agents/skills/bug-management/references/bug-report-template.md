@@ -42,15 +42,19 @@ Evidence: `<filename>`; <optional user report or log reference>.
 - <non-regression requirement>
 ```
 
-## Task-list Row Template
+## Active Task-list Row Template
+
+Use this only when the bug belongs to an approved multi-iteration batch. Isolated defects and CI findings do not need a task-list row.
 
 ```markdown
-| ID | Source | Priority | State | Acceptance / verification |
+| ID | Source / evidence | Priority | State | Summary |
 | --- | --- | --- | --- | --- |
 | BR-### | `bugs_reports/<dated-report>.md` | P1 | Reported | <one-sentence user-visible defect and planned check> |
 ```
 
 ## Task Detail Template
+
+Use this only for an approved multi-iteration batch.
 
 ```markdown
 ## BR-### — <outcome-oriented name>

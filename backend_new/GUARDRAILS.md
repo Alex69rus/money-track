@@ -87,3 +87,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: moving an aggregate from the frontend to Python only relocates the unbounded memory and latency cost.
 - Exploration: static parameterized PostgreSQL queries correctly covered AED/user/date filtering, category/tag shares, Dubai-local month buckets, and tag extraction; the isolated parity suite passed 34 tests with 2 production-only skips.
 - Prevention rule: reject any aggregate resource that loads matching transaction rows for Python reduction, grouping, share calculation, or ordering; return only database aggregate projections.
+
+### 2026-07-18 - Bootstrap Catalog Seeds
+- Takeaway: production identity values cannot be reused when seeding a fresh database with hierarchical catalog data.
+- Preferred fix: seed root rows first, then resolve child `parent_category_id` values by the parent's stable unique name.
+- Prevention rule: use idempotent `ON CONFLICT (name) DO NOTHING` catalog inserts in the initial migration and preserve the production type and ordering values.
