@@ -57,6 +57,7 @@ describe("TransactionCategorySelectorDialog", () => {
     expect(screen.getByTestId("tx-category-expand-1")).toHaveAccessibleName("Collapse Grouped parent group");
     expect(screen.queryByTestId("tx-category-expand-3")).not.toBeInTheDocument();
     expect(screen.getByTestId("tx-category-selection-marker-3")).toBeInTheDocument();
+    expect(screen.getByTestId("tx-category-option-2")).toHaveTextContent("category");
 
     fireEvent.change(screen.getByTestId("tx-category-search"), { target: { value: "Leaf" } });
     expect(screen.queryByTestId("tx-category-expand-3")).not.toBeInTheDocument();

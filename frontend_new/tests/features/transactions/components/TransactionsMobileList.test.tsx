@@ -27,7 +27,7 @@ const selectedCategoryWithoutIconTransaction: Transaction = {
     id: 4,
     name: "Clothing & Shoes",
     type: "EXPENSE",
-    color: "#22c55e",
+    color: "#dcaf83",
     icon: null,
     parentCategoryId: null,
     orderIndex: 4,
@@ -86,6 +86,10 @@ describe("TransactionsMobileList", () => {
 
     expect(categoryControl).toHaveAccessibleName("Change category for transaction 78");
     expect(categoryControl).toHaveTextContent("CS");
+    expect(categoryControl).toHaveStyle({
+      backgroundColor: "rgba(220, 175, 131, 0.16)",
+      color: "rgb(220, 175, 131)",
+    });
     expect(screen.getByTestId("tx-mobile-category-initials-78")).toHaveTextContent("CS");
   });
 });

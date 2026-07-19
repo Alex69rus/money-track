@@ -1,4 +1,5 @@
 import { PlusIcon } from "lucide-react";
+import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +47,7 @@ export function TransactionsMobileList({
               <ul className="divide-y divide-[#253a56]/75">
                 {group.transactions.map((transaction) => {
                   const hasSelectedCategory = transaction.categoryId !== null;
+                  const categoryPalette = getCategoryIconPalette(transaction.category?.color, 0.16);
                   return (
                     <li
                       className="relative px-4 py-3.5"
@@ -67,9 +69,13 @@ export function TransactionsMobileList({
                               ? `Change category for transaction ${transaction.id}`
                               : `Choose category for transaction ${transaction.id}`
                           }
-                          className="pointer-events-auto mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                          className="pointer-events-auto mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
                           data-testid={`tx-mobile-category-${transaction.id}`}
                           onClick={() => onEditCategory(transaction)}
+                          style={{
+                            backgroundColor: categoryPalette.backgroundColor,
+                            color: categoryPalette.foregroundColor,
+                          }}
                           type="button"
                         >
                           <CategoryIconGlyph

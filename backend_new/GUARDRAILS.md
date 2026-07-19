@@ -92,3 +92,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: production identity values cannot be reused when seeding a fresh database with hierarchical catalog data.
 - Preferred fix: seed root rows first, then resolve child `parent_category_id` values by the parent's stable unique name.
 - Prevention rule: use idempotent `ON CONFLICT (name) DO NOTHING` catalog inserts in the initial migration and preserve the production type and ordering values.
+
+### 2026-07-19 - Canonical Category Presentation
+- Takeaway: shared category colors and Material Symbol names belong in the database catalog, not in per-client mappings.
+- Exploration: an idempotent migration updated all 50 seeded categories by stable `(name, type)` and the category API exposed the values unchanged.
+- Prevention rule: add every predefined category's icon and validated `#RRGGBB` color to the catalog migration and cover the API response in integration tests.

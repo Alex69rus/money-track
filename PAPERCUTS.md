@@ -61,3 +61,19 @@ Running a focused backend test → used `backend_new/.venv/bin/pytest` after cha
 ## 2026-07-18 22:00 — GPT-5.6-Terra
 
 Updating the bug-report template → an `apply_patch` context used a four-column divider for a five-column Markdown table, so the patch was rejected. Re-read table separators before patching Markdown tables.
+
+## 2026-07-19 15:35 — GPT-5.6-Terra
+
+Inspecting frontend test configuration → an unmatched `frontend_new/vitest.config.*` glob made zsh exit before the remaining checks. Use `find` for optional config files under zsh.
+
+## 2026-07-19 15:40 — GPT-5.6-Terra
+
+Running frontend tests → passed Jest's `--runInBand` flag to Vitest, which rejects it. Use the package's plain `npm test` command.
+
+## 2026-07-19 15:50 — GPT-5.6-Terra
+
+Running the frontend build → invoked `npm run build` from the repository root, which only owns QA scripts. Run the build from `frontend_new`.
+
+## 2026-07-19 15:57 — GPT-5.6-Terra
+
+Inspecting mobile-QA artifacts → used GNU `find -printf`, which macOS `find` does not support. Use `find -print` or `stat` on macOS.

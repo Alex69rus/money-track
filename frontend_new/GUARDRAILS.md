@@ -100,3 +100,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: A focused Analytics widget renders a backend aggregate; it does not fetch a transaction collection to rebuild that value.
 - Exploration: The four focused resources and the shared snapshot preserve widget boundaries while PostgreSQL performs filtering, aggregation, ordering, and business-local month grouping.
 - Prevention rule: Reject frontend list pagination loops, `reduce`, grouping, or sorting introduced to calculate an Analytics widget; request or extend the focused backend resource instead.
+
+## Canonical category presentation — 2026-07-19
+
+- Takeaway: Render category identity from backend `icon` and `color` in every transaction context, while retaining the shared fallback for incomplete data.
+- Exploration: The mobile list, filters, editor, desktop table, and both parent and child selector rows all consumed the same category palette; phone QA passed in light and dark themes.
+- Prevention rule: Use `getCategoryIconPalette` and `CategoryIconGlyph` for new category affordances, and cover the selected Home beige (`#DCAF83`) plus fallback behavior in component tests.

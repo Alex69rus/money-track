@@ -60,6 +60,27 @@ def test_categories_sorted_by_order_index_then_name(
     assert body == ordered
 
 
+def test_category_catalog_exposes_canonical_icons_and_colors(
+    http_client: httpx.Client,
+    base_url: str,
+    perform_request,
+) -> None:
+    response, body = perform_request(http_client, "GET", base_url, "/api/categories/")
+
+    assert response.status_code == 200
+    assert isinstance(body, list)
+    assert len(body) == 50
+    assert all(isinstance(category["icon"], str) and category["icon"] for category in body)
+    assert all(isinstance(category["color"], str) and category["color"].startswith("#") for category in body)
+    assert all(len(category["color"]) == 7 for category in body)
+
+    categories_by_name = {category["name"]: category for category in body}
+    assert categories_by_name["Home"]["color"] == "#dcaf83"
+    assert categories_by_name["Home"]["icon"] == "home"
+    assert categories_by_name["Furniture"]["color"] == "#dcaf83"
+    assert categories_by_name["Apique salary"]["icon"] == "payments"
+
+
 def test_tags_distinct_sorted_for_current_user_only(
     http_client: httpx.Client,
     base_url: str,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, SearchIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
   Dialog,
@@ -47,40 +48,6 @@ function byCategoryOrder(first: Category, second: Category): number {
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
-}
-
-function toHexPair(value: string): string {
-  return `${value}${value}`;
-}
-
-function normalizeHexColor(color: string): string | null {
-  const raw = color.trim();
-  if (!raw.startsWith("#")) {
-    return null;
-  }
-
-  const value = raw.slice(1);
-  if (/^[0-9a-fA-F]{3}$/.test(value)) {
-    return `${toHexPair(value[0] ?? "0")}${toHexPair(value[1] ?? "0")}${toHexPair(value[2] ?? "0")}`.toLowerCase();
-  }
-
-  if (/^[0-9a-fA-F]{6}$/.test(value)) {
-    return value.toLowerCase();
-  }
-
-  return null;
-}
-
-function withAlpha(hexColor: string | null, alpha: number, fallback: string): string {
-  if (!hexColor) {
-    return fallback;
-  }
-
-  const red = Number.parseInt(hexColor.slice(0, 2), 16);
-  const green = Number.parseInt(hexColor.slice(2, 4), 16);
-  const blue = Number.parseInt(hexColor.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 export function TransactionCategorySelectorDialog({
@@ -273,9 +240,7 @@ export function TransactionCategorySelectorDialog({
                 const isParentSelected = selectedCategoryId === group.parent.id;
                 const hasChildren = group.children.length > 0;
                 const isExpanded = normalizedSearch.length > 0 ? true : (expandedGroupIds[group.parent.id] ?? false);
-                const parentColor = normalizeHexColor(group.parent.color ?? "");
-                const iconBackground = withAlpha(parentColor, 0.22, "rgba(45, 140, 255, 0.18)");
-                const iconForeground = parentColor ? `#${parentColor}` : "#2d8cff";
+                const parentPalette = getCategoryIconPalette(group.parent.color);
                 const showChildren = hasChildren && (isExpanded || normalizedSearch.length > 0);
                 const childIndentClass = hasChildren ? "pl-14" : "pl-0";
 
@@ -295,8 +260,8 @@ export function TransactionCategorySelectorDialog({
                         <div
                           className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
                           style={{
-                            backgroundColor: iconBackground,
-                            color: iconForeground,
+                            backgroundColor: parentPalette.backgroundColor,
+                            color: parentPalette.foregroundColor,
                           }}
                         >
                           <CategoryIconGlyph
@@ -336,6 +301,7 @@ export function TransactionCategorySelectorDialog({
                       <div className={cn("flex flex-col gap-2 pb-2", childIndentClass)}>
                         {group.visibleChildren.map((category) => {
                           const isSelected = selectedCategoryId === category.id;
+                          const categoryPalette = getCategoryIconPalette(category.color, 0.16);
 
                           return (
                             <button
@@ -351,7 +317,20 @@ export function TransactionCategorySelectorDialog({
                               onClick={() => void handleCategorySelect(category.id)}
                               type="button"
                             >
-                              <span className="truncate">{category.name}</span>
+                              <span
+                                className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                                style={{
+                                  backgroundColor: categoryPalette.backgroundColor,
+                                  color: categoryPalette.foregroundColor,
+                                }}
+                              >
+                                <CategoryIconGlyph
+                                  category={category}
+                                  className="material-symbols-outlined text-[1.15rem] leading-none"
+                                  fallbackClassName="text-xs font-semibold"
+                                />
+                              </span>
+                              <span className="min-w-0 flex-1 truncate">{category.name}</span>
                               {isSelected ? <CheckCircle2Icon aria-hidden className="size-5 shrink-0" /> : null}
                             </button>
                           );

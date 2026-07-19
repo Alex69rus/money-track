@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
   Dialog,
@@ -196,6 +197,7 @@ export function TransactionEditDialog({
 
   const selectedCategory = categoryId === null ? null : (categoryById.get(categoryId) ?? null);
   const selectedCategoryLabel = selectedCategory?.name ?? (categoryId === null ? "Uncategorized" : "Unknown");
+  const categoryPalette = getCategoryIconPalette(selectedCategory?.color, 0.24);
   const normalizedCurrency = normalizeCurrency(currency);
   const currencySymbol = resolveCurrencySymbol(currency);
   const transactionDateLabel = formatDateTimePreview(transactionDate);
@@ -454,7 +456,13 @@ export function TransactionEditDialog({
               type="button"
             >
               <div className="flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-[#2d8cff] text-white shadow-[0_10px_22px_rgba(45,140,255,0.28)]">
+                <div
+                  className="flex size-11 items-center justify-center rounded-xl shadow-[0_10px_22px_rgba(45,140,255,0.28)]"
+                  style={{
+                    backgroundColor: categoryPalette.backgroundColor,
+                    color: categoryPalette.foregroundColor,
+                  }}
+                >
                   {selectedCategory ? (
                     <CategoryIconGlyph
                       category={selectedCategory}

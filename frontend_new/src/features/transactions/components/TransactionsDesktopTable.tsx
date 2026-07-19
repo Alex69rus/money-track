@@ -1,4 +1,6 @@
-import { FolderPenIcon, PencilLineIcon, TagsIcon } from "lucide-react";
+import { PencilLineIcon, TagsIcon } from "lucide-react";
+import { getCategoryIconPalette } from "@/components/category-color";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +52,7 @@ export function TransactionsDesktopTable({
         <TableBody>
           {transactions.map((transaction) => {
             const isPositive = transaction.amount >= 0;
+            const categoryPalette = getCategoryIconPalette(transaction.category?.color, 0.16);
 
             return (
               <TableRow data-testid={`tx-desktop-row-${transaction.id}`} key={transaction.id}>
@@ -69,13 +72,27 @@ export function TransactionsDesktopTable({
                 <TableCell>
                   <Button
                     aria-label={`Change category for transaction ${transaction.id}`}
+                    className="gap-2"
                     data-testid={`tx-desktop-category-${transaction.id}`}
                     onClick={() => onEditCategory(transaction)}
                     size="sm"
                     type="button"
                     variant="ghost"
                   >
-                    <FolderPenIcon aria-hidden data-icon="inline-start" />
+                    <span
+                      className="flex size-6 shrink-0 items-center justify-center rounded-md"
+                      style={{
+                        backgroundColor: categoryPalette.backgroundColor,
+                        color: categoryPalette.foregroundColor,
+                      }}
+                    >
+                      <CategoryIconGlyph
+                        category={transaction.category}
+                        className="material-symbols-outlined text-[1rem] leading-none"
+                        fallbackClassName="text-xs font-semibold"
+                        fallbackText="?"
+                      />
+                    </span>
                     {transaction.category?.name || "Uncategorized"}
                   </Button>
                 </TableCell>

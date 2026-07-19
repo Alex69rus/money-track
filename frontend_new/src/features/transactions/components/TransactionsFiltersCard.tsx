@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { ChevronRightIcon, FolderIcon, SearchIcon, SlidersHorizontalIcon, TagsIcon, XIcon } from "lucide-react";
+import { getCategoryIconPalette } from "@/components/category-color";
+import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,14 +57,16 @@ export function TransactionsFiltersCard({
   onOpenTagSelector,
   onRetryOptions,
 }: TransactionsFiltersCardProps): JSX.Element {
-  const selectedCategoryLabel = useMemo(() => {
+  const selectedCategory = useMemo(() => {
     if (!draft.categoryId) {
       return undefined;
     }
 
     const categoryId = Number(draft.categoryId);
-    return categories.find((category) => category.id === categoryId)?.name;
+    return categories.find((category) => category.id === categoryId);
   }, [categories, draft.categoryId]);
+  const selectedCategoryLabel = selectedCategory?.name;
+  const categoryPalette = getCategoryIconPalette(selectedCategory?.color, 0.16);
 
   const onFieldChange = (field: DraftStringField, value: string): void => {
     onDraftChange({
@@ -234,8 +238,22 @@ export function TransactionsFiltersCard({
                   onClick={onOpenCategorySelector}
                   type="button"
                 >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <FolderIcon aria-hidden className="size-4" />
+                  <span
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{
+                      backgroundColor: categoryPalette.backgroundColor,
+                      color: categoryPalette.foregroundColor,
+                    }}
+                  >
+                    {selectedCategory ? (
+                      <CategoryIconGlyph
+                        category={selectedCategory}
+                        className="material-symbols-outlined text-[1rem] leading-none"
+                        fallbackClassName="text-xs font-semibold"
+                      />
+                    ) : (
+                      <FolderIcon aria-hidden className="size-4" />
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-foreground">
