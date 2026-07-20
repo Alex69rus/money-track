@@ -686,6 +686,7 @@ export function TransactionEditDialog({
         pending={false}
         presentation={presentation === "page" ? "page" : "dialog"}
         title="Select Category"
+        transactionType={isExpense ? "expense" : "income"}
       />
 
       <TransactionTagSelectorDialog

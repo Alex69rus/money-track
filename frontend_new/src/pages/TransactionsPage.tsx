@@ -663,6 +663,13 @@ export function TransactionsPage(): JSX.Element {
         pending={categoryUpdatePending}
         presentation="page"
         title="Select Category"
+        transactionType={
+          quickCategoryTransaction === null
+            ? undefined
+            : quickCategoryTransaction.amount < 0
+              ? "expense"
+              : "income"
+        }
       />
 
       <TransactionTagSelectorDialog

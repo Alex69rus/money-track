@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TransactionEditDialog } from "@/features/transactions/components/TransactionEditDialog";
-import type { Transaction } from "@/types/transactions";
+import type { Category, Transaction } from "@/types/transactions";
 
 const transaction: Transaction = {
   id: 91,
@@ -17,6 +17,29 @@ const transaction: Transaction = {
   createdAt: new Date("2026-07-12T09:15:00Z"),
   category: null,
 };
+
+const categories: Category[] = [
+  {
+    id: 1,
+    name: "Groceries",
+    type: "EXPENSE",
+    color: "#22c55e",
+    icon: "shopping_cart",
+    parentCategoryId: null,
+    orderIndex: 1,
+    createdAt: new Date("2026-07-12T09:15:00Z"),
+  },
+  {
+    id: 2,
+    name: "Salary",
+    type: "INCOME",
+    color: "#2d8cff",
+    icon: "payments",
+    parentCategoryId: null,
+    orderIndex: 2,
+    createdAt: new Date("2026-07-12T09:15:00Z"),
+  },
+];
 
 describe("TransactionEditDialog", () => {
   it("keeps an in-progress edit when the same transaction is refreshed from the list", () => {
@@ -105,6 +128,28 @@ describe("TransactionEditDialog", () => {
     fireEvent.click(screen.getByTestId("tx-edit-sign-income"));
     expect(amountInput).toHaveValue("12.32");
     expect(screen.getByTestId("tx-edit-sign-income")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("filters category choices after the transaction direction changes", () => {
+    render(
+      <TransactionEditDialog
+        activeSubpage="none"
+        availableTags={[]}
+        categories={categories}
+        onDeleted={vi.fn()}
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        open
+        presentation="page"
+        transaction={transaction}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("tx-edit-sign-income"));
+    fireEvent.click(screen.getByTestId("tx-edit-open-category"));
+
+    expect(screen.getByTestId("tx-category-option-2")).toHaveTextContent("Salary");
+    expect(screen.queryByTestId("tx-category-option-1")).not.toBeInTheDocument();
   });
 
   it("uses the shared theme surface for destructive confirmation", () => {

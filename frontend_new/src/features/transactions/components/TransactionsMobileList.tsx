@@ -69,7 +69,7 @@ export function TransactionsMobileList({
                               ? `Change category for transaction ${transaction.id}`
                               : `Choose category for transaction ${transaction.id}`
                           }
-                          className="pointer-events-auto mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
+                          className="pointer-events-auto mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl transition-opacity hover:opacity-85"
                           data-testid={`tx-mobile-category-${transaction.id}`}
                           onClick={() => onEditCategory(transaction)}
                           style={{

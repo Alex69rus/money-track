@@ -10,7 +10,7 @@ Users open Filters and change text, date range, category, tags, or amount range.
 
 ## Edit a transaction
 
-Tapping a transaction card or edit control opens a prefilled full-page edit route in Telegram. Users can update amount, currency, date/time, category, tags, and note; required fields validate before save. Save updates the list in place. Delete requires a confirmation dialog.
+Tapping a transaction card or edit control opens a prefilled full-page edit route in Telegram. Users can update amount, currency, date/time, category, tags, and note; required fields validate before save. The category selector and quick category update selector show only categories matching the transaction direction; changing Income/Expense before opening the edit selector updates its choices. Save updates the list in place. Delete requires a confirmation dialog.
 
 Category and tag controls open their own full-page selector routes. Both selectors support search and require an explicit update action. Telegram BackButton returns to the prior transaction context.
 

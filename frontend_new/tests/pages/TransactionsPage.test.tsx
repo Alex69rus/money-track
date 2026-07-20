@@ -1,10 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionsPage } from "@/pages/TransactionsPage";
-import type { Transaction } from "@/types/transactions";
+import type { Category, Transaction } from "@/types/transactions";
 
-const { useTransactionSummary } = vi.hoisted(() => ({
+const { fetchCategories, fetchTags, useTransactionSummary } = vi.hoisted(() => ({
+  fetchCategories: vi.fn(),
+  fetchTags: vi.fn(),
   useTransactionSummary: vi.fn(),
 }));
 
@@ -24,6 +26,29 @@ const listedTransaction: Transaction = {
 };
 
 const listedTransactions: Transaction[] = [listedTransaction];
+
+const categories: Category[] = [
+  {
+    id: 11,
+    name: "Groceries",
+    type: "EXPENSE",
+    color: "#22c55e",
+    icon: "shopping_cart",
+    parentCategoryId: null,
+    orderIndex: 1,
+    createdAt: new Date("2026-07-12T09:15:00"),
+  },
+  {
+    id: 12,
+    name: "Salary",
+    type: "INCOME",
+    color: "#2d8cff",
+    icon: "payments",
+    parentCategoryId: null,
+    orderIndex: 2,
+    createdAt: new Date("2026-07-12T09:15:00"),
+  },
+];
 
 vi.mock("@/features/analytics/hooks/useAnalyticsResources", () => ({
   useTransactionSummary,
@@ -46,13 +71,17 @@ vi.mock("@/features/transactions/hooks/useTransactionsList", () => ({
   }),
 }));
 
-vi.mock("@/services/api/categories", () => ({ fetchCategories: vi.fn(() => new Promise<never>(() => undefined)) }));
-vi.mock("@/services/api/tags", () => ({ fetchTags: vi.fn(() => new Promise<never>(() => undefined)) }));
+vi.mock("@/services/api/categories", () => ({ fetchCategories }));
+vi.mock("@/services/api/tags", () => ({ fetchTags }));
 
 describe("TransactionsPage", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-15T12:00:00"));
+    fetchCategories.mockReset();
+    fetchCategories.mockImplementation(() => new Promise<never>(() => undefined));
+    fetchTags.mockReset();
+    fetchTags.mockImplementation(() => new Promise<never>(() => undefined));
     useTransactionSummary.mockReset();
     useTransactionSummary.mockReturnValue({
       data: {
@@ -84,5 +113,23 @@ describe("TransactionsPage", () => {
     expect(screen.getByTestId("transactions-monthly-expense")).toHaveTextContent("25.50");
     expect(screen.queryByText("Recent Transactions", { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByText("2392 records", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("limits quick category updates to the transaction direction", async () => {
+    vi.useRealTimers();
+    fetchCategories.mockResolvedValue(categories);
+    fetchTags.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={["/transactions/1/category"]}>
+        <TransactionsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("tx-category-option-11")).toHaveTextContent("Groceries");
+    });
+
+    expect(screen.queryByTestId("tx-category-option-12")).not.toBeInTheDocument();
   });
 });

@@ -56,6 +56,7 @@ describe("TransactionsMobileList", () => {
 
     expect(categoryControl).toHaveAccessibleName("Choose category for transaction 77");
     expect(categoryControl).toHaveTextContent("?");
+    expect(categoryControl).toHaveClass("size-11", "rounded-2xl");
     expect(amount).toHaveTextContent("-AED");
     expect(amount).toHaveClass("whitespace-nowrap");
     expect(screen.queryByText("Edit", { exact: true })).not.toBeInTheDocument();
@@ -86,6 +87,7 @@ describe("TransactionsMobileList", () => {
 
     expect(categoryControl).toHaveAccessibleName("Change category for transaction 78");
     expect(categoryControl).toHaveTextContent("CS");
+    expect(categoryControl).toHaveClass("size-11", "rounded-2xl");
     expect(categoryControl).toHaveStyle({
       backgroundColor: "rgba(220, 175, 131, 0.16)",
       color: "rgb(220, 175, 131)",

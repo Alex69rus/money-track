@@ -38,7 +38,7 @@ Transactions list MUST support paginated/incremental loading for long histories.
 Category selection flow MUST be triggered when user taps the category icon in transaction context.
 
 ### FR-011
-Category selection MUST use a dedicated selector surface with searchable grouped categories and explicit confirmation action before submit.
+Category selection MUST use a dedicated selector surface with searchable grouped categories and explicit confirmation action before submit. When opened in a transaction edit or quick-category-update context, it MUST show only categories whose type matches that transaction's direction; changing the direction in edit MUST update the selectable category set.
 
 ### FR-012
 Tag editing MUST use a dedicated selector surface and explicit confirmation action (`Done` / `Update` equivalent) before submit.

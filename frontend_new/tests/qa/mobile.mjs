@@ -58,6 +58,26 @@ function buildFixtures() {
       orderIndex: 2,
       createdAt,
     },
+    {
+      id: 420,
+      name: "Mobile QA grouped category",
+      type: "EXPENSE",
+      color: "#a855f7",
+      icon: "category",
+      parentCategoryId: null,
+      orderIndex: 2.5,
+      createdAt,
+    },
+    {
+      id: 421,
+      name: "Mobile QA sub-category",
+      type: "EXPENSE",
+      color: "#a855f7",
+      icon: "shopping_cart",
+      parentCategoryId: 420,
+      orderIndex: 2.6,
+      createdAt,
+    },
   ];
   const transactions = [
     {
@@ -541,6 +561,22 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     ) {
       throw new Error("Leaf category must not render an expand chevron and must retain its selected marker.");
     }
+    const groupedCategoryExpander = page.locator('[data-testid="tx-category-expand-420"]');
+    if ((await groupedCategoryExpander.getAttribute("aria-label"))?.startsWith("Expand")) {
+      await groupedCategoryExpander.click();
+    }
+    const subcategoryGap = await page.locator('[data-testid="tx-category-option-421"]').evaluate((element) => {
+      const [icon, label] = Array.from(element.children);
+      if (!icon || !label) {
+        return null;
+      }
+
+      return label.getBoundingClientRect().left - icon.getBoundingClientRect().right;
+    });
+    if (subcategoryGap === null || subcategoryGap < 8) {
+      throw new Error(`Sub-category icons and labels must have a clear visual gap; received ${subcategoryGap}px.`);
+    }
+    await page.locator('[data-testid="tx-category-option-421"]').scrollIntoViewIfNeeded();
     await screenshot(page, profileDirectory, "category-selector");
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });

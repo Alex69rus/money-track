@@ -77,3 +77,19 @@ Running the frontend build → invoked `npm run build` from the repository root,
 ## 2026-07-19 15:57 — GPT-5.6-Terra
 
 Inspecting mobile-QA artifacts → used GNU `find -printf`, which macOS `find` does not support. Use `find -print` or `stat` on macOS.
+
+## 2026-07-20 18:51 — GPT-5.6-Codex
+
+Validating a frontend selector change → `npm run typecheck` reused incremental state and missed an optional-chaining nullability error that `npm run build` caught. Treat the production build as the authoritative TypeScript check for this project.
+
+## 2026-07-20 19:01 — GPT-5.6-Codex
+
+Extending mobile selector QA → assumed the added category group started collapsed, but the selector auto-expands the first groups and the test collapsed it. Read the expander's accessible state before toggling it in a fixture.
+
+## 2026-07-20 18:56 — GPT-5.6-Codex
+
+Inspecting backend data models for an AI-chat PRD → assumed `backend_new/app/models.py`, but models are a package under `backend_new/app/models/tables.py`. Use `rg --files backend_new/app` before opening a conventionally named module.
+
+## 2026-07-20 19:20 — GPT-5.6-Codex
+
+Running the full mobile QA matrix → the terminal capture ended after six profiles without emitting the report, while a `QA_MOBILE_PROFILE=iphone-se` run completed both themes. Use focused profile runs to obtain a complete proof report when the full matrix exceeds the capture window.

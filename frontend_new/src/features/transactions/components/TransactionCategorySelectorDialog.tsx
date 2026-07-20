@@ -18,6 +18,7 @@ import type { Category } from "@/types/transactions";
 interface TransactionCategorySelectorDialogProps {
   open: boolean;
   categories: Category[];
+  transactionType?: "expense" | "income";
   currentCategoryId: number | null;
   pending: boolean;
   error: string | null;
@@ -50,9 +51,14 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function matchesTransactionType(category: Category, transactionType: "expense" | "income" | undefined): boolean {
+  return transactionType === undefined || normalize(category.type) === transactionType;
+}
+
 export function TransactionCategorySelectorDialog({
   open,
   categories,
+  transactionType,
   currentCategoryId,
   pending,
   error,
@@ -70,7 +76,7 @@ export function TransactionCategorySelectorDialog({
   const normalizedSearch = normalize(search);
 
   const groups = useMemo<CategoryGroup[]>(() => {
-    const sorted = [...categories].sort(byCategoryOrder);
+    const sorted = categories.filter((category) => matchesTransactionType(category, transactionType)).sort(byCategoryOrder);
     const topLevel = sorted.filter((category) => category.parentCategoryId === null);
     const parentLookup = new Set(topLevel.map((category) => category.id));
 
@@ -84,7 +90,7 @@ export function TransactionCategorySelectorDialog({
       .map((category) => ({ parent: category, children: [] }));
 
     return [...grouped, ...orphanLeafs];
-  }, [categories]);
+  }, [categories, transactionType]);
 
   useEffect(() => {
     if (!open) {
@@ -307,7 +313,7 @@ export function TransactionCategorySelectorDialog({
                             <button
                               aria-label={`Select category ${category.name}`}
                               className={cn(
-                                "flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-base transition-colors",
+                                "flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-base transition-colors",
                                 isSelected
                                   ? "bg-[#143450] text-[#2d8cff]"
                                   : "text-slate-400 hover:bg-white/5 hover:text-slate-200",

@@ -106,3 +106,15 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Render category identity from backend `icon` and `color` in every transaction context, while retaining the shared fallback for incomplete data.
 - Exploration: The mobile list, filters, editor, desktop table, and both parent and child selector rows all consumed the same category palette; phone QA passed in light and dark themes.
 - Prevention rule: Use `getCategoryIconPalette` and `CategoryIconGlyph` for new category affordances, and cover the selected Home beige (`#DCAF83`) plus fallback behavior in component tests.
+
+## Direction-aware category selection — 2026-07-20
+
+- Takeaway: Pass the transaction direction into the shared category selector so edit and quick-update flows expose only matching category types.
+- Exploration: Component, page, and Phase-2 checks covered an expense quick update and an edit switched to income; the phone matrix rendered an expanded child row with a measurable icon-label gap.
+- Prevention rule: Normalize category types at the shared selector boundary, cover both callers, and make selector-layout QA inspect an expanded child row before capturing the screenshot.
+
+## Transaction-card category tile — 2026-07-20
+
+- Takeaway: Match the mobile transaction-card category affordance to the selector's 44px rounded-square tile.
+- Exploration: The dark and light iPhone SE fixture retained readable configured icons and iconless initials without affecting card-level editing.
+- Prevention rule: Assert the shared `size-11 rounded-2xl` geometry for both categorized and uncategorized card actions, then inspect a phone screenshot.

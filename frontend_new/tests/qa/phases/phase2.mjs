@@ -45,6 +45,16 @@ function fail(evidence) {
   return { pass: false, evidence };
 }
 
+async function visibleCategoryIds(page) {
+  return await page.locator('[data-testid^="tx-category-option-"]').evaluateAll((elements) =>
+    elements
+      .map((element) => element.getAttribute("data-testid"))
+      .filter((testId) => testId !== null && testId !== "tx-category-option-uncategorized")
+      .map((testId) => Number(testId.replace("tx-category-option-", "")))
+      .filter((categoryId) => Number.isInteger(categoryId)),
+  );
+}
+
 export const phase2Definition = {
   id: "phase2",
   frIds: PHASE2_FR_IDS,
@@ -55,6 +65,23 @@ export const phase2Definition = {
 
     const created = await createQaTransaction(backendBaseUrl, qaNote);
     const transactionId = created.id;
+    const categoriesResponse = await fetch(`${backendBaseUrl}/api/categories`);
+    if (!categoriesResponse.ok) {
+      throw new Error(`Failed to load categories for Phase 2 QA (${categoriesResponse.status}).`);
+    }
+    const categories = await categoriesResponse.json();
+    const categoryTypeById = new Map(
+      categories.map((category) => [category.id, String(category.type).trim().toLowerCase()]),
+    );
+    const expenseCategoryIds = new Set(
+      categories.filter((category) => String(category.type).trim().toLowerCase() === "expense").map((category) => category.id),
+    );
+    const incomeCategoryIds = new Set(
+      categories.filter((category) => String(category.type).trim().toLowerCase() === "income").map((category) => category.id),
+    );
+    if (expenseCategoryIds.size === 0 || incomeCategoryIds.size === 0) {
+      throw new Error("Phase-2 category QA requires both expense and income categories.");
+    }
 
     await page.goto(`${frontendBaseUrl}/transactions`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector("#transactions-search-text", { timeout: 30000 });
@@ -98,10 +125,13 @@ export const phase2Definition = {
 
     const categorySearchVisible = await page.locator('[data-testid="tx-category-search"]').isVisible();
     const categoryUpdateVisible = await page.locator('[data-testid="tx-category-update"]').isVisible();
+    const quickCategoryIds = await visibleCategoryIds(page);
+    const quickCategoryTypesMatch =
+      quickCategoryIds.length > 0 && quickCategoryIds.every((categoryId) => categoryTypeById.get(categoryId) === "expense");
     fr["FR-011"] =
-      categorySearchVisible && categoryUpdateVisible
-        ? pass("Category selector is searchable and uses explicit Update confirmation.")
-        : fail("Category selector is missing searchable input or explicit Update confirmation.");
+      categorySearchVisible && categoryUpdateVisible && quickCategoryTypesMatch
+        ? pass("Quick category choices match the expense transaction, switching edit to income shows only income choices, and the selector remains searchable with explicit confirmation.")
+        : fail("Quick category choices must match the transaction direction and provide searchable explicit confirmation.");
 
     const categoryOptions = page.locator('[data-testid^="tx-category-option-"]');
     const optionCount = await categoryOptions.count();
@@ -170,6 +200,18 @@ export const phase2Definition = {
       amountValue && currencyValue && dateValue
         ? pass("Full transaction edit page opens with prefilled values.")
         : fail("Edit dialog opened but one or more required prefilled fields were empty.");
+
+    await page.locator('[data-testid="tx-edit-sign-income"]').click();
+    await page.locator('[data-testid="tx-edit-open-category"]').click();
+    await page.waitForSelector('[data-testid="tx-category-page"]', { timeout: 15000 });
+    const editCategoryIds = await visibleCategoryIds(page);
+    const editCategoryTypesMatch =
+      editCategoryIds.length > 0 && editCategoryIds.every((categoryId) => categoryTypeById.get(categoryId) === "income");
+    if (!editCategoryTypesMatch) {
+      fr["FR-011"] = fail("Changing transaction direction must update edit category choices to the matching type.");
+    }
+    await page.goBack();
+    await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
 
     await page.fill("#transaction-edit-amount", "0");
     await page.locator('[data-testid="tx-edit-save"]').click();

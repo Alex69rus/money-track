@@ -35,6 +35,16 @@ const categories: Category[] = [
     orderIndex: 3,
     createdAt,
   },
+  {
+    id: 4,
+    name: "Salary",
+    type: "INCOME",
+    color: "#22c55e",
+    icon: "payments",
+    parentCategoryId: null,
+    orderIndex: 4,
+    createdAt,
+  },
 ];
 
 describe("TransactionCategorySelectorDialog", () => {
@@ -83,5 +93,64 @@ describe("TransactionCategorySelectorDialog", () => {
 
     expect(screen.getByTestId("tx-category-option-uncategorized")).toHaveTextContent("All categories");
     expect(screen.getByTestId("tx-category-option-uncategorized")).toHaveAccessibleName("Clear category filter");
+  });
+
+  it("shows only categories matching the requested transaction direction", () => {
+    const { rerender } = render(
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        transactionType="expense"
+        currentCategoryId={null}
+        description="Select one"
+        error={null}
+        onConfirm={vi.fn()}
+        onOpenChange={vi.fn()}
+        open
+        pending={false}
+        presentation="page"
+        title="Category"
+      />,
+    );
+
+    expect(screen.getByTestId("tx-category-option-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("tx-category-option-4")).not.toBeInTheDocument();
+
+    rerender(
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        transactionType="income"
+        currentCategoryId={null}
+        description="Select one"
+        error={null}
+        onConfirm={vi.fn()}
+        onOpenChange={vi.fn()}
+        open
+        pending={false}
+        presentation="page"
+        title="Category"
+      />,
+    );
+
+    expect(screen.queryByTestId("tx-category-option-1")).not.toBeInTheDocument();
+    expect(screen.getByTestId("tx-category-option-4")).toBeInTheDocument();
+  });
+
+  it("keeps a visible gap between each child icon and its label", () => {
+    render(
+      <TransactionCategorySelectorDialog
+        categories={categories}
+        currentCategoryId={null}
+        description="Select one"
+        error={null}
+        onConfirm={vi.fn()}
+        onOpenChange={vi.fn()}
+        open
+        pending={false}
+        presentation="page"
+        title="Category"
+      />,
+    );
+
+    expect(screen.getByTestId("tx-category-option-2")).toHaveClass("gap-3");
   });
 });
