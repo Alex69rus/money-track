@@ -97,3 +97,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: shared category colors and Material Symbol names belong in the database catalog, not in per-client mappings.
 - Exploration: an idempotent migration updated all 50 seeded categories by stable `(name, type)` and the category API exposed the values unchanged.
 - Prevention rule: add every predefined category's icon and validated `#RRGGBB` color to the catalog migration and cover the API response in integration tests.
+
+### 2026-07-25 - Zed FastAPI launcher
+- Takeaway: this FastAPI service must launch the `uvicorn` module from `backend_new`; a Django-style `main.py runserver` profile cannot start it.
+- Exploration: `python -m uvicorn app.main:app` returned `OK` from `/health`; the inherited `uvicorn` console script was ruled out because its interpreter path is stale after a moved checkout.
+- Prevention rule: configure Zed Debugpy with `module: "uvicorn"` and `cwd: "$ZED_WORKTREE_ROOT/backend_new"`; recreate `.venv` before relying on console-script executables.

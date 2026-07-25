@@ -97,3 +97,11 @@ Running the full mobile QA matrix → the terminal capture ended after six profi
 ## 2026-07-20 19:47 — GPT-5.6-Terra
 
 Following the frontend guide's QA reference → it names `docs/qa-acceptance-checklist.md`, but the checklist lives at `frontend_new/docs/qa-acceptance-checklist.md`. Update the scoped guide to its actual path.
+
+## 2026-07-25 00:00 — GPT-5
+
+Looking up current Zed debugger documentation → assumed the web result used a structured `content` array, but this connector returns a text value. Serialize connector responses first when their result shape is unknown.
+
+## 2026-07-25 00:00 — GPT-5
+
+Starting the backend with `uv run uvicorn` → the inherited `.venv/bin/uvicorn` script has a stale interpreter path from a moved checkout, although `python -m uvicorn` imports and runs correctly. Use module invocation while the virtual environment is recreated.

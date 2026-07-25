@@ -8,6 +8,7 @@ The Analytics screen covers the most common financial questions with fixed widge
 - “What changed between this month and last month?”
 - “Show my largest subscriptions in the last 90 days.”
 - “Which categories grew the most this quarter?”
+- "How much did I spend on the tag Xxx for last 3 months?"
 
 AI Transaction Chat complements Analytics. It is an analytical assistant for a user's own transaction data, not a replacement for the existing analytics screen.
 
@@ -76,6 +77,8 @@ The product needs to combine flexible, natural-language analysis with determinis
 
 The agent is analytical and read-only. If its data-access path uses SQL, it must allow only read-only analytical retrieval and reject commands that can alter data, permissions, database objects, roles, files, or transaction state.
 
+The implementation must prevent SQL injection. It must use parameterized queries for all values derived from user messages, chat history, transaction text, or LLM-generated input, and must never construct executable SQL by interpolating or concatenating those values. Malformed or injection-like input must be rejected safely without executing unintended SQL or exposing database details.
+
 At minimum, the agent must be prohibited from issuing:
 
 - Data-changing commands: `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `TRUNCATE`
@@ -116,10 +119,11 @@ This is a product safety requirement. The implementation must enforce it in code
 5. The backend, not the LLM, determines the authenticated user and scopes every data-access operation to that user.
 6. Automated tests prove that user A cannot access, infer, or change user B's data through normal questions, malformed inputs, guessed identifiers, or prompt-injection attempts.
 7. The prohibited SQL operations in FR-5 are rejected by code whenever SQL is used for agent data access.
-8. A dialogue is available only during the current AI Chat view and is cleared on a new-dialogue action, app reload, or screen change.
-9. Default OpenAI tracing and existing backend logging are available for diagnosing feature behavior.
-10. Answers and visuals contain only facts supported by the current user's real transaction data; when data is insufficient, the assistant does not invent an answer.
-11. Chat accepts text input only and does not provide multi-modal input controls.
+8. SQL injection attempts through user messages, chat history, transaction text, or LLM-generated input cannot execute unintended SQL, reveal database details, or bypass user scoping.
+9. A dialogue is available only during the current AI Chat view and is cleared on a new-dialogue action, app reload, or screen change.
+10. Default OpenAI tracing and existing backend logging are available for diagnosing feature behavior.
+11. Answers and visuals contain only facts supported by the current user's real transaction data; when data is insufficient, the assistant does not invent an answer.
+12. Chat accepts text input only and does not provide multi-modal input controls.
 
 ## 8) Resolved Decisions
 

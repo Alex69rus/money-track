@@ -24,7 +24,7 @@ from app.schemas.responses import PaginatedTransactionsResponse, TransactionResp
 from app.schemas.transactions import CreateTransactionRequest, UpdateTransactionRequest
 from app.services.auth import get_current_user_id
 
-router = APIRouter()
+router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 
 def _validate_date_range(from_date: date | None, to_date: date | None) -> None:

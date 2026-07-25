@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from app.db.queries import fetch_tags
 from app.services.auth import get_current_user_id
 
-router = APIRouter()
+router = APIRouter(prefix="/tags", tags=["Tags"])
 
 
 @router.get("")

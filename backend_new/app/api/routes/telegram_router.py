@@ -16,7 +16,7 @@ from app.services.telegram_runtime import TelegramBotRuntime
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.telegram-webhook")
 
-router = APIRouter()
+router = APIRouter(prefix="/telegram", tags=["Telegram"])
 
 
 def _is_webhook_secret_valid(received_secret: str | None) -> bool:

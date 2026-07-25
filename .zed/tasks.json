@@ -1,0 +1,17 @@
+[
+  {
+    "label": "Frontend: Vite dev server",
+    "command": "npm",
+    "args": [
+      "run",
+      "dev",
+      "--",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "4173"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT/frontend_new",
+    "use_new_terminal": true
+  }
+]

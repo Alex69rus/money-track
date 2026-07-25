@@ -157,6 +157,16 @@ class DbHelper:
             raise RuntimeError("No category available in database")
         return int(row["id"])
 
+    async def get_category_id_by_name(self, name: str) -> int:
+        conn = await asyncpg.connect(self._database_url)
+        try:
+            row = await conn.fetchrow("SELECT id FROM category WHERE name = $1", name)
+        finally:
+            await conn.close()
+        if row is None:
+            raise RuntimeError(f"Category not found: {name}")
+        return int(row["id"])
+
     async def has_transaction_user_message_unique_index(self) -> bool:
         conn = await asyncpg.connect(self._database_url)
         try:

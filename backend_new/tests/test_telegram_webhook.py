@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from telegram import Bot
 
-from app.api.routes.telegram import router as telegram_router
+from app.api.routes.telegram_router import router as telegram_router
 from app.core.config import get_settings
 
 
@@ -25,7 +25,7 @@ class _FakeRuntime:
 
 def _build_test_app() -> FastAPI:
     test_app = FastAPI()
-    test_app.include_router(telegram_router, prefix="/api/telegram")
+    test_app.include_router(telegram_router, prefix="/api")
     return test_app
 
 

@@ -157,7 +157,7 @@ async def fetch_transactions(
     tag: str | None,
     text: str | None,
     flow: TransactionFlow | None,
-    uncategorized: bool,
+    uncategorized: bool | None,
     calculation_currency_only: bool,
     skip: int,
     take: int,
