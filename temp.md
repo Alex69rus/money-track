@@ -4,6 +4,9 @@
 
 ## Feature requests:
 
+### 0. User time zone support
+We need to fetch user time zone automatically from the browser or telegram on-fly. All transactions should be stored in UTC and displayed to the user in his time zone (based on browser info or telegram info)
+
 ### 1. Multi-currency support. 
 Support all transactions in different currencies and provide automatic conversion at the trx update point based on current exchange rates. User selects single currency for analytics and all conversions are done to that currency for reporting purposes.
 + settings page with ability to select that currenct and sync exchange rates automatically by clicking button. and ability to see the current excange rate that will be applied to the transactions.

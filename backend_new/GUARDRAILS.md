@@ -112,3 +112,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: a PostgreSQL `SELECT` alias is not available to a `WHERE` predicate in the same query level.
 - Exploration: case-insensitive tag filtering failed with `column "tag" does not exist`; default retrieval and pagination ruled out array storage and ordering defects.
 - Prevention rule: expand tag arrays with `CROSS JOIN LATERAL UNNEST(...) AS alias(tag)` and reference `alias.tag` for all filter predicates.
+
+### 2026-07-26 - AI Chat Aggregate Parameter Order
+- Takeaway: raw-query argument order follows placeholder position in the complete SQL string, not query-construction order.
+- Exploration: business-timezone grouping placed its placeholder before the nested user-scope predicate, so a user ID was bound where PostgreSQL expected a timezone string.
+- Prevention rule: build raw SQL parameter lists in textual placeholder order and keep a local-time boundary integration test for every date-grouping query.
+
+### 2026-07-26 - AI Chat Structured Tool Output
+- Takeaway: ordinary Pydantic models and lists are stringified before the Agents SDK returns them to the model.
+- Exploration: aggregate output reached the model as `TransactionAggregationResult(... Decimal(...))`; `ToolOutputText` preserved model-generated JSON as text instead.
+- Prevention rule: return `ToolOutputText(text=<validated JSON>)` from every AI Chat tool and assert the model-facing text parses as JSON in its integration test.

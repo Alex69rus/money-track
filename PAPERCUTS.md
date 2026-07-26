@@ -113,3 +113,19 @@ Checking the local Docker stack → sandboxed `docker compose ps` could not acce
 ## 2026-07-25 00:00 — GPT-5
 
 Running the repository-wide formatter gate → `ruff format --check .` stopped on the unrelated pre-existing `app/services/ai_chat/aggregate_tool.py`. Keep the task scope narrow and run changed-file formatting while separately reporting the repository baseline mismatch.
+
+## 2026-07-26 15:15 — GPT-5
+
+Capturing an AI Chat bug batch → a combined `apply_patch` rejected a task-register context because the Markdown separator had the wrong column count. Re-read table delimiters before patching task registers.
+
+## 2026-07-26 15:25 — GPT-5
+
+Running the full backend suite in the sandbox → `uv` panicked while accessing macOS dynamic configuration before startup. Classify this as `sandbox/permission` and rerun the same health-checked orchestration with approved local-process access.
+
+## 2026-07-26 15:30 — GPT-5
+
+Diagnosing stale PostgreSQL fixtures with an inline shell snippet → the shell expanded `$1` query placeholders and asyncpg rejected string timestamp values. Use a literal heredoc and typed `datetime` query parameters for read-only database diagnostics.
+
+## 2026-07-26 16:00 — GPT-5
+
+Reloading the E2E-validation skill from `backend_new` → used the root-relative `.agents` path and the read failed. Resolve repository-owned skills with `../.agents/...` when the working directory is `backend_new`.

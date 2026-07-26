@@ -3,19 +3,19 @@ from decimal import Decimal
 from typing import Literal, cast
 
 from agents.run_context import RunContextWrapper
-from agents.tool import function_tool
+from agents.tool import ToolOutputText, function_tool
 from pydantic import BaseModel
 
 from app.models import TransactionsWithCategory
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
-from app.services.ai_chat.common import TransactionFilter
+from app.services.ai_chat.common import PaginationSkip, PaginationTake, TransactionFilter
 from app.services.ai_chat.transaction_scope import build_filtered_transaction_scope_sql
 
 
 class TransactionListItem(BaseModel):
     id: int
     transaction_date_time: str
-    amount: float
+    amount: Decimal
     note: str | None
     tags: list[str]
     currency: str
@@ -33,13 +33,22 @@ class TransactionsList(BaseModel):
     has_more: bool
 
 
-TransactionFlow = Literal["expense", "income"]
+TransactionSortBy = Literal["transaction_date_time", "amount"]
+_SORT_COLUMNS: dict[TransactionSortBy, str] = {
+    "transaction_date_time": '"transaction_date_time"',
+    "amount": '"amount"',
+}
+
 
 @function_tool()
 async def list_transactions(
     ctx: RunContextWrapper[ChatAgentContext],
     filters: TransactionFilter,
-) -> TransactionsList:
+    skip: PaginationSkip = 0,
+    take: PaginationTake = 10,
+    sort_by: TransactionSortBy = "transaction_date_time",
+    sort_order_asc: bool = False,
+) -> ToolOutputText:
     """
     Returns paginated list of transactions according to the specified filters.
     Each transaction includes its details and associated category information.
@@ -47,8 +56,8 @@ async def list_transactions(
     Response fields:
     data: List of transactions with details and category information (the model listed below).
     total_count: Total number of transactions matching the filters.
-    skip: Number of transactions skipped (for pagination).
-    take: Number of transactions returned (for pagination).
+    skip: Number of transactions skipped (for pagination, default: 0).
+    take: Number of transactions returned (for pagination, default: 10, maximum: 100).
     has_more: Boolean indicating if there are more transactions available beyond the current page.
 
     Data model for each transaction:
@@ -71,6 +80,8 @@ async def list_transactions(
     ).run()
     total_count = int(cast(int | str, count_rows[0]["total_count"]))
 
+    direction = "ASC" if sort_order_asc else "DESC"
+    sort_column = _SORT_COLUMNS[sort_by]
     transactions_sql = (
         """\
     SELECT
@@ -85,29 +96,30 @@ async def list_transactions(
         "category_type"         AS category_type
     """
         + from_and_where_sql
-        + """
-    ORDER BY "transaction_date_time" DESC, "id" DESC
-    OFFSET {} LIMIT {}
+        + f"""
+    ORDER BY {sort_column} {direction}, "id" {direction}
+    OFFSET {{}} LIMIT {{}}
     """
     )
 
-    rows = await TransactionsWithCategory.raw(transactions_sql, *parameters, filters.skip, filters.take).run()
+    rows = await TransactionsWithCategory.raw(transactions_sql, *parameters, skip, take).run()
     data = [_map_transaction_row(row) for row in rows]
 
-    return TransactionsList(
+    result = TransactionsList(
         data=data,
         total_count=total_count,
-        skip=filters.skip,
-        take=filters.take,
-        has_more=filters.skip + filters.take < total_count,
+        skip=skip,
+        take=take,
+        has_more=skip + take < total_count,
     )
+    return ToolOutputText(text=result.model_dump_json())
 
 
 def _map_transaction_row(row: dict[str, object]) -> TransactionListItem:
     return TransactionListItem(
         id=int(cast(int | str, row["id"])),
         transaction_date_time=cast(datetime, row["transaction_date_time"]).isoformat(),
-        amount=float(cast(Decimal, row["amount"])),
+        amount=cast(Decimal, row["amount"]),
         note=cast(str | None, row["note"]),
         tags=cast(list[str], row["tags"] or []),
         currency=cast(str, row["currency"]),

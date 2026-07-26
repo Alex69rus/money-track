@@ -1,15 +1,23 @@
+import logging
 from datetime import date
 
 from agents import Agent, ModelSettings, Runner, set_default_openai_key
-from openai import BaseModel
+from openai import APIError
 from openai.types.shared import Reasoning
-from pydantic import ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.config import get_settings
 from app.models import Category
 from app.services.ai_chat.aggregate_tool import aggregate_transactions
-from app.services.ai_chat.select_tool import ChatAgentContext, list_transactions
+from app.services.ai_chat.chat_agent_context import ChatAgentContext
+from app.services.ai_chat.select_tool import list_transactions
 from app.services.ai_chat.tags_tool import get_user_tags
+
+logger = logging.getLogger(__name__)
+
+
+class ChatAgentUnavailableError(Exception):
+    """Raised when the configured AI provider cannot serve a chat request."""
 
 
 class ChatAgentResponse(BaseModel):
@@ -56,6 +64,10 @@ class ChatAgent:
         )
 
     async def get_response(self, query: str) -> ChatAgentResponse:
+        settings = get_settings()
+        if not settings.openai_api_key:
+            logger.error("AI chat OpenAI API key is not configured")
+            raise ChatAgentUnavailableError("AI chat provider is not configured")
 
         agent = self._get_chat_agent()
 
@@ -69,6 +81,10 @@ class ChatAgent:
             """
 
         context = ChatAgentContext(user_id=self.current_user_id)
-        res = await Runner.run(starting_agent=agent, input=adjusted_query, context=context)
+        try:
+            res = await Runner.run(starting_agent=agent, input=adjusted_query, context=context)
+        except APIError as exc:
+            logger.error("AI chat provider request failed: %s", exc, exc_info=True)
+            raise ChatAgentUnavailableError("AI chat provider is unavailable") from exc
 
         return res.final_output_as(ChatAgentResponse)

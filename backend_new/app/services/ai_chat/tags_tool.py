@@ -1,16 +1,20 @@
+import json
+
 from agents import RunContextWrapper, function_tool
+from agents.tool import ToolOutputText
 
 from app.models import TransactionsWithCategory
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
+from app.services.ai_chat.common import PaginationSkip, PaginationTake
 
 
 @function_tool()
 async def get_user_tags(
     ctx: RunContextWrapper[ChatAgentContext],
     tag_name_filter: str | None = None,
-    skip: int = 0,
-    take: int = 10,
-) -> list[str]:
+    skip: PaginationSkip = 0,
+    take: PaginationTake = 10,
+) -> ToolOutputText:
     """
     Returns a paginated list of unique tags associated with the user's transactions.
     Suports optional filtering of tags by a provided substring (case-insensitive).
@@ -18,7 +22,7 @@ async def get_user_tags(
     Args:
         tag_name_filter (str | None): Optional substring to filter tags (case-insensitive).
         skip (int): Number of tags to skip for pagination (default: 0).
-        take (int): Number of tags to return for pagination (default: 10).
+        take (int): Number of tags to return for pagination (default: 10, maximum: 100).
     """
     parameters: list[object] = [ctx.context.user_id]
 
@@ -38,4 +42,5 @@ async def get_user_tags(
     parameters.extend([skip, take])
 
     rows = await TransactionsWithCategory.raw(tags_sql, *parameters).run()
-    return [row["tag"] for row in rows if row["tag"] is not None]
+    tags = [row["tag"] for row in rows if row["tag"] is not None]
+    return ToolOutputText(text=json.dumps(tags))
