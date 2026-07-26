@@ -105,3 +105,11 @@ Looking up current Zed debugger documentation → assumed the web result used a 
 ## 2026-07-25 00:00 — GPT-5
 
 Starting the backend with `uv run uvicorn` → the inherited `.venv/bin/uvicorn` script has a stale interpreter path from a moved checkout, although `python -m uvicorn` imports and runs correctly. Use module invocation while the virtual environment is recreated.
+
+## 2026-07-25 00:00 — GPT-5
+
+Checking the local Docker stack → sandboxed `docker compose ps` could not access the Docker daemon socket. Run the check with approved elevated local-process permission when container status is required.
+
+## 2026-07-25 00:00 — GPT-5
+
+Running the repository-wide formatter gate → `ruff format --check .` stopped on the unrelated pre-existing `app/services/ai_chat/aggregate_tool.py`. Keep the task scope narrow and run changed-file formatting while separately reporting the repository baseline mismatch.

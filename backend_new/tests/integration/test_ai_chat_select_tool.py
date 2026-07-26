@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from agents.tool_context import ToolContext
 
+from app.models import TransactionsWithCategory
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
 from app.services.ai_chat.select_tool import TransactionsList, list_transactions
 from tests.fixtures import DbHelper, SeedTransaction
@@ -61,6 +62,59 @@ def _seed_transaction(
             )
         )
     )
+
+
+def test_transactions_with_category_view_exposes_shared_tool_fields(
+    db_helper: DbHelper,
+    test_user_id: int,
+) -> None:
+    category_id = asyncio.run(db_helper.get_category_id_by_name("Home"))
+    transaction_date = datetime(2099, 7, 4, 12, 34, tzinfo=UTC)
+    transaction_id = _seed_transaction(
+        db_helper,
+        user_id=test_user_id,
+        transaction_date=transaction_date,
+        amount=Decimal("-12.34"),
+        note=_unique_value(db_helper.namespace, "shared-view"),
+        category_id=category_id,
+        tags=[_unique_value(db_helper.namespace, "shared-view-tag")],
+        message_suffix="msg-shared-view",
+    )
+
+    rows = asyncio.run(
+        TransactionsWithCategory.select(
+            TransactionsWithCategory.id,
+            TransactionsWithCategory.user_id,
+            TransactionsWithCategory.transaction_date_time,
+            TransactionsWithCategory.transaction_date_day,
+            TransactionsWithCategory.transaction_date_month,
+            TransactionsWithCategory.transaction_date_quarter,
+            TransactionsWithCategory.transaction_date_year,
+            TransactionsWithCategory.amount,
+            TransactionsWithCategory.note,
+            TransactionsWithCategory.tags,
+            TransactionsWithCategory.currency,
+            TransactionsWithCategory.category_id,
+            TransactionsWithCategory.category_name,
+            TransactionsWithCategory.category_type,
+        )
+        .where(TransactionsWithCategory.id == transaction_id)
+        .run()
+    )
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["id"] == transaction_id
+    assert row["user_id"] == test_user_id
+    assert row["transaction_date_time"] == transaction_date
+    assert row["transaction_date_day"] == datetime(2099, 7, 4, tzinfo=UTC)
+    assert row["transaction_date_month"] == datetime(2099, 7, 1, tzinfo=UTC)
+    assert row["transaction_date_quarter"] == datetime(2099, 7, 1, tzinfo=UTC)
+    assert row["transaction_date_year"] == datetime(2099, 1, 1, tzinfo=UTC)
+    assert row["amount"] == Decimal("-12.34")
+    assert row["category_id"] == category_id
+    assert row["category_name"] == "Home"
+    assert row["category_type"] == "Expense"
 
 
 def test_list_transactions_applies_date_amount_category_tag_text_filters_and_user_scope(

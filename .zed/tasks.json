@@ -2,16 +2,16 @@
   {
     "label": "Frontend: Vite dev server",
     "command": "npm",
-    "args": [
-      "run",
-      "dev",
-      "--",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      "4173"
-    ],
+    "args": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "4173"],
     "cwd": "$ZED_WORKTREE_ROOT/frontend_new",
-    "use_new_terminal": true
-  }
+    "use_new_terminal": true,
+  },
+  {
+    "label": "Backend: pytest current file",
+    "tags": ["python-pytest-class", "python-pytest-method"],
+    "command": "uv",
+    "args": ["run", "--no-project", "pytest", "$ZED_FILE", "-q"],
+    "cwd": "$ZED_WORKTREE_ROOT/backend_new",
+    "use_new_terminal": true,
+  },
 ]

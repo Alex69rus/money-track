@@ -102,3 +102,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: this FastAPI service must launch the `uvicorn` module from `backend_new`; a Django-style `main.py runserver` profile cannot start it.
 - Exploration: `python -m uvicorn app.main:app` returned `OK` from `/health`; the inherited `uvicorn` console script was ruled out because its interpreter path is stale after a moved checkout.
 - Prevention rule: configure Zed Debugpy with `module: "uvicorn"` and `cwd: "$ZED_WORKTREE_ROOT/backend_new"`; recreate `.venv` before relying on console-script executables.
+
+### 2026-07-25 - AI Chat Transaction Pagination
+- Takeaway: pair a paginated data query with a matching database-side count query and deterministic ordering.
+- Exploration: the focused AI-chat tool suite passed after applying the same predicates to `COUNT(*)` and adding `OFFSET` / `LIMIT` before execution.
+- Prevention rule: every new raw paginated transaction query must return its requested page, unpaged total, and `has_more` from one shared predicate fragment.
+
+### 2026-07-26 - Array Tag Filtering
+- Takeaway: a PostgreSQL `SELECT` alias is not available to a `WHERE` predicate in the same query level.
+- Exploration: case-insensitive tag filtering failed with `column "tag" does not exist`; default retrieval and pagination ruled out array storage and ordering defects.
+- Prevention rule: expand tag arrays with `CROSS JOIN LATERAL UNNEST(...) AS alias(tag)` and reference `alias.tag` for all filter predicates.

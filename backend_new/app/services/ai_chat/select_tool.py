@@ -1,13 +1,15 @@
-from typing import Literal
+from datetime import datetime
+from decimal import Decimal
+from typing import Literal, cast
 
 from agents.run_context import RunContextWrapper
 from agents.tool import function_tool
 from pydantic import BaseModel
 
-from app.db.queries import fetch_transactions
-from app.schemas.responses import TransactionResponse
+from app.models import TransactionsWithCategory
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
 from app.services.ai_chat.common import TransactionFilter
+from app.services.ai_chat.transaction_scope import build_filtered_transaction_scope_sql
 
 
 class TransactionListItem(BaseModel):
@@ -32,7 +34,6 @@ class TransactionsList(BaseModel):
 
 
 TransactionFlow = Literal["expense", "income"]
-
 
 @function_tool()
 async def list_transactions(
@@ -61,42 +62,56 @@ async def list_transactions(
     category_name: Name of the associated category (if any).
     category_type: Type of the associated category (if any).
     """
-    result = await fetch_transactions(
-        user_id=ctx.context.user_id,
-        from_date=filters.from_date,
-        to_date=filters.to_date,
-        min_amount=filters.min_amount,
-        max_amount=filters.max_amount,
-        category_id=filters.category_id,
-        tags=filters.tags,
-        tag=None,
-        text=filters.text,
-        flow=filters.flow,
-        uncategorized=filters.uncategorized,
-        calculation_currency_only=False,
+
+    parameters: list[object] = [ctx.context.user_id]
+    from_and_where_sql = build_filtered_transaction_scope_sql(filters, parameters)
+
+    count_rows = await TransactionsWithCategory.raw(
+        f"SELECT COUNT(*) AS total_count {from_and_where_sql}", *parameters
+    ).run()
+    total_count = int(cast(int | str, count_rows[0]["total_count"]))
+
+    transactions_sql = (
+        """\
+    SELECT
+        "id"                    AS id,
+        "transaction_date_time" AS transaction_date_time,
+        "amount"                AS amount,
+        "note"                  AS note,
+        "tags"                  AS tags,
+        "currency"              AS currency,
+        "category_id"           AS category_id,
+        "category_name"         AS category_name,
+        "category_type"         AS category_type
+    """
+        + from_and_where_sql
+        + """
+    ORDER BY "transaction_date_time" DESC, "id" DESC
+    OFFSET {} LIMIT {}
+    """
+    )
+
+    rows = await TransactionsWithCategory.raw(transactions_sql, *parameters, filters.skip, filters.take).run()
+    data = [_map_transaction_row(row) for row in rows]
+
+    return TransactionsList(
+        data=data,
+        total_count=total_count,
         skip=filters.skip,
         take=filters.take,
-    )
-
-    mapped_transactions = [_map_transaction_to_list_item(trx) for trx in result.data]
-    return TransactionsList(
-        data=mapped_transactions,
-        total_count=result.totalCount,
-        skip=result.skip,
-        take=result.take,
-        has_more=result.hasMore,
+        has_more=filters.skip + filters.take < total_count,
     )
 
 
-def _map_transaction_to_list_item(transaction: TransactionResponse) -> TransactionListItem:
+def _map_transaction_row(row: dict[str, object]) -> TransactionListItem:
     return TransactionListItem(
-        id=transaction.id,
-        transaction_date_time=transaction.transactionDate.isoformat(),
-        amount=float(transaction.amount),
-        note=transaction.note,
-        tags=transaction.tags,
-        currency=transaction.currency,
-        category_id=transaction.category.id if transaction.category else None,
-        category_name=transaction.category.name if transaction.category else None,
-        category_type=transaction.category.type if transaction.category else None,
+        id=int(cast(int | str, row["id"])),
+        transaction_date_time=cast(datetime, row["transaction_date_time"]).isoformat(),
+        amount=float(cast(Decimal, row["amount"])),
+        note=cast(str | None, row["note"]),
+        tags=cast(list[str], row["tags"] or []),
+        currency=cast(str, row["currency"]),
+        category_id=int(cast(int | str, row["category_id"])) if row["category_id"] is not None else None,
+        category_name=cast(str | None, row["category_name"]),
+        category_type=cast(str | None, row["category_type"]),
     )
