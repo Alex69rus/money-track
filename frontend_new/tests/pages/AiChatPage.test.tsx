@@ -13,6 +13,20 @@ function renderChatPage(): void {
   );
 }
 
+function response(message: string, visual: object | null = null): Response {
+  return new Response(JSON.stringify({ version: "v1", kind: "answer", message, visual }), {
+    headers: { "Content-Type": "application/json" },
+    status: 200,
+  });
+}
+
+function payloadFromRequest(request: RequestInit | undefined): { history: unknown[]; message: string } {
+  if (typeof request?.body !== "string") {
+    throw new Error("Expected a JSON request body.");
+  }
+  return JSON.parse(request.body) as { history: unknown[]; message: string };
+}
+
 describe("AiChatPage", () => {
   const originalFetch = global.fetch;
 
@@ -24,13 +38,16 @@ describe("AiChatPage", () => {
     global.fetch = originalFetch;
   });
 
-  it("sends via Enter, shows pending state, and appends user/assistant timeline messages", async () => {
+  it("sends via Enter, shows pending state, and appends distinct user and assistant messages", async () => {
     let resolveFetch!: (value: Response) => void;
     const fetchMock = vi.fn(
-      () =>
-        new Promise<Response>((resolve) => {
+      (_input: RequestInfo | URL, _init?: RequestInit) => {
+        void _input;
+        void _init;
+        return new Promise<Response>((resolve) => {
           resolveFetch = resolve;
-        }),
+        });
+      },
     );
     global.fetch = fetchMock as unknown as typeof fetch;
 
@@ -43,17 +60,15 @@ describe("AiChatPage", () => {
     expect(await screen.findByTestId("ai-chat-pending")).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-send")).toBeDisabled();
 
-    resolveFetch(
-      new Response(JSON.stringify({ response: "You spent AED 1200 this month." }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    resolveFetch(response("You spent AED 1200 this month."));
 
     await waitFor(() => {
       expect(screen.queryByTestId("ai-chat-pending")).not.toBeInTheDocument();
     });
 
+    const initialRequest = fetchMock.mock.calls[0]?.[1];
+    const payload = payloadFromRequest(initialRequest);
+    expect(payload).toEqual({ history: [], message: "How much did I spend?" });
     expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(1);
     expect(screen.getAllByTestId("ai-chat-message-assistant").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("You spent AED 1200 this month.")).toBeInTheDocument();
@@ -73,31 +88,57 @@ describe("AiChatPage", () => {
     expect((textarea as HTMLTextAreaElement).value).toBe("line one");
   });
 
-  it("shows fallback + error on request failure and supports reset confirmation flow", async () => {
+  it("keeps the initial chat at the primary-page top, then scrolls after a user prompt", async () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+    global.fetch = vi.fn().mockResolvedValue(response("Answered.")) as unknown as typeof fetch;
+
+    renderChatPage();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Show spending" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalled();
+    });
+  });
+
+  it("retries the same history without inventing or duplicating a user message, then starts a new chat", async () => {
     const fetchMock = vi
-      .fn()
+      .fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
       .mockResolvedValueOnce(new Response("upstream unavailable", { status: 500 }))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ response: "Recovered answer." }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      );
+      .mockResolvedValueOnce(response("Recovered answer."))
+      .mockResolvedValueOnce(response("Follow-up answer."));
     global.fetch = fetchMock as unknown as typeof fetch;
 
     renderChatPage();
-
-    const sessionBefore = screen.getByTestId("ai-chat-session-id").textContent;
 
     fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "failed prompt" } });
     fireEvent.click(screen.getByTestId("ai-chat-send"));
 
     expect(await screen.findByTestId("ai-chat-error")).toBeInTheDocument();
-    expect(await screen.findByTestId("ai-chat-fallback")).toBeInTheDocument();
+    expect(screen.queryByTestId("ai-chat-fallback")).not.toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-retry-last")).toBeInTheDocument();
+    expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(1);
 
     fireEvent.click(screen.getByTestId("ai-chat-retry-last"));
     expect(await screen.findByText("Recovered answer.")).toBeInTheDocument();
+    expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(1);
+    const retryRequest = fetchMock.mock.calls[1]?.[1];
+    const retryPayload = payloadFromRequest(retryRequest);
+    expect(retryPayload).toEqual({ history: [], message: "failed prompt" });
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "follow-up prompt" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("Follow-up answer.")).toBeInTheDocument();
+    const followUpRequest = fetchMock.mock.calls[2]?.[1];
+    expect(payloadFromRequest(followUpRequest)).toEqual({
+      history: [
+        { content: "failed prompt", role: "user" },
+        { content: "Recovered answer.", role: "assistant" },
+      ],
+      message: "follow-up prompt",
+    });
 
     fireEvent.click(screen.getByTestId("ai-chat-reset-trigger"));
     expect(await screen.findByTestId("ai-chat-reset-dialog")).toBeInTheDocument();
@@ -106,9 +147,74 @@ describe("AiChatPage", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("ai-chat-reset-dialog")).not.toBeInTheDocument();
     });
-
-    const sessionAfter = screen.getByTestId("ai-chat-session-id").textContent;
-    expect(sessionAfter).not.toEqual(sessionBefore);
     expect(screen.queryByTestId("ai-chat-message-user")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("ai-chat-message-assistant")).toHaveLength(1);
+  });
+
+  it("keeps a failed user bubble visible without using it as a later prompt's history", async () => {
+    const fetchMock = vi
+      .fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(new Response("upstream unavailable", { status: 500 }))
+      .mockResolvedValueOnce(response("Second answer."));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "failed prompt" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByTestId("ai-chat-error")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "new prompt" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("Second answer.")).toBeInTheDocument();
+
+    const newRequest = fetchMock.mock.calls[1]?.[1];
+    expect(payloadFromRequest(newRequest)).toEqual({ history: [], message: "new prompt" });
+  });
+
+  it("sends only the six newest completed dialogue pairs", async () => {
+    const fetchMock = vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      const payload = payloadFromRequest(init);
+      return Promise.resolve(response(`answer:${payload.message}`));
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    renderChatPage();
+    for (let index = 1; index <= 7; index += 1) {
+      const prompt = `question:${index}`;
+      fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: prompt } });
+      fireEvent.click(screen.getByTestId("ai-chat-send"));
+      await screen.findByText(`answer:${prompt}`);
+    }
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "question:8" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    await screen.findByText("answer:question:8");
+
+    const eighthRequest = fetchMock.mock.calls[7]?.[1];
+    const payload = payloadFromRequest(eighthRequest);
+    expect(payload.history).toHaveLength(12);
+    expect(payload.history[0]).toEqual({ content: "question:2", role: "user" });
+    expect(payload.history[11]).toEqual({ content: "answer:question:7", role: "assistant" });
+  });
+
+  it("renders a server-grounded summary visual", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      response("Spending for July was AED 120.", {
+        kind: "summary",
+        period: { fromDate: "2099-07-01", label: "2099-07-01 to 2099-07-31", toDate: "2099-07-31" },
+        metrics: [
+          { count: null, key: "spending", label: "Spending", money: { amount: "120.00", currency: "AED", display: "AED 120.00" }, percentage: null },
+          { count: 3, key: "transaction_count", label: "Matching transactions", money: null, percentage: null },
+        ],
+        title: "Spending summary",
+      }),
+    ) as unknown as typeof fetch;
+
+    renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "How much in July?" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+
+    expect(await screen.findByTestId("ai-chat-visual-summary")).toBeInTheDocument();
+    expect(screen.getByText("AED 120.00")).toBeInTheDocument();
   });
 });

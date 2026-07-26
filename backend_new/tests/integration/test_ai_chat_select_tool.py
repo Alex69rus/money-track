@@ -207,6 +207,35 @@ def test_list_transactions_preserves_decimal_amount_precision(
     assert result.data[0].model_dump(mode="json")["amount"] == "9999999999999999.99"
 
 
+def test_list_transactions_treats_sql_shaped_filter_text_as_data(
+    db_helper: DbHelper,
+    test_user_id: int,
+) -> None:
+    tag = unique_value(db_helper.namespace, "select-sql-shaped")
+    transaction_id = asyncio.run(
+        seed_ai_chat_transaction(
+            db_helper,
+            user_id=test_user_id,
+            transaction_date=datetime(2099, 7, 5, 12, 0, tzinfo=UTC),
+            amount=Decimal("-12.00"),
+            note=unique_value(db_helper.namespace, "safe-row"),
+            category_id=None,
+            tags=[tag],
+            message_suffix="select-sql-shaped",
+        )
+    )
+
+    injection_shaped_text = "'; DROP TABLE transactions; --"
+    no_match = _invoke_list_transactions(
+        user_id=test_user_id,
+        arguments={"filters": {"tags": injection_shaped_text, "text": injection_shaped_text}},
+    )
+    preserved_row = _invoke_list_transactions(user_id=test_user_id, arguments={"filters": {"tags": tag}})
+
+    assert no_match.data == []
+    assert preserved_row.data[0].id == transaction_id
+
+
 @pytest.mark.parametrize(
     "filters",
     [

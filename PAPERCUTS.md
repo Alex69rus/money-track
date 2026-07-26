@@ -129,3 +129,28 @@ Diagnosing stale PostgreSQL fixtures with an inline shell snippet → the shell 
 ## 2026-07-26 16:00 — GPT-5
 
 Reloading the E2E-validation skill from `backend_new` → used the root-relative `.agents` path and the read failed. Resolve repository-owned skills with `../.agents/...` when the working directory is `backend_new`.
+## 2026-07-26  — GPT-5
+
+Reviewing the AI Chat frontend guide references → `frontend_new/AGENTS.MD` points to `frontend_new/docs/api-evolution-plan.md`, but that file is absent. Update the guide or restore the contract reference so API work has an authoritative local source.
+
+## 2026-07-26  — GPT-5
+
+Adding shadcn Chart/Field primitives → the CLI treated both `@/` and `src/` aliases as literal import/write paths, creating an `@/` directory and `src/...` imports. Keep `components.json` source-relative for generation, delete only generated misplaced files, and patch generated imports to the project’s `@/` alias before use.
+
+## 2026-07-26  — GPT-5
+
+Linting the generated shadcn Chart component → the upstream Recharts wrapper uses callback `any` values that violate this repository’s strict ESLint rules. Keep a narrowly scoped rule disable at the generated component boundary rather than relaxing project lint or leaking unsafe values into app code.
+
+## 2026-07-26  — GPT-5
+
+Building the frontend after adding Recharts → Vite reports a minified chunk above 500 kB. Evaluate route-level lazy loading for chart code if bundle size becomes a measured mobile performance problem; do not change chunking speculatively in this feature slice.
+
+## 2026-07-26  — GPT-5
+
+Starting root Phase 4 browser QA in the sandbox → `uv` panicked in macOS `system-configuration` while creating the backend runtime. Re-run the same repository-owned QA command with elevated local-service access; classify this as sandbox/environment until an assertion runs.
+## 2026-07-26 22:22 — Codex
+
+Running a frontend command from `frontend_new/` with a repository-prefixed test path → `sed` could not find the file. Use paths relative to the command worktree when checking a scoped file.
+## 2026-07-26 22:43 — Codex
+
+Adding an AI Chat integration fixture in the same shared test-user/date range as API-parity analytics → the full backend suite saw the fixture's rows. Namespace alone does not isolate unfiltered date-range tests; use a disjoint future date window for cross-suite seed data.

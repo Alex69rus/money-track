@@ -122,3 +122,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: ordinary Pydantic models and lists are stringified before the Agents SDK returns them to the model.
 - Exploration: aggregate output reached the model as `TransactionAggregationResult(... Decimal(...))`; `ToolOutputText` preserved model-generated JSON as text instead.
 - Prevention rule: return `ToolOutputText(text=<validated JSON>)` from every AI Chat tool and assert the model-facing text parses as JSON in its integration test.
+
+### 2026-07-26 - AI Chat Factual Response Boundary
+- Takeaway: keep every client-visible fact in a deterministic presentation response, not in model output.
+- Exploration: a strict directive rejected a model-authored fact field, while the scoped presentation integration suite covered summary, table, chart, share, and comparison output.
+- Prevention rule: add a presentation-tool regression for every new AI Chat analysis and reject any directive schema field that could carry prose, titles, values, or rows.
+
+### 2026-07-26 - AI Chat Negative-Expense Ranking
+- Takeaway: sort negative expense aggregates by absolute value before applying a top-N visual cap.
+- Exploration: descending raw sums put `-10` before `-100`; absolute-value SQL ordering preserved the largest displayed expenses and the comparison candidates.
+- Prevention rule: any user-visible expense ranking must test unequal negative magnitudes and assert the largest displayed amount appears first.

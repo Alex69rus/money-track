@@ -6,7 +6,7 @@ The Analytics screen covers the most common financial questions with fixed widge
 
 - “How much did I spend on restaurants last month?”
 - “What changed between this month and last month?”
-- “Show my largest subscriptions in the last 90 days.”
+- “Show my largest expenses in the last 90 days.”
 - “Which categories grew the most this quarter?”
 - "How much did I spend on the tag Xxx for last 3 months?"
 
@@ -21,7 +21,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 ## 3) Goals
 
 1. Let users ask natural-language questions about their transaction history.
-2. Answer questions about spending, income, balance, categories, tags, merchants, transaction history, and trends.
+2. Answer questions about spending, income, balance, categories, tags, transaction history, and trends.
 3. Present results in the clearest form: text, table, chart, bars, or a trend line.
 4. Ensure a user can access only their own data, regardless of what they ask or what the LLM attempts to do.
 5. Keep the first version read-only: chat must never change Money Track data.
@@ -52,7 +52,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 ### FR-2: Flexible transaction analysis
 
 - The assistant answers ad hoc analytical questions about the current user's transactions, rather than being limited to predefined wording or a fixed list of reports.
-- It can analyze requested periods, compare periods, identify notable changes, summarize categories or tags, explore merchant spending, and locate relevant transactions.
+- It can analyze requested periods, compare periods, identify notable changes, summarize categories or tags, and locate relevant transactions.
 - Answers state the period or interpretation used whenever that information matters to the result.
 - The assistant must base factual statements, values, and visual data on the user's real transaction data. When the available data cannot support an answer, it says so rather than inventing an answer.
 - If no relevant data exists, the assistant says so clearly.

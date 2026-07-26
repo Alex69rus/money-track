@@ -15,6 +15,18 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Reserve the shared top host-controls clearance on every primary and fixed nested page; do not add one-off per-page offsets.
 - Treat browser emulation as supporting evidence only. State the missing real-device condition when it cannot be run.
 
+## AI Chat timeline — 2026-07-26
+
+- Takeaway: do not auto-scroll the initial welcome timeline on a short Telegram viewport.
+- Exploration: the initial `scrollIntoView` shifted iPhone SE AI Chat into the 96 px host-control clearance; larger phone profiles did not reproduce it.
+- Prevention rule: trigger timeline auto-scroll only after a user sends or retries a prompt, then run the full mobile matrix and inspect the iPhone SE AI Chat capture.
+
+## AI Chat completed-history pairing — 2026-07-26
+
+- Takeaway: submit only capped, complete user/assistant pairs; a failed visible user turn is retryable, not completed history.
+- Exploration: a failed turn made the next history end with `user`, while a retried turn needed its original user bubble restored after success.
+- Prevention rule: cover failed-then-new, failed-then-retry-then-follow-up, and more-than-six-turn requests in the AI Chat page test.
+
 ## UI and data
 
 - Preserve existing callbacks and `data-testid` hooks through visual refactors, then verify the real interaction contract.
