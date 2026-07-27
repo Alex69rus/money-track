@@ -98,6 +98,10 @@ Running the full mobile QA matrix → the terminal capture ended after six profi
 
 Following the frontend guide's QA reference → it names `docs/qa-acceptance-checklist.md`, but the checklist lives at `frontend_new/docs/qa-acceptance-checklist.md`. Update the scoped guide to its actual path.
 
+## 2026-07-26 22:57 — GPT-5.6
+
+Applying the AI Chat composition patch → a broad patch context assumed adjacent alert-dialog imports and did not match the component's full import block. Use smaller exact contexts for independently formatted import groups.
+
 ## 2026-07-25 00:00 — GPT-5
 
 Looking up current Zed debugger documentation → assumed the web result used a structured `content` array, but this connector returns a text value. Serialize connector responses first when their result shape is unknown.

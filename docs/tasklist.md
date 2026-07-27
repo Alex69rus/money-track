@@ -294,3 +294,42 @@ Ensure charts never surface a client-derived monetary string and complete the cr
 
 - Resolved BR-011: bar, line, and category-share tooltips now map chart geometry to server-provided money displays. Frontend validation now mirrors summary enums and breakdown/comparison caps; trend selects chronological buckets and supports month/quarter/year grouping.
 - Remaining decision: comparison growth is correct for the largest 100 groups from each period, but not provably for a lower-total group outside both caps. Do not silently choose unbounded retrieval or a user-visible cap without product/architecture direction.
+
+## AI-CHAT-08 — Phone-first AI Chat composition
+
+Source: User review and `bugs_reports/ai-chat-mobile-composition-2026-07-26.md` (BR-014–BR-016).
+
+State: Verified.
+
+### Goal
+
+Make AI Chat feel like a focused, native chat surface in the existing Money Track theme: persistent compact controls and composer, with the conversation itself using the available screen.
+
+### Scope
+
+- Remove suggestions, verbose headings/help text, visible role labels, the Message label, and the mobile-visible keyboard shortcut hint.
+- Use a small icon-only new-chat action, a compact title, a rounded compact composer, and bubble direction rather than labels for message hierarchy.
+- Give `/chat` a route-specific internal transcript scroll surface while preserving AppShell scroll behavior on every other route and the existing Telegram safe-area/navigation behavior.
+- Preserve all existing send, multiline, pending, retry, reset, abort, accessibility, and server-grounded visual behavior.
+
+### Acceptance criteria
+
+- At 390×844 DPR 3, chat controls remain visible while a long timeline scrolls independently; the app shell does not scroll on `/chat`.
+- The removed visual chrome is absent while accessible labels, dialog copy, keyboard semantics, and message test semantics remain available.
+- Focus/keyboard viewport changes keep the composer usable and do not cause the outer shell to scroll.
+- Targeted unit/browser checks and the complete frontend verification suite pass; mobile QA screenshots are visually inspected in both themes.
+
+### Plan
+
+1. Capture the reported evidence and add regressions for the intended information hierarchy and `/chat` scroll ownership.
+2. Update `AppShell` and `AiChatPage` with a route-scoped no-outer-scroll layout, minimal header, transcript-only scroll surface, and compact accessible composer.
+3. Extend phase/browser and mobile QA to prove fixed controls, inner scroll behavior, removed chrome, and keyboard-safe composition; inspect generated screenshots.
+4. Run frontend lint, typecheck, unit tests, build, Phase 4, and mobile QA; record any real-device exception.
+
+### Delivery record — 2026-07-26
+
+- Replaced the card-and-form presentation with a compact header, plus-only accessible new-chat control, transcript-only scroll surface, and rounded icon-send composer. Removed the introductory/suggested copy, structural labels, visible role labels, timestamps, and mobile-visible keyboard shortcut hint.
+- Made AppShell disable only its `/chat` page scroll; other routes retain their existing scroll behavior. The input opts out of the shell's focus-positioning scroll because the chat flex layout keeps its composer above a resized keyboard viewport.
+- Added unit, Phase 4, and mobile regressions for absent chrome, icon-only controls, outer/inner scroll ownership, fixed control positions, safe-area/navigation clearance, and keyboard resizing. Reviewed dark iPhone 12 Pro and light iPhone SE screenshots from the final mobile run.
+- Verification: `cd frontend_new && npm run lint && npm run typecheck` — passed; `npm test` — 19 files / 51 tests passed; `npm run build` — passed (existing Recharts chunk-size warning only); `scripts/run_frontend_phase_qa.sh phase4` — FR-023–FR-027 passed; `scripts/run_frontend_phase_qa.sh phase5` — FR-028, FR-030, FR-031, FR-033, and FR-040 passed; `scripts/run_frontend_mobile_qa.sh` — all dark/light iPhone 12 Pro, iPhone 15, iPhone 15 Pro Max, and iPhone SE profiles passed.
+- Remaining exception: a real Telegram device smoke test was not run because `TELEGRAM_DEVICE_NGROK_DOMAIN` is unset.

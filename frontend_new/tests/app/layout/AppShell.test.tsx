@@ -52,4 +52,14 @@ describe("AppShell", () => {
       expect(screen.getByTestId("app-shell-fallback-mode")).toBeInTheDocument();
     });
   });
+
+  it("delegates scrolling to the AI Chat timeline without changing other primary pages", () => {
+    renderShell("/chat");
+    expect(screen.getByTestId("app-shell-main")).toHaveClass("overflow-hidden");
+    expect(screen.getByTestId("app-shell-main")).not.toHaveClass("overflow-y-auto");
+
+    cleanup();
+    renderShell("/transactions");
+    expect(screen.getByTestId("app-shell-main")).toHaveClass("overflow-y-auto");
+  });
 });

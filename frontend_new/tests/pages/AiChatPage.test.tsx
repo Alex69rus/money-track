@@ -38,6 +38,20 @@ describe("AiChatPage", () => {
     global.fetch = originalFetch;
   });
 
+  it("uses a minimal accessible chat composition without suggestions or desktop-only chrome", () => {
+    renderChatPage();
+
+    expect(screen.getByTestId("ai-chat-header")).toHaveTextContent("AI Chat");
+    expect(screen.getByRole("button", { name: "Start a new AI chat" })).toBeInTheDocument();
+    expect(screen.getByTestId("ai-chat-composer")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-chat-input")).toHaveAttribute("data-skip-focus-position", "true");
+    expect(screen.queryByTestId("ai-chat-suggestions")).not.toBeInTheDocument();
+    expect(screen.queryByText("Conversation")).not.toBeInTheDocument();
+    expect(screen.queryByText("Message", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("Enter to send, Shift+Enter for a new line.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Assistant", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("sends via Enter, shows pending state, and appends distinct user and assistant messages", async () => {
     let resolveFetch!: (value: Response) => void;
     const fetchMock = vi.fn(
@@ -70,7 +84,7 @@ describe("AiChatPage", () => {
     const payload = payloadFromRequest(initialRequest);
     expect(payload).toEqual({ history: [], message: "How much did I spend?" });
     expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(1);
-    expect(screen.getAllByTestId("ai-chat-message-assistant").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByTestId("ai-chat-message-assistant")).toHaveLength(1);
     expect(screen.getByText("You spent AED 1200 this month.")).toBeInTheDocument();
   });
 
@@ -148,7 +162,7 @@ describe("AiChatPage", () => {
       expect(screen.queryByTestId("ai-chat-reset-dialog")).not.toBeInTheDocument();
     });
     expect(screen.queryByTestId("ai-chat-message-user")).not.toBeInTheDocument();
-    expect(screen.getAllByTestId("ai-chat-message-assistant")).toHaveLength(1);
+    expect(screen.queryByTestId("ai-chat-message-assistant")).not.toBeInTheDocument();
   });
 
   it("keeps a failed user bubble visible without using it as a later prompt's history", async () => {

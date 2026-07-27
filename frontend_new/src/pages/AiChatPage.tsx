@@ -13,8 +13,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatVisual } from "@/components/ai-chat/ChatVisual";
@@ -42,14 +40,6 @@ interface FailedRequest {
   userMessageId: string;
 }
 
-const INITIAL_ASSISTANT_MESSAGE =
-  "Ask about your spending, income, categories, tags, transaction history, or trends.";
-
-const SUGGESTION_PROMPTS = [
-  "How much did I spend this month?",
-  "Compare this month with last month.",
-  "Show spending by category for the last 30 days.",
-];
 const MAX_HISTORY_CHARACTERS = 12_000;
 const MAX_HISTORY_MESSAGES = 12;
 
@@ -71,19 +61,7 @@ function isAbortError(error: unknown): boolean {
 }
 
 function buildInitialMessages(): ChatMessage[] {
-  return [
-    {
-      createdAt: new Date(),
-      id: "assistant-welcome",
-      includeInHistory: false,
-      role: "assistant",
-      text: INITIAL_ASSISTANT_MESSAGE,
-    },
-  ];
-}
-
-function formatMessageTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return [];
 }
 
 function historyFromMessages(messages: ChatMessage[]): ChatHistoryMessage[] {
@@ -256,25 +234,20 @@ export function AiChatPage(): JSX.Element {
   }, []);
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-4" data-testid="ai-chat-page">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">AI Chat</h2>
-          <p className="text-sm text-muted-foreground">
-            Get read-only answers grounded in your transactions. Start with a period, category, tag, or trend.
-          </p>
-        </div>
+    <section className="flex h-full min-h-0 flex-col" data-testid="ai-chat-page">
+      <header className="flex shrink-0 items-center justify-between gap-3 pb-3" data-testid="ai-chat-header">
+        <h2 className="text-base font-semibold tracking-tight">AI Chat</h2>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
               aria-label="Start a new AI chat"
+              className="size-8 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
               data-testid="ai-chat-reset-trigger"
-              size="sm"
+              size="icon-sm"
               type="button"
-              variant="outline"
+              variant="ghost"
             >
-              <PlusIcon data-icon="inline-start" />
-              New chat
+              <PlusIcon aria-hidden className="size-4" />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent data-testid="ai-chat-reset-dialog">
@@ -290,28 +263,10 @@ export function AiChatPage(): JSX.Element {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-
-      <div className="flex flex-wrap gap-2" data-testid="ai-chat-suggestions">
-        {SUGGESTION_PROMPTS.map((prompt) => (
-          <Button
-            data-testid={`ai-chat-suggestion-${prompt.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-            disabled={pending}
-            key={prompt}
-            onClick={() => {
-              void submitPrompt(prompt);
-            }}
-            size="sm"
-            type="button"
-            variant="secondary"
-          >
-            {prompt}
-          </Button>
-        ))}
-      </div>
+      </header>
 
       {error ? (
-        <Alert data-testid="ai-chat-error" variant="destructive">
+        <Alert className="mb-3 shrink-0" data-testid="ai-chat-error" variant="destructive">
           <AlertTitle>AI response issue</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <span>{error}</span>
@@ -340,90 +295,86 @@ export function AiChatPage(): JSX.Element {
         </Alert>
       ) : null}
 
-      <Card className="flex min-h-0 flex-1 flex-col gap-0 py-0">
-        <CardHeader className="gap-1 border-b py-4">
-          <CardTitle className="text-base">Conversation</CardTitle>
-          <CardDescription>Chat is cleared when you start over, leave this view, or reload the app.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
-          <div
-            aria-live="polite"
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-lg border bg-muted/20 p-3"
-            data-testid="ai-chat-timeline"
-          >
-            {messages.map((message) => (
-              <article
-                className={cn(
-                  "flex max-w-[92%] flex-col gap-2 rounded-lg border p-3",
-                  message.role === "user"
-                    ? "ml-auto border-primary/40 bg-primary/10 text-right"
-                    : "mr-auto border-border bg-card text-left",
-                )}
-                data-message-id={message.id}
-                data-role={message.role}
-                data-testid={`ai-chat-message-${message.role}`}
-                key={message.id}
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {message.role === "user" ? "You" : "Assistant"}
+      <div className="min-h-0 flex-1">
+        <div
+          aria-live="polite"
+          className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain py-2 pr-1"
+          data-focus-scroll-container
+          data-testid="ai-chat-timeline"
+        >
+          {messages.map((message) => (
+            <article
+              aria-label={
+                message.pending
+                  ? "AI Chat is preparing a response"
+                  : message.role === "user"
+                    ? "Your message"
+                    : "AI Chat response"
+              }
+              className={cn(
+                "flex max-w-[88%] flex-col gap-2 rounded-2xl px-3 py-2.5 text-sm",
+                message.role === "user"
+                  ? "ml-auto rounded-br-md bg-primary text-primary-foreground"
+                  : "mr-auto max-w-full rounded-none px-1 py-2 text-foreground",
+              )}
+              data-message-id={message.id}
+              data-role={message.role}
+              data-testid={`ai-chat-message-${message.role}`}
+              key={message.id}
+            >
+              {message.pending ? (
+                <p className="flex items-center gap-2" data-testid="ai-chat-pending">
+                  <Spinner />
+                  {message.text}
                 </p>
-                {message.pending ? (
-                  <p className="flex items-center gap-2 text-sm" data-testid="ai-chat-pending">
-                    <Spinner />
-                    {message.text}
-                  </p>
-                ) : (
-                  <>
-                    <p className="whitespace-pre-wrap text-sm">{message.text}</p>
-                    {message.visual ? <ChatVisual visual={message.visual} /> : null}
-                  </>
-                )}
-                <p className="text-xs text-muted-foreground">{formatMessageTime(message.createdAt)}</p>
-              </article>
-            ))}
-            <div ref={timelineEndRef} />
-          </div>
+              ) : (
+                <>
+                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  {message.visual ? <ChatVisual visual={message.visual} /> : null}
+                </>
+              )}
+            </article>
+          ))}
+          <div ref={timelineEndRef} />
+        </div>
+      </div>
 
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="ai-chat-input">Message</FieldLabel>
-              <Textarea
-                aria-label="Chat message input"
-                className="min-h-24"
-                data-testid="ai-chat-input"
-                disabled={pending}
-                id="ai-chat-input"
-                onChange={(event) => {
-                  setInputValue(event.target.value);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void submitPrompt(inputValue);
-                  }
-                }}
-                placeholder="Ask about spending, trends, categories, tags, or transactions…"
-                value={inputValue}
-              />
-            </Field>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">Enter to send, Shift+Enter for a new line.</p>
-              <Button
-                aria-label="Send chat message"
-                data-testid="ai-chat-send"
-                disabled={pending || inputValue.trim().length === 0}
-                onClick={() => {
-                  void submitPrompt(inputValue);
-                }}
-                type="button"
-              >
-                <SendIcon data-icon="inline-start" />
-                Send
-              </Button>
-            </div>
-          </FieldGroup>
-        </CardContent>
-      </Card>
+      <div className="shrink-0 pt-3" data-testid="ai-chat-composer">
+        <div className="flex items-end gap-2 rounded-2xl border border-input bg-card p-2 shadow-xs">
+          <Textarea
+            aria-label="Chat message input"
+            className="min-h-10 max-h-28 resize-none border-0 bg-transparent px-2 py-2 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+            data-skip-focus-position="true"
+            data-testid="ai-chat-input"
+            disabled={pending}
+            id="ai-chat-input"
+            onChange={(event) => {
+              setInputValue(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void submitPrompt(inputValue);
+              }
+            }}
+            placeholder="Ask about your money…"
+            value={inputValue}
+          />
+          <Button
+            aria-label="Send chat message"
+            className="size-9 rounded-full"
+            data-testid="ai-chat-send"
+            disabled={pending || inputValue.trim().length === 0}
+            onClick={() => {
+              void submitPrompt(inputValue);
+            }}
+            size="icon"
+            type="button"
+          >
+            <SendIcon aria-hidden className="size-4" />
+          </Button>
+        </div>
+      </div>
     </section>
   );
 }
