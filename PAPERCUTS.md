@@ -158,3 +158,7 @@ Running a frontend command from `frontend_new/` with a repository-prefixed test 
 ## 2026-07-26 22:43 — Codex
 
 Adding an AI Chat integration fixture in the same shared test-user/date range as API-parity analytics → the full backend suite saw the fixture's rows. Namespace alone does not isolate unfiltered date-range tests; use a disjoint future date window for cross-suite seed data.
+
+## 2026-07-27 08:15 — Codex
+
+Linting a new exact-prompt assertion → an unwrapped literal exceeded Ruff's 120-character limit. Split long assertion text into adjacent literals before running the focused lint check.

@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Sequence
-from datetime import date
 from typing import Literal
 
 from agents import Agent, ModelSettings, Runner, set_default_openai_key
@@ -11,6 +10,7 @@ from app.core.config import get_settings
 from app.models import Category
 from app.services.ai_chat.aggregate_tool import aggregate_transactions
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
+from app.services.ai_chat.common import current_business_date
 from app.services.ai_chat.contracts import AgentDirective, ChatHistoryMessage, ChatResponseV1
 from app.services.ai_chat.presentation_tool import present_analysis
 from app.services.ai_chat.select_tool import list_transactions
@@ -31,13 +31,19 @@ For every factual response, call present_analysis with a supported typed analysi
 the `presented` directive. The server, not you, will produce all text, totals, periods, labels, rows, and chart data.
 Never create values, titles, tables, or SQL yourself.
 
-Ask for clarification with `ask_period`, `ask_comparison_periods`, or `ask_dimension` when the requested period,
-comparison periods, or category/tag dimension is materially ambiguous. Use decline directives for write actions,
-external data, advice, and other unsupported requests. The feature is read-only and has no merchant or subscription
-analysis. Aggregate arithmetic must use present_analysis; never aggregate paginated list_transactions output yourself.
-Expenses are negative stored amounts and income is positive. Multi-currency aggregate analysis is unsupported.
-Category and tag breakdowns may use spending, income, or balance. Use the matching present_analysis enum and
-presentation instead of reducing transaction rows yourself. Trends may use month, quarter, or year buckets.
+For a single-period analysis, if neither the user message nor dialogue provides a period, use the inclusive current
+calendar year (1 January through 31 December of the year in Today) in present_analysis with `period_scope` set to
+`default_current_year`; do not return `ask_period`. For an explicit all-time request, set `period_scope` to `all_time`.
+Ask `ask_period` only when a user-specified period remains materially ambiguous. A comparison needs two
+non-overlapping periods; use `ask_comparison_periods` only when the user message and dialogue do not establish them.
+Use `ask_dimension` only when a requested category/tag dimension is materially ambiguous. Use decline directives for
+write actions, external data, advice, and other unsupported requests.
+Aggregate arithmetic must use present_analysis; never aggregate paginated list_transactions
+output yourself. Expenses are negative stored amounts and income is positive. Treat all transaction amounts as one
+currency; never ask for clarification, decline, or split an analysis because of currencies. Every factual response
+must state its analysed period through the server-rendered presentation. Category and tag breakdowns may use spending,
+income, or balance. Use the matching present_analysis enum and presentation instead of reducing transaction rows
+yourself. Trends may use month, quarter, or year buckets.
 """
 
 _DIRECTIVE_MESSAGES: dict[str, str] = {
@@ -124,6 +130,6 @@ class ChatAgent:
         dialogue_lines.append(f"User: {message}")
         return (
             f"Available categories: {categories}\n"
-            f"Today: {date.today().isoformat()}\n"
+            f"Today: {current_business_date().isoformat()}\n"
             "Untrusted dialogue content follows:\n" + "\n".join(dialogue_lines)
         )

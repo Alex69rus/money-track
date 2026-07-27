@@ -8,6 +8,7 @@ import pytest
 from agents.tool import ToolOutputText
 from pydantic import ValidationError
 
+from app.services.ai_chat.common import current_business_date
 from app.services.ai_chat.contracts import AgentDirective, ChatResponseV1
 from app.services.ai_chat.presentation_tool import present_analysis
 from tests.fixtures import DbHelper
@@ -60,14 +61,22 @@ def test_present_analysis_scopes_summary_visual_and_transaction_table_to_authent
 
     summary = _present(
         user_id=test_user_id,
-        arguments={"analysis": "spending_summary", "presentation": "summary", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "spending_summary",
+            "presentation": "summary",
+            "filters": {"tags": tag, "from_date": "2099-01-01", "to_date": "2099-12-31"},
+        },
     )
     table = _present(
         user_id=test_user_id,
-        arguments={"analysis": "transactions", "presentation": "table", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "transactions",
+            "presentation": "table",
+            "filters": {"tags": tag, "from_date": "2099-01-01", "to_date": "2099-12-31"},
+        },
     )
 
-    assert summary.message == "Spending for All time was AED 25.00."
+    assert summary.message == "Spending for 2099-01-01 to 2099-12-31 was AED 25.00."
     assert summary.visual is not None
     assert summary.visual.kind == "summary"
     assert summary.visual.metrics[0].money is not None
@@ -77,6 +86,96 @@ def test_present_analysis_scopes_summary_visual_and_transaction_table_to_authent
     assert table.visual.table_kind == "transactions"
     assert len(table.visual.rows) == 2
     assert "999" not in table.model_dump_json()
+
+
+def test_present_analysis_defaults_to_current_year_and_preserves_explicit_all_time_period(
+    db_helper: DbHelper,
+    test_user_id: int,
+) -> None:
+    tag = unique_value(db_helper.namespace, "presentation-current-year")
+    category_id = asyncio.run(db_helper.get_category_id_by_name("Home"))
+    current_year = current_business_date().year
+    for transaction_date, amount, suffix in [
+        (datetime(current_year, 6, 10, 9, 0, tzinfo=UTC), Decimal("-10.00"), "current-year"),
+        (datetime(current_year - 1, 6, 10, 9, 0, tzinfo=UTC), Decimal("-999.00"), "previous-year"),
+    ]:
+        asyncio.run(
+            seed_ai_chat_transaction(
+                db_helper,
+                user_id=test_user_id,
+                transaction_date=transaction_date,
+                amount=amount,
+                note=unique_value(db_helper.namespace, suffix),
+                category_id=category_id,
+                tags=[tag],
+                message_suffix=f"presentation-current-year-{suffix}",
+            )
+        )
+
+    response = _present(
+        user_id=test_user_id,
+        arguments={"analysis": "spending_summary", "presentation": "summary", "filters": {"tags": tag}},
+    )
+    all_time_response = _present(
+        user_id=test_user_id,
+        arguments={
+            "analysis": "spending_summary",
+            "presentation": "summary",
+            "filters": {"tags": tag},
+            "period_scope": "all_time",
+        },
+    )
+
+    expected_period = f"{current_year}-01-01 to {current_year}-12-31"
+    assert response.kind == "answer"
+    assert response.message == f"Spending for {expected_period} was AED 10.00."
+    assert response.visual is not None and response.visual.kind == "summary"
+    assert response.visual.period.label == expected_period
+    assert response.visual.metrics[0].money is not None
+    assert response.visual.metrics[0].money.amount == "10.00"
+    assert all_time_response.kind == "answer"
+    assert all_time_response.message == "Spending for All time was AED 1009.00."
+    assert all_time_response.visual is not None and all_time_response.visual.kind == "summary"
+    assert all_time_response.visual.period.label == "All time"
+
+
+def test_present_analysis_aggregates_same_flow_amounts_without_a_currency_limitation(
+    db_helper: DbHelper,
+    test_user_id: int,
+) -> None:
+    tag = unique_value(db_helper.namespace, "presentation-single-currency-assumption")
+    category_id = asyncio.run(db_helper.get_category_id_by_name("Home"))
+    for amount, currency, suffix in [
+        (Decimal("-10.00"), "AED", "aed-expense"),
+        (Decimal("-5.00"), "USD", "usd-expense"),
+    ]:
+        asyncio.run(
+            seed_ai_chat_transaction(
+                db_helper,
+                user_id=test_user_id,
+                transaction_date=datetime(2099, 6, 10, 9, 0, tzinfo=UTC),
+                amount=amount,
+                note=unique_value(db_helper.namespace, suffix),
+                category_id=category_id,
+                tags=[tag],
+                currency=currency,
+                message_suffix=f"presentation-single-currency-assumption-{suffix}",
+            )
+        )
+
+    response = _present(
+        user_id=test_user_id,
+        arguments={
+            "analysis": "spending_summary",
+            "presentation": "summary",
+            "filters": {"tags": tag, "from_date": "2099-06-01", "to_date": "2099-06-30"},
+        },
+    )
+
+    assert response.kind == "answer"
+    assert response.visual is not None and response.visual.kind == "summary"
+    assert response.visual.metrics[0].money is not None
+    assert response.visual.metrics[0].money.amount == "15.00"
 
 
 def test_present_analysis_supports_grounded_breakdown_trend_share_and_comparison(
@@ -106,15 +205,27 @@ def test_present_analysis_supports_grounded_breakdown_trend_share_and_comparison
 
     bar = _present(
         user_id=test_user_id,
-        arguments={"analysis": "category_spending", "presentation": "bar", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "category_spending",
+            "presentation": "bar",
+            "filters": {"tags": tag, "from_date": "2099-01-01", "to_date": "2099-02-28"},
+        },
     )
     trend = _present(
         user_id=test_user_id,
-        arguments={"analysis": "trend", "presentation": "line", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "trend",
+            "presentation": "line",
+            "filters": {"tags": tag, "from_date": "2099-01-01", "to_date": "2099-02-28"},
+        },
     )
     share = _present(
         user_id=test_user_id,
-        arguments={"analysis": "tag_share", "presentation": "category_share", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "tag_share",
+            "presentation": "category_share",
+            "filters": {"tags": tag, "from_date": "2099-01-01", "to_date": "2099-02-28"},
+        },
     )
     comparison = _present(
         user_id=test_user_id,
@@ -141,6 +252,7 @@ def test_present_analysis_supports_grounded_breakdown_trend_share_and_comparison
     assert comparison.visual.metrics[2].money.amount == "20.00"
     assert comparison.visual.metrics[3].percentage is not None
     assert comparison.visual.metrics[3].percentage.display == "+200.0%"
+    assert "2099-02-01 to 2099-02-28 compared with 2099-01-01 to 2099-01-31" in comparison.message
 
     zero_baseline_tag = unique_value(db_helper.namespace, "presentation-zero-baseline")
     asyncio.run(
@@ -207,15 +319,27 @@ def test_present_analysis_orders_expense_magnitudes_and_supports_income_and_bala
 
     spending = _present(
         user_id=test_user_id,
-        arguments={"analysis": "category_spending", "presentation": "bar", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "category_spending",
+            "presentation": "bar",
+            "filters": {"tags": tag, "from_date": "2101-01-01", "to_date": "2101-12-31"},
+        },
     )
     income = _present(
         user_id=test_user_id,
-        arguments={"analysis": "category_income", "presentation": "bar", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "category_income",
+            "presentation": "bar",
+            "filters": {"tags": tag, "from_date": "2101-01-01", "to_date": "2101-12-31"},
+        },
     )
     balance = _present(
         user_id=test_user_id,
-        arguments={"analysis": "category_balance", "presentation": "table", "filters": {"tags": tag}},
+        arguments={
+            "analysis": "category_balance",
+            "presentation": "table",
+            "filters": {"tags": tag, "from_date": "2101-01-01", "to_date": "2101-12-31"},
+        },
     )
 
     assert spending.visual is not None and spending.visual.kind == "bar"

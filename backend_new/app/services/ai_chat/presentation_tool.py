@@ -9,7 +9,7 @@ from agents.tool import ToolOutputText
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
-from app.services.ai_chat.common import PaginationTake, TransactionFilter
+from app.services.ai_chat.common import PaginationTake, TransactionFilter, current_business_date
 from app.services.ai_chat.contracts import (
     BarVisualItemV1,
     BarVisualV1,
@@ -73,6 +73,7 @@ SinglePeriodAnalysisKind = Literal[
 ]
 PresentationKind = Literal["summary", "table", "bar", "line", "category_share"]
 TrendGranularity = Literal["month", "quarter", "year"]
+PeriodScope = Literal["default_current_year", "all_time"]
 _TREND_GROUPINGS: dict[
     TrendGranularity, Literal["transaction_date_month", "transaction_date_quarter", "transaction_date_year"]
 ] = {
@@ -151,9 +152,14 @@ def _trend_label(bucket: str, granularity: TrendGranularity) -> str:
     return str(bucket_date.year)
 
 
-async def _currency_or_limitation(
-    *, user_id: int, filters: list[TransactionFilter]
-) -> tuple[str | None, ChatResponseV1 | None]:
+def _apply_period_scope(filters: TransactionFilter, *, period_scope: PeriodScope) -> TransactionFilter:
+    if filters.from_date is not None or filters.to_date is not None or period_scope == "all_time":
+        return filters
+    current_date = current_business_date()
+    return _with_dates(filters, date(current_date.year, 1, 1), date(current_date.year, 12, 31))
+
+
+async def _display_currency(*, user_id: int, filters: list[TransactionFilter]) -> str | None:
     currencies = sorted(
         {
             currency
@@ -161,12 +167,7 @@ async def _currency_or_limitation(
             for currency in await query_distinct_currencies(user_id=user_id, filters=current_filters)
         }
     )
-    if len(currencies) > 1:
-        return None, ChatResponseV1(
-            kind="limitation",
-            message="I can’t combine multiple currencies until converted analytics values are available.",
-        )
-    return (currencies[0] if currencies else None), None
+    return currencies[0] if currencies else None
 
 
 async def _sum_amount(*, user_id: int, filters: TransactionFilter) -> Decimal | None:
@@ -213,7 +214,9 @@ async def _present_single_period(
     presentation: PresentationKind,
     filters: TransactionFilter,
     trend_granularity: TrendGranularity,
+    period_scope: PeriodScope,
 ) -> ChatResponseV1:
+    filters = _apply_period_scope(filters, period_scope=period_scope)
     period = _period(filters)
 
     if analysis == "transactions":
@@ -254,9 +257,7 @@ async def _present_single_period(
         else:
             metric_key = "balance"
             metric_filters = _with_flow(filters, None)
-        currency, limitation = await _currency_or_limitation(user_id=user_id, filters=[metric_filters])
-        if limitation:
-            return limitation
+        currency = await _display_currency(user_id=user_id, filters=[metric_filters])
         amount = await _sum_amount(user_id=user_id, filters=metric_filters)
         if amount is None or currency is None:
             return _no_data(period)
@@ -283,9 +284,7 @@ async def _present_single_period(
         group_by = _TREND_GROUPINGS[trend_granularity]
         expense_filters = _with_flow(filters, "expense")
         income_filters = _with_flow(filters, "income")
-        currency, limitation = await _currency_or_limitation(user_id=user_id, filters=[expense_filters, income_filters])
-        if limitation:
-            return limitation
+        currency = await _display_currency(user_id=user_id, filters=[expense_filters, income_filters])
         if presentation != "line" or currency is None:
             return _unsupported_presentation() if currency else _no_data(period)
         expenses = await query_aggregations(
@@ -357,9 +356,7 @@ async def _present_single_period(
     if analysis in breakdown_config:
         flow, measure = breakdown_config[analysis]
         breakdown_filters = _with_flow(filters, flow)
-        currency, limitation = await _currency_or_limitation(user_id=user_id, filters=[breakdown_filters])
-        if limitation:
-            return limitation
+        currency = await _display_currency(user_id=user_id, filters=[breakdown_filters])
         breakdown = await _breakdown(user_id=user_id, filters=breakdown_filters, group_by=field)
         if not breakdown.data or currency is None:
             return _no_data(period)
@@ -405,9 +402,7 @@ async def _present_single_period(
         )
 
     expense_filters = _with_flow(filters, "expense")
-    currency, limitation = await _currency_or_limitation(user_id=user_id, filters=[expense_filters])
-    if limitation:
-        return limitation
+    currency = await _display_currency(user_id=user_id, filters=[expense_filters])
     breakdown = await _breakdown(user_id=user_id, filters=expense_filters, group_by=field)
     if not breakdown.data or currency is None:
         return _no_data(period)
@@ -452,11 +447,7 @@ async def _present_comparison(
     period = _comparison_period(current_filters, previous_filters)
     current_expense_filters = _with_flow(current_filters, "expense")
     previous_expense_filters = _with_flow(previous_filters, "expense")
-    currency, limitation = await _currency_or_limitation(
-        user_id=user_id, filters=[current_expense_filters, previous_expense_filters]
-    )
-    if limitation:
-        return limitation
+    currency = await _display_currency(user_id=user_id, filters=[current_expense_filters, previous_expense_filters])
     if currency is None:
         return _no_data(period)
 
@@ -487,7 +478,7 @@ async def _present_comparison(
         )
         return ChatResponseV1(
             kind="answer",
-            message=f"Spending changed by {_money(change, currency).display}. {suffix}",
+            message=f"Spending for {period.label} changed by {_money(change, currency).display}. {suffix}",
             visual=comparison_summary_visual,
         )
 
@@ -551,7 +542,7 @@ async def _present_comparison(
         return _unsupported_presentation()
     return ChatResponseV1(
         kind="answer",
-        message=f"Here is {dimension} spending change for the selected periods.",
+        message=f"Here is {dimension} spending change for {period.label}.",
         visual=growth_visual,
     )
 
@@ -574,6 +565,7 @@ async def present_analysis(
     filters: TransactionFilter,
     comparison: ComparisonPeriods | None = None,
     trend_granularity: TrendGranularity = "month",
+    period_scope: PeriodScope = "default_current_year",
 ) -> ToolOutputText:
     """Create the only client-visible factual AI Chat response from typed, user-scoped read queries."""
     if analysis in {"comparison_summary", "category_growth", "tag_growth"}:
@@ -599,6 +591,7 @@ async def present_analysis(
             presentation=presentation,
             filters=filters,
             trend_granularity=trend_granularity,
+            period_scope=period_scope,
         )
     ctx.context.presentation = response
     return ToolOutputText(text=response.model_dump_json())

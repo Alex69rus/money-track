@@ -36,7 +36,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 - Multi-modal input, including images, audio, video, files, or documents.
 - Replacing the existing Analytics screen or its common widgets.
 - Long-lived dialogues, dialogue history, or the ability to switch between past dialogues.
-- Supporting multi-currency analysis until the multi-currency feature defines reliable converted values for analytics.
+- Currency conversion or separate-currency analysis. AI Chat treats transaction amounts as one-currency data.
 
 ## 5) User Experience Requirements
 
@@ -47,13 +47,14 @@ The product needs to combine flexible, natural-language analysis with determinis
 - The chat displays a message timeline with distinct user and assistant messages.
 - The UI shows a pending state while an answer is being prepared and a clear, retryable error when the answer cannot be produced.
 - Users can start a new dialogue from a dedicated button; it clears the current dialogue and begins a fresh one.
-- The assistant asks a concise follow-up question when the user's request is ambiguous rather than silently making an unexpected assumption.
+- The assistant asks a concise follow-up question when the request remains ambiguous after applying documented defaults rather than silently making an unexpected assumption.
 
 ### FR-2: Flexible transaction analysis
 
 - The assistant answers ad hoc analytical questions about the current user's transactions, rather than being limited to predefined wording or a fixed list of reports.
 - It can analyze requested periods, compare periods, identify notable changes, summarize categories or tags, and locate relevant transactions.
-- Answers state the period or interpretation used whenever that information matters to the result.
+- If a single analysis period is not stated, it uses the inclusive current calendar year.
+- Answers state the analysed period or interpretation used whenever that information matters to the result.
 - The assistant must base factual statements, values, and visual data on the user's real transaction data. When the available data cannot support an answer, it says so rather than inventing an answer.
 - If no relevant data exists, the assistant says so clearly.
 - If a request is outside the feature scope, the assistant explains the limitation and, where useful, suggests a supported analytical question.
@@ -114,7 +115,7 @@ This is a product safety requirement. The implementation must enforce it in code
 
 1. An authenticated user can ask flexible analytical questions about their transaction history and receive a useful answer.
 2. The assistant can present transaction analysis as text and, where helpful, as a supported visual form.
-3. The assistant asks for clarification when it cannot reliably infer the intended question or period.
+3. The assistant uses the current calendar year when a single analysis period is omitted, states the analysed period in the result, and asks for clarification only when it cannot reliably infer the intended question or required comparison periods.
 4. Chat operations do not alter transactions, categories, tags, or any other Money Track data.
 5. The backend, not the LLM, determines the authenticated user and scopes every data-access operation to that user.
 6. Automated tests prove that user A cannot access, infer, or change user B's data through normal questions, malformed inputs, guessed identifiers, or prompt-injection attempts.
@@ -133,6 +134,7 @@ This is a product safety requirement. The implementation must enforce it in code
 4. Dialogues are limited to the current AI Chat view and do not survive a new-dialogue action, reload, or screen change.
 5. The feature uses default OpenAI tracing and the product's existing backend logging.
 6. Detailed API contracts, dialogue-passing mechanics, tool design, query design, and database permissions belong to implementation planning, not this PRD.
+7. AI Chat assumes users have one currency. It aggregates matching transaction amounts without conversion or currency-specific analysis.
 
 ## 9) References
 

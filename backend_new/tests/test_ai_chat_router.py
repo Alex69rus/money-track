@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from datetime import UTC, date, datetime
+from types import SimpleNamespace
+from zoneinfo import ZoneInfo
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.di_containers.dependencies import get_chat_agent
 from app.api.routes.ai_chat_router import router as ai_chat_router
-from app.services.ai_chat.chat_agent import ChatAgentUnavailableError
+from app.services.ai_chat.chat_agent import CHAT_AGENT_PROMPT, ChatAgentUnavailableError
+from app.services.ai_chat.common import current_business_date
 from app.services.ai_chat.contracts import ChatHistoryMessage, ChatResponseV1
 from app.services.auth import get_current_user_id
 
@@ -25,6 +30,39 @@ class _RecordingChatAgent:
 class _UnavailableChatAgent:
     async def get_response(self, message: str, history: list[ChatHistoryMessage]) -> ChatResponseV1:
         raise ChatAgentUnavailableError("provider unavailable")
+
+
+def test_chat_agent_prompt_has_unambiguous_period_and_currency_instructions() -> None:
+    instructions = " ".join(CHAT_AGENT_PROMPT.split())
+
+    assert (
+        "For a single-period analysis, if neither the user message nor dialogue provides a period, use the inclusive "
+        "current calendar year (1 January through 31 December of the year in Today) in present_analysis with "
+        "`period_scope` set to `default_current_year`; do not return `ask_period`." in instructions
+    )
+    assert "For an explicit all-time request, set `period_scope` to `all_time`." in instructions
+    assert "Ask `ask_period` only when a user-specified period remains materially ambiguous." in instructions
+    assert (
+        "A comparison needs two non-overlapping periods; use `ask_comparison_periods` only when the user message and "
+        "dialogue do not establish them." in instructions
+    )
+    assert (
+        "Treat all transaction amounts as one currency; never ask for clarification, decline, or split an analysis"
+        in instructions
+    )
+    assert (
+        "because of currencies. Every factual response must state its analysed period through the server-rendered "
+        "presentation." in instructions
+    )
+
+
+def test_current_business_date_uses_the_configured_business_timezone(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.services.ai_chat.common.get_settings",
+        lambda: SimpleNamespace(business_tzinfo=ZoneInfo("Pacific/Kiritimati")),
+    )
+
+    assert current_business_date(now=datetime(2026, 12, 31, 12, 0, tzinfo=UTC)) == date(2027, 1, 1)
 
 
 def _build_test_app() -> FastAPI:

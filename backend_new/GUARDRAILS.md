@@ -132,3 +132,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: sort negative expense aggregates by absolute value before applying a top-N visual cap.
 - Exploration: descending raw sums put `-10` before `-100`; absolute-value SQL ordering preserved the largest displayed expenses and the comparison candidates.
 - Prevention rule: any user-visible expense ranking must test unequal negative magnitudes and assert the largest displayed amount appears first.
+
+### 2026-07-27 - AI Chat Analysis Defaults
+- Takeaway: do not rely on a model prompt alone to apply an omitted analysis period; resolve the same default at the deterministic presentation boundary and preserve explicit all-time intent with a typed scope.
+- Exploration: presentation-tool integration tests proved an undated single-period request uses the inclusive current calendar year, an explicit all-time request retains prior-year records, same-flow amounts aggregate under the single-currency assumption, and results show their derived period.
+- Prevention rule: whenever an AI Chat analysis default changes, update the prompt and add a presentation-tool regression that asserts selected records, explicit period scope, and the server-rendered period label.

@@ -1,12 +1,19 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.core.config import get_settings
+
 TransactionFlow = Literal["expense", "income"]
 PaginationSkip = Annotated[int, Field(ge=0, description="Number of matching rows to skip for pagination")]
 PaginationTake = Annotated[int, Field(ge=1, le=100, description="Number of matching rows to return (1-100)")]
+
+
+def current_business_date(*, now: datetime | None = None) -> date:
+    business_timezone = get_settings().business_tzinfo
+    return (now or datetime.now(business_timezone)).astimezone(business_timezone).date()
 
 
 class TransactionFilter(BaseModel):

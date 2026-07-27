@@ -14,6 +14,7 @@ The following architecture decisions were explicitly approved during planning:
 4. The backend, rather than the model, will render every factual assistant sentence, visual title, total, row, point, percentage, and period label from deterministic query results. The model may select from a typed analysis intent, but its free-form output is never sent to the Mini App.
 5. The backend will provide deterministic period-comparison and category/tag growth calculations, including explicit zero-denominator and no-data handling.
 6. The frontend will use the official shadcn Chart component and its Recharts dependency for the supported chart forms.
+7. AI Chat treats transaction amounts as single-currency data: it aggregates matching amounts without conversion or separate-currency analysis. An omitted single analysis period defaults to the inclusive current calendar year, and every factual response states its analysed period.
 
 The first release remains read-only. The frontend will not compute analytical results from transaction records; the backend query tools remain the only data source for all figures and visual data.
 
@@ -36,7 +37,7 @@ The first release remains read-only. The frontend will not compute analytical re
 | Production-facing chat UX | UI exposes session IDs and API/environment implementation details; one suggestion requests unsupported anomaly detection. | Replace with concise feature guidance and supported suggestions; retain no client identity/session fields. |
 | Factual assistant content | The LLM currently returns a free-text response, so prompt wording alone cannot prevent invented values or claims. | A server-rendered presentation is the only successful response; model prose, titles, numbers, and rows are discarded. |
 | Data grounding for visual values | The LLM currently returns only free text and cannot safely supply chart data. | A dedicated tool queries and serializes every rendered value server-side; the model can select a supported presentation intent but cannot author visual numbers or rows. |
-| Multi-currency non-goal | The chat prompt says to ignore currency, contradicting the PRD. | Reject aggregate/visual analysis that spans multiple currencies; individual transaction lookup may show each recorded currency without conversion. |
+| Single-currency assumption | The former prompt and presentation service rejected aggregate results spanning multiple currencies. | Aggregate matching amounts without conversion or currency splitting, under the approved single-currency assumption. |
 | Comparison and growth analysis | Existing aggregation supports one period only, risking model-performed comparisons. | A deterministic comparison service computes totals, deltas, percentages, and category/tag growth for two typed periods. |
 | Clarification and scope boundaries | Agent instructions do not fully require clarification, unsupported-scope handling, or visual selection. | Map a closed model directive to server-authored clarification/limitation copy; cover it with mocked-agent/router tests. |
 
@@ -77,7 +78,7 @@ type ChatResponseV1 = {
 };
 
 type PeriodV1 = {
-  label: string; // server-derived: an inclusive business-timezone range or “All time”
+  label: string; // server-derived inclusive business-timezone range or “All time”
   fromDate: string | null; // YYYY-MM-DD
   toDate: string | null; // YYYY-MM-DD
 };
@@ -191,17 +192,17 @@ This fails closed: a fake or real model response that contains a fabricated numb
 2. **Refactor deterministic read services**
    - Extract the existing tool query/mapping logic into reusable internal functions that accept `user_id`, typed filters, ordering, and pagination.
    - Retain fixed SQL identifiers, whitelists, and positional parameter bindings; add category-name grouping only through a fixed expression.
-   - Add a single-currency guard for aggregate/visual results, typed no-data result, and a two-period comparison service that calculates deltas and zero-baseline percentage behavior. Keep raw transaction listing read-only and currency-preserving.
+   - Treat aggregate/visual results as single-currency data without conversion or currency splitting, add typed no-data results, and provide a two-period comparison service that calculates deltas and zero-baseline percentage behavior. Keep raw transaction listing read-only and currency-preserving.
 
 3. **Grounded presentation tool and agent context**
    - Extend `ChatAgentContext` with request-local `ChatResponseV1` state, never a database-backed session.
    - Implement `present_analysis` as the sole producer of success responses; it supports only the enumerated summary, transaction table, breakdown, comparison, bar, trend-line, and category-share combinations.
    - Render every message/title/period/row/point from server templates and deterministic results. Enforce the stated output limits and ordering before serializing the response.
-   - Update prompt, SDK input construction, strict no-prose `AgentDirective`, and final response assembly so free-form model output is never delivered.
+   - Update prompt, SDK input construction, strict no-prose `AgentDirective`, and final response assembly so free-form model output is never delivered. Default an unspecified single analysis period to the inclusive current calendar year; require the server-rendered response to state its analysed period.
 
 4. **Backend regression/security tests**
    - Extend unit/router tests for strict request validation, auth-owned identity, response shape, history forwarding, provider failures, malformed history, and an invalid/fabricated model response that must fail closed.
-   - Extend integration tests for every visual shape and data source, period labels, no-data and zero-baseline comparisons, category labels, tag values, multi-currency refusal, and no mutations.
+   - Extend integration tests for every visual shape and data source, current-year defaulting, period labels in single and comparison results, no-data and zero-baseline comparisons, category labels, tag values, single-currency aggregation, and no mutations.
    - Reuse two-user fixtures to prove all visual/table outputs and clarification follow-ups remain scoped to user A despite guessed IDs, explicit requests for user B, prompt injection in messages, history, and stored transaction note/tag text.
    - Retain/extend SQL-prohibition and injection regressions around every SQL-using tool. Assert forbidden statements and malformed inputs cannot modify rows, schema, roles, session state, or disclose database internals.
 
@@ -237,7 +238,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
 | Evidence | What it proves |
 | --- | --- |
 | Backend unit/router tests | Auth determines user; extra/invalid request fields are rejected; bounded history is forwarded as content; 503 remains clear and retryable; no client session/identity is trusted. |
-| Backend AI-tool integration tests using two users | Query, summary, table, bar, line, and category-share outputs contain only the authenticated user’s rows and values; no-data, period, tag/category, and multi-currency behavior are correct. |
+| Backend AI-tool integration tests using two users | Query, summary, table, bar, line, and category-share outputs contain only the authenticated user’s rows and values; current-year defaults, stated periods, tag/category, and single-currency aggregation behavior are correct. |
 | Backend mutation/SQL-safety regression tests | Injection-shaped user/history/note/tag/model values cannot execute prohibited statements, bypass parameterization/scoping, mutate records, or reveal DB details. |
 | Agent behavior tests with a deterministic fake/model fixture | Ambiguous questions map to a concise server clarification; unsupported/write/advice/external-data requests map to a server limitation; a fake fabricated number/title is rejected or discarded, and every delivered fact comes from deterministic presentation output. |
 | Frontend Vitest | Timeline roles, typed API contract, request history, retry without duplication, reset/unmount/reload clearing, error recovery, each visual renderer, accessibility semantics, and text-only fallback all work. |
@@ -273,7 +274,7 @@ For backend integration validation, use the repository’s health-polled `run-e2
 - [x] API contract has a single source of truth, strict validation, and compatibility tests.
 - [x] All delivered factual text, titles, periods, values, and visual rows/points originate solely in a user-scoped deterministic backend presentation service.
 - [x] Dialogue is absent after new dialogue, route change, and reload; no storage/session persistence exists.
-- [x] Read-only, scoping, invalid-model-output, multi-currency, no-data, ambiguity, and unsupported-scope cases have automated evidence.
+- [x] Read-only, scoping, invalid-model-output, current-year defaulting, single-currency aggregation, no-data, ambiguity, and unsupported-scope cases have automated evidence.
 - [x] Frontend checks, affected browser/mobile QA, and backend checks are green; the missing real-device condition is recorded below.
 - [x] Reusable findings are captured in the scoped `GUARDRAILS.md` files after the iteration.
 
