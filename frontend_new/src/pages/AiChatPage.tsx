@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LoaderCircleIcon, RotateCcwIcon, SendIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PlusIcon, RotateCcwIcon, SendIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -12,73 +12,87 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiRequestError } from "@/services/api/client";
-import { getChatFallbackResponse, sendChatMessage } from "@/services/api/chat";
-import { getTelegramWebApp } from "@/services/telegram/webapp";
+import { ChatVisual } from "@/components/ai-chat/ChatVisual";
 import { cn } from "@/lib/utils";
+import { ApiRequestError } from "@/services/api/client";
+import {
+  type ChatHistoryMessage,
+  type ChatVisual as ChatVisualData,
+  sendChatMessage,
+} from "@/services/api/chat";
 
 interface ChatMessage {
+  createdAt: Date;
   id: string;
+  includeInHistory: boolean;
+  pending?: boolean;
   role: "assistant" | "user";
   text: string;
-  createdAt: Date;
-  pending?: boolean;
-  fallback?: boolean;
+  visual?: ChatVisualData | null;
 }
 
-const INITIAL_ASSISTANT_MESSAGE =
-  "Hello! I'm your AI financial assistant. Ask anything about your spending, trends, and transactions.";
+interface FailedRequest {
+  history: ChatHistoryMessage[];
+  message: string;
+  userMessageId: string;
+}
 
-const SUGGESTION_PROMPTS = [
-  "How much did I spend this month?",
-  "What are my top spending categories?",
-  "Show unusual expenses from the last 7 days.",
-];
+const MAX_HISTORY_CHARACTERS = 12_000;
+const MAX_HISTORY_MESSAGES = 12;
 
 function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    return error.message;
+  if (error instanceof ApiRequestError && error.status === 503) {
+    return "AI Chat is temporarily unavailable. Please try again.";
   }
-
+  if (error instanceof ApiRequestError) {
+    return "AI Chat could not answer that request. Please try again.";
+  }
   if (error instanceof Error && error.message) {
     return error.message;
   }
-
-  return "Failed to get AI response.";
+  return "AI Chat could not answer that request. Please try again.";
 }
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-function createSessionId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+function buildInitialMessages(): ChatMessage[] {
+  return [];
+}
+
+function historyFromMessages(messages: ChatMessage[]): ChatHistoryMessage[] {
+  const completedMessages = messages
+    .filter((message) => message.includeInHistory && !message.pending)
+    .map((message) => ({ content: message.text, role: message.role }));
+  const completePairs: ChatHistoryMessage[][] = [];
+
+  for (let index = 0; index < completedMessages.length - 1; index += 2) {
+    const userMessage = completedMessages[index];
+    const assistantMessage = completedMessages[index + 1];
+    if (userMessage?.role === "user" && assistantMessage?.role === "assistant") {
+      completePairs.push([userMessage, assistantMessage]);
+    }
   }
 
-  return `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
+  const boundedHistory: ChatHistoryMessage[] = [];
+  let historyCharacters = 0;
+  for (const pair of completePairs.reverse()) {
+    const pairCharacters = pair.reduce((total, message) => total + message.content.length, 0);
+    if (
+      boundedHistory.length + pair.length > MAX_HISTORY_MESSAGES ||
+      historyCharacters + pairCharacters > MAX_HISTORY_CHARACTERS
+    ) {
+      break;
+    }
+    boundedHistory.unshift(...pair);
+    historyCharacters += pairCharacters;
+  }
 
-function buildInitialMessages(): ChatMessage[] {
-  return [
-    {
-      id: "assistant-welcome",
-      role: "assistant",
-      text: INITIAL_ASSISTANT_MESSAGE,
-      createdAt: new Date(),
-    },
-  ];
-}
-
-function formatMessageTime(date: Date): string {
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return boundedHistory;
 }
 
 export function AiChatPage(): JSX.Element {
@@ -86,14 +100,20 @@ export function AiChatPage(): JSX.Element {
   const [inputValue, setInputValue] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState(() => createSessionId());
-  const [lastFailedPrompt, setLastFailedPrompt] = useState<string | null>(null);
+  const [lastFailedRequest, setLastFailedRequest] = useState<FailedRequest | null>(null);
 
   const messageSequenceRef = useRef(0);
   const pendingRequestRef = useRef<AbortController | null>(null);
+  const shouldScrollTimelineRef = useRef(false);
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef(messages);
 
-  const userId = useMemo(() => getTelegramWebApp()?.initDataUnsafe?.user?.id ?? 1, []);
+  useEffect(() => {
+    messagesRef.current = messages;
+    if (shouldScrollTimelineRef.current) {
+      timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const nextMessageId = useCallback((): string => {
     messageSequenceRef.current += 1;
@@ -105,75 +125,80 @@ export function AiChatPage(): JSX.Element {
     pendingRequestRef.current = null;
     setPending(false);
     setError(null);
-    setLastFailedPrompt(null);
+    setLastFailedRequest(null);
     setInputValue("");
-    setSessionId(createSessionId());
+    shouldScrollTimelineRef.current = false;
     setMessages(buildInitialMessages());
   }, []);
 
   const submitPrompt = useCallback(
-    async (promptInput: string): Promise<void> => {
+    async (
+      promptInput: string,
+      retryHistory?: ChatHistoryMessage[],
+      retryUserMessageId?: string,
+    ): Promise<void> => {
       if (pending) {
         return;
       }
-
       const prompt = promptInput.trim();
       if (!prompt) {
         return;
       }
 
+      const history = retryHistory ?? historyFromMessages(messagesRef.current);
       const requestTimestamp = new Date();
-      const userMessageId = nextMessageId();
+      const isRetry = retryHistory !== undefined;
+      const userMessageId = retryUserMessageId ?? (isRetry ? null : nextMessageId());
       const pendingMessageId = nextMessageId();
 
       setError(null);
-      setLastFailedPrompt(null);
+      setLastFailedRequest(null);
       setInputValue("");
+      shouldScrollTimelineRef.current = true;
       setPending(true);
       setMessages((previous) => [
         ...previous,
+        ...(isRetry
+          ? []
+          : [
+              {
+                createdAt: requestTimestamp,
+                id: userMessageId ?? nextMessageId(),
+                includeInHistory: true,
+                role: "user" as const,
+                text: prompt,
+              },
+            ]),
         {
-          id: userMessageId,
-          role: "user",
-          text: prompt,
           createdAt: requestTimestamp,
-        },
-        {
           id: pendingMessageId,
-          role: "assistant",
-          text: "AI is thinking...",
-          createdAt: requestTimestamp,
+          includeInHistory: false,
           pending: true,
+          role: "assistant",
+          text: "AI is thinking…",
         },
       ]);
 
       const abortController = new AbortController();
       pendingRequestRef.current = abortController;
-
       try {
-        const assistantResponse = await sendChatMessage(
-          {
-            message: prompt,
-            userId,
-            sessionId,
-            timestamp: requestTimestamp.toISOString(),
-          },
-          abortController.signal,
-        );
-
+        const response = await sendChatMessage({ history, message: prompt }, abortController.signal);
         if (abortController.signal.aborted) {
           return;
         }
-
         setMessages((previous) =>
           previous.map((message) =>
             message.id === pendingMessageId
               ? {
                   ...message,
-                  text: assistantResponse,
-                  pending: false,
                   createdAt: new Date(),
+                  includeInHistory: true,
+                  pending: false,
+                  text: response.message,
+                  visual: response.visual,
                 }
+              : message.id === retryUserMessageId
+                ? { ...message, includeInHistory: true }
               : message,
           ),
         );
@@ -181,39 +206,26 @@ export function AiChatPage(): JSX.Element {
         if (isAbortError(requestError)) {
           return;
         }
-
-        const fallbackResponse = getChatFallbackResponse();
-        setLastFailedPrompt(prompt);
-        setError(`${toErrorMessage(requestError)} Showing fallback response.`);
         setMessages((previous) =>
-          previous.map((message) =>
-            message.id === pendingMessageId
-              ? {
-                  ...message,
-                  text: fallbackResponse,
-                  pending: false,
-                  fallback: true,
-                  createdAt: new Date(),
-                }
-              : message,
-          ),
+          previous
+            .filter((message) => message.id !== pendingMessageId)
+            .map((message) =>
+              message.id === userMessageId ? { ...message, includeInHistory: false } : message,
+            ),
         );
-      } finally {
-        if (!abortController.signal.aborted) {
-          setPending(false);
+        if (userMessageId) {
+          setLastFailedRequest({ history, message: prompt, userMessageId });
         }
-
+        setError(toErrorMessage(requestError));
+      } finally {
         if (pendingRequestRef.current === abortController) {
           pendingRequestRef.current = null;
+          setPending(false);
         }
       }
     },
-    [nextMessageId, pending, sessionId, userId],
+    [nextMessageId, pending],
   );
-
-  useEffect(() => {
-    timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -222,89 +234,60 @@ export function AiChatPage(): JSX.Element {
   }, []);
 
   return (
-    <section className="flex h-full flex-col gap-4" data-testid="ai-chat-page">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">AI Chat</h2>
-          <p className="text-sm text-muted-foreground">
-            Ask questions about your finances. Requests are sent to
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">/api/chat</code>
-            through
-            <code className="ml-1 rounded bg-muted px-1 py-0.5 text-xs">VITE_API_BASE_URL</code>.
-          </p>
-        </div>
+    <section className="flex h-full min-h-0 flex-col" data-testid="ai-chat-page">
+      <header className="flex shrink-0 items-center justify-between gap-3 pb-3" data-testid="ai-chat-header">
+        <h2 className="text-base font-semibold tracking-tight">AI Chat</h2>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
-              aria-label="Reset AI chat session"
+              aria-label="Start a new AI chat"
+              className="size-8 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
               data-testid="ai-chat-reset-trigger"
-              size="sm"
+              size="icon-sm"
               type="button"
-              variant="outline"
+              variant="ghost"
             >
-              <RotateCcwIcon data-icon="inline-start" />
-              Reset
+              <PlusIcon aria-hidden className="size-4" />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent data-testid="ai-chat-reset-dialog">
             <AlertDialogHeader>
-              <AlertDialogTitle>Reset chat session</AlertDialogTitle>
-              <AlertDialogDescription>
-                This clears conversation history and starts a new AI chat session.
-              </AlertDialogDescription>
+              <AlertDialogTitle>Start a new chat?</AlertDialogTitle>
+              <AlertDialogDescription>This clears the current AI Chat conversation.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                data-testid="ai-chat-reset-confirm"
-                onClick={() => {
-                  resetChat();
-                }}
-                type="button"
-              >
-                Reset session
+              <AlertDialogAction data-testid="ai-chat-reset-confirm" onClick={resetChat} type="button">
+                Start new chat
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTION_PROMPTS.map((prompt) => (
-          <Button
-            data-testid={`ai-chat-suggestion-${prompt.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-            disabled={pending}
-            key={prompt}
-            onClick={() => {
-              void submitPrompt(prompt);
-            }}
-            size="sm"
-            type="button"
-            variant="secondary"
-          >
-            {prompt}
-          </Button>
-        ))}
-      </div>
+      </header>
 
       {error ? (
-        <Alert data-testid="ai-chat-error" variant="destructive">
+        <Alert className="mb-3 shrink-0" data-testid="ai-chat-error" variant="destructive">
           <AlertTitle>AI response issue</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <span>{error}</span>
-            {lastFailedPrompt ? (
+            {lastFailedRequest ? (
               <div>
                 <Button
                   data-testid="ai-chat-retry-last"
                   disabled={pending}
                   onClick={() => {
-                    void submitPrompt(lastFailedPrompt);
+                    void submitPrompt(
+                      lastFailedRequest.message,
+                      lastFailedRequest.history,
+                      lastFailedRequest.userMessageId,
+                    );
                   }}
                   size="sm"
                   type="button"
                   variant="outline"
                 >
-                  Retry last prompt
+                  <RotateCcwIcon data-icon="inline-start" />
+                  Retry
                 </Button>
               </div>
             ) : null}
@@ -312,96 +295,86 @@ export function AiChatPage(): JSX.Element {
         </Alert>
       ) : null}
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="gap-2">
-          <CardTitle className="text-base">Conversation</CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <span>Session id:</span>
-            <Badge data-testid="ai-chat-session-id" variant="secondary">
-              {sessionId}
-            </Badge>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
-          <div
-            aria-live="polite"
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-lg border bg-muted/20 p-3"
-            data-testid="ai-chat-timeline"
-          >
-            {messages.map((message) => (
-              <article
-                className={cn(
-                  "flex max-w-[92%] flex-col gap-1 rounded-lg border p-3",
-                  message.role === "user"
-                    ? "ml-auto border-primary/40 bg-primary/10 text-right"
-                    : "mr-auto border-border bg-card text-left",
-                )}
-                data-message-id={message.id}
-                data-role={message.role}
-                data-testid={`ai-chat-message-${message.role}`}
-                key={message.id}
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {message.role === "user" ? "You" : "Assistant"}
+      <div className="min-h-0 flex-1">
+        <div
+          aria-live="polite"
+          className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain py-2 pr-1"
+          data-focus-scroll-container
+          data-testid="ai-chat-timeline"
+        >
+          {messages.map((message) => (
+            <article
+              aria-label={
+                message.pending
+                  ? "AI Chat is preparing a response"
+                  : message.role === "user"
+                    ? "Your message"
+                    : "AI Chat response"
+              }
+              className={cn(
+                "flex max-w-[88%] flex-col gap-2 rounded-2xl px-3 py-2.5 text-sm",
+                message.role === "user"
+                  ? "ml-auto rounded-br-md bg-primary text-primary-foreground"
+                  : "mr-auto max-w-full rounded-none px-1 py-2 text-foreground",
+              )}
+              data-message-id={message.id}
+              data-role={message.role}
+              data-testid={`ai-chat-message-${message.role}`}
+              key={message.id}
+            >
+              {message.pending ? (
+                <p className="flex items-center gap-2" data-testid="ai-chat-pending">
+                  <Spinner />
+                  {message.text}
                 </p>
-                {message.pending ? (
-                  <p className="flex items-center gap-2 text-sm" data-testid="ai-chat-pending">
-                    <LoaderCircleIcon className="animate-spin" />
-                    {message.text}
-                  </p>
-                ) : (
-                  <p
-                    className="whitespace-pre-wrap text-sm"
-                    data-testid={message.fallback ? "ai-chat-fallback" : undefined}
-                  >
-                    {message.text}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">{formatMessageTime(message.createdAt)}</p>
-              </article>
-            ))}
-            <div ref={timelineEndRef} />
-          </div>
+              ) : (
+                <>
+                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  {message.visual ? <ChatVisual visual={message.visual} /> : null}
+                </>
+              )}
+            </article>
+          ))}
+          <div ref={timelineEndRef} />
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="ai-chat-input">
-              Message
-            </label>
-            <Textarea
-              aria-label="Chat message input"
-              className="min-h-24"
-              data-testid="ai-chat-input"
-              id="ai-chat-input"
-              onChange={(event) => {
-                setInputValue(event.target.value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  void submitPrompt(inputValue);
-                }
-              }}
-              placeholder="Ask about spending, trends, or suspicious transactions..."
-              value={inputValue}
-            />
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">Enter to send, Shift+Enter for new line.</p>
-              <Button
-                aria-label="Send chat message"
-                data-testid="ai-chat-send"
-                disabled={pending || inputValue.trim().length === 0}
-                onClick={() => {
-                  void submitPrompt(inputValue);
-                }}
-                type="button"
-              >
-                <SendIcon data-icon="inline-start" />
-                Send
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="shrink-0 pt-3" data-testid="ai-chat-composer">
+        <div className="flex items-end gap-2 rounded-2xl border border-input bg-card p-2 shadow-xs">
+          <Textarea
+            aria-label="Chat message input"
+            className="min-h-10 max-h-28 resize-none border-0 bg-transparent px-2 py-2 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+            data-skip-focus-position="true"
+            data-testid="ai-chat-input"
+            disabled={pending}
+            id="ai-chat-input"
+            onChange={(event) => {
+              setInputValue(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void submitPrompt(inputValue);
+              }
+            }}
+            placeholder="Ask about your money…"
+            value={inputValue}
+          />
+          <Button
+            aria-label="Send chat message"
+            className="size-9 rounded-full"
+            data-testid="ai-chat-send"
+            disabled={pending || inputValue.trim().length === 0}
+            onClick={() => {
+              void submitPrompt(inputValue);
+            }}
+            size="icon"
+            type="button"
+          >
+            <SendIcon aria-hidden className="size-4" />
+          </Button>
+        </div>
+      </div>
     </section>
   );
 }

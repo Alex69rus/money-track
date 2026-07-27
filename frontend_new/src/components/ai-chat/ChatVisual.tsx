@@ -1,0 +1,272 @@
+import { type ReactNode } from "react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type {
+  ChatBarVisual,
+  ChatCategoryShareVisual,
+  ChatLineVisual,
+  ChatMoney,
+  ChatSummaryVisual,
+  ChatVisual,
+} from "@/services/api/chat";
+
+const BAR_CHART_CONFIG = {
+  value: { label: "Amount", color: "var(--chart-1)" },
+} satisfies ChartConfig;
+
+const LINE_CHART_CONFIG = {
+  spending: { label: "Spending", color: "var(--chart-1)" },
+  income: { label: "Income", color: "var(--chart-2)" },
+} satisfies ChartConfig;
+
+const SHARE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+
+function toChartValue(amount: string): number {
+  const value = Number(amount);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function VisualCard({ children, period, title }: { children: ReactNode; period: string; title: string }): JSX.Element {
+  return (
+    <Card className="gap-0 overflow-hidden py-0" data-testid="ai-chat-visual">
+      <CardHeader className="gap-1 border-b py-4">
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription>{period}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-4">{children}</CardContent>
+    </Card>
+  );
+}
+
+function ChartFacts({ facts }: { facts: string[] }): JSX.Element {
+  return (
+    <ul className="sr-only">
+      {facts.map((fact) => (
+        <li key={fact}>{fact}</li>
+      ))}
+    </ul>
+  );
+}
+
+function SummaryVisual({ visual }: { visual: ChatSummaryVisual }): JSX.Element {
+  return (
+    <VisualCard period={visual.period.label} title={visual.title}>
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="ai-chat-visual-summary">
+        {visual.metrics.map((metric) => {
+          const value = metric.money?.display ?? metric.percentage?.display ?? metric.count?.toString() ?? "Not available";
+          return (
+            <div className="rounded-lg bg-muted/60 p-3" key={metric.key}>
+              <dt className="text-xs font-medium text-muted-foreground">{metric.label}</dt>
+              <dd className="mt-1 text-base font-semibold">{value}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    </VisualCard>
+  );
+}
+
+function MoneyCell({ money }: { money: ChatMoney }): JSX.Element {
+  return <>{money.display}</>;
+}
+
+function TableVisual({ visual }: { visual: Extract<ChatVisual, { kind: "table" }> }): JSX.Element {
+  const transactionRows = visual.tableKind === "transactions" ? visual.rows : [];
+  const breakdownRows = visual.tableKind === "breakdown" ? visual.rows : [];
+  const comparisonRows = visual.tableKind === "comparison" ? visual.rows : [];
+
+  return (
+    <VisualCard period={visual.period.label} title={visual.title}>
+      <Table data-testid={`ai-chat-visual-table-${visual.tableKind}`}>
+        <TableCaption className="sr-only">{visual.title}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            {visual.tableKind === "transactions" ? (
+              <>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead>Amount</TableHead>
+              </>
+            ) : null}
+            {visual.tableKind === "breakdown" ? (
+              <>
+                <TableHead>Label</TableHead>
+                <TableHead>Amount</TableHead>
+              </>
+            ) : null}
+            {visual.tableKind === "comparison" ? (
+              <>
+                <TableHead>Label</TableHead>
+                <TableHead>Current</TableHead>
+                <TableHead>Previous</TableHead>
+                <TableHead>Change</TableHead>
+              </>
+            ) : null}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactionRows.map((row) => (
+            <TableRow key={row.id}>
+              <TableCell>{row.dateTime}</TableCell>
+              <TableCell>{row.category ?? "Uncategorized"}</TableCell>
+              <TableCell>{row.note ?? (row.tags.join(", ") || "—")}</TableCell>
+              <TableCell><MoneyCell money={row.amount} /></TableCell>
+            </TableRow>
+          ))}
+          {breakdownRows.map((row) => (
+            <TableRow key={row.label}>
+              <TableCell>{row.label}</TableCell>
+              <TableCell><MoneyCell money={row.value} /></TableCell>
+            </TableRow>
+          ))}
+          {comparisonRows.map((row) => (
+            <TableRow key={row.label}>
+              <TableCell>{row.label}</TableCell>
+              <TableCell><MoneyCell money={row.current} /></TableCell>
+              <TableCell><MoneyCell money={row.previous} /></TableCell>
+              <TableCell><MoneyCell money={row.change} /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </VisualCard>
+  );
+}
+
+function BarVisual({ visual }: { visual: ChatBarVisual }): JSX.Element {
+  const chartData = visual.items.map((item) => ({ label: item.label, value: toChartValue(item.value.amount) }));
+  const displayByValue = new Map(chartData.map((item, index) => [item.value, visual.items[index]!.value.display]));
+  return (
+    <VisualCard period={visual.period.label} title={visual.title}>
+      <ChartContainer className="min-h-56 w-full" config={BAR_CHART_CONFIG} data-testid="ai-chat-visual-bar">
+        <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis axisLine={false} dataKey="label" tickLine={false} tickMargin={8} />
+          <YAxis axisLine={false} tickLine={false} width={36} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value) =>
+                  typeof value === "number" ? displayByValue.get(value) ?? "Not available" : "Not available"
+                }
+              />
+            }
+          />
+          <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+        </BarChart>
+      </ChartContainer>
+      <ChartFacts facts={visual.items.map((item) => `${item.label}: ${item.value.display}`)} />
+    </VisualCard>
+  );
+}
+
+function LineVisual({ visual }: { visual: ChatLineVisual }): JSX.Element {
+  const chartData = visual.points.map((point) => ({
+    income: toChartValue(point.income.amount),
+    label: point.label,
+    spending: toChartValue(point.spending.amount),
+  }));
+  const displayBySeriesAndValue = new Map<string, string>();
+  visual.points.forEach((point, index) => {
+    const data = chartData[index]!;
+    displayBySeriesAndValue.set(`spending:${data.spending}`, point.spending.display);
+    displayBySeriesAndValue.set(`income:${data.income}`, point.income.display);
+    displayBySeriesAndValue.set(`Spending:${data.spending}`, point.spending.display);
+    displayBySeriesAndValue.set(`Income:${data.income}`, point.income.display);
+  });
+  return (
+    <VisualCard period={visual.period.label} title={visual.title}>
+      <ChartContainer className="min-h-56 w-full" config={LINE_CHART_CONFIG} data-testid="ai-chat-visual-line">
+        <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis axisLine={false} dataKey="label" tickLine={false} tickMargin={8} />
+          <YAxis axisLine={false} tickLine={false} width={36} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, name) =>
+                  typeof value === "number" && (typeof name === "string" || typeof name === "number")
+                    ? displayBySeriesAndValue.get(`${name}:${value}`) ?? "Not available"
+                    : "Not available"
+                }
+              />
+            }
+          />
+          <Line dataKey="spending" dot={false} stroke="var(--color-spending)" strokeWidth={2} type="monotone" />
+          <Line dataKey="income" dot={false} stroke="var(--color-income)" strokeWidth={2} type="monotone" />
+        </LineChart>
+      </ChartContainer>
+      <ChartFacts
+        facts={visual.points.map((point) => `${point.label}: ${point.spending.display} spending, ${point.income.display} income`)}
+      />
+    </VisualCard>
+  );
+}
+
+function CategoryShareVisual({ visual }: { visual: ChatCategoryShareVisual }): JSX.Element {
+  const chartData = visual.items.map((item, index) => ({
+    fill: SHARE_COLORS[index % SHARE_COLORS.length],
+    label: item.label,
+    value: toChartValue(item.value.amount),
+  }));
+  const displayByValue = new Map(chartData.map((item, index) => [item.value, visual.items[index]!.value.display]));
+  return (
+    <VisualCard period={visual.period.label} title={visual.title}>
+      <ChartContainer className="min-h-56 w-full" config={BAR_CHART_CONFIG} data-testid="ai-chat-visual-category-share">
+        <PieChart>
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value) =>
+                  typeof value === "number" ? displayByValue.get(value) ?? "Not available" : "Not available"
+                }
+                nameKey="label"
+              />
+            }
+          />
+          <Pie data={chartData} dataKey="value" nameKey="label" />
+        </PieChart>
+      </ChartContainer>
+      <ul className="flex flex-col gap-1 text-sm" aria-label={`${visual.dimension} share values`}>
+        {visual.items.map((item) => (
+          <li className="flex justify-between gap-3" key={item.label}>
+            <span>{item.label}</span>
+            <span className="text-muted-foreground">{item.share.display} · {item.value.display}</span>
+          </li>
+        ))}
+      </ul>
+    </VisualCard>
+  );
+}
+
+export function ChatVisual({ visual }: { visual: ChatVisual }): JSX.Element {
+  if (visual.kind === "summary") {
+    return <SummaryVisual visual={visual} />;
+  }
+  if (visual.kind === "table") {
+    return <TableVisual visual={visual} />;
+  }
+  if (visual.kind === "bar") {
+    return <BarVisual visual={visual} />;
+  }
+  if (visual.kind === "line") {
+    return <LineVisual visual={visual} />;
+  }
+  return <CategoryShareVisual visual={visual} />;
+}

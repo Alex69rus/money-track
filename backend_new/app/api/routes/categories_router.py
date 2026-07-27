@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.db.queries import fetch_categories
 from app.schemas.responses import CategoryResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
 @router.get("")

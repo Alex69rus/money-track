@@ -3,16 +3,25 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import socket
+import subprocess
+import sys
+import tempfile
+import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 import pytest
 
 from tests.fixtures import DbHelper
+
+_LOCAL_API_HOST = "127.0.0.1"
+_LOCAL_API_STARTUP_TIMEOUT_SECONDS = 30
 
 
 def _read_database_url_from_env_file() -> str | None:
@@ -27,6 +36,56 @@ def _read_database_url_from_env_file() -> str | None:
         if line.startswith("DATABASE_URL="):
             return line.split("=", 1)[1].strip()
     return None
+
+
+def _find_available_local_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.bind((_LOCAL_API_HOST, 0))
+        return int(server_socket.getsockname()[1])
+
+
+def _read_process_logs(log_file: IO[str]) -> str:
+    log_file.seek(0)
+    return log_file.read().strip()
+
+
+def _wait_for_local_api(
+    process: subprocess.Popen[str],
+    *,
+    url: str,
+    log_file: IO[str],
+) -> None:
+    deadline = time.monotonic() + _LOCAL_API_STARTUP_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(
+                f"Local test API exited before becoming ready (exit code {process.returncode}).\n"
+                f"{_read_process_logs(log_file)}"
+            )
+        try:
+            response = httpx.get(f"{url}/health", timeout=1)
+            if response.status_code == 200 and response.text == "OK":
+                return
+        except httpx.HTTPError:
+            pass
+        time.sleep(0.25)
+
+    raise RuntimeError(
+        f"Local test API did not become ready within {_LOCAL_API_STARTUP_TIMEOUT_SECONDS} seconds.\n"
+        f"{_read_process_logs(log_file)}"
+    )
+
+
+def _stop_local_api(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
 
 
 def _normalize_localhost_to_ipv4(dsn: str) -> str:
@@ -76,8 +135,49 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture(scope="session")
-def base_url() -> str:
-    return os.getenv("BASE_URL", "http://localhost:8000")
+def base_url(
+    test_database_url: str,
+    db_cleanup_session: None,
+) -> Iterator[str]:
+    configured_url = os.getenv("BASE_URL")
+    if configured_url:
+        yield configured_url
+        return
+
+    port = _find_available_local_port()
+    url = f"http://{_LOCAL_API_HOST}:{port}"
+    backend_root = Path(__file__).resolve().parents[2]
+    environment = os.environ | {
+        "ENVIRONMENT": "Development",
+        "DATABASE_URL": test_database_url,
+        "TELEGRAM_BOT_TOKEN": "test-token",
+        "TELEGRAM_WEBHOOK_URL": "",
+        "TELEGRAM_WEBHOOK_SECRET": "",
+    }
+
+    with tempfile.TemporaryFile(mode="w+") as log_file:
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "app.main:app",
+                "--host",
+                _LOCAL_API_HOST,
+                "--port",
+                str(port),
+            ],
+            cwd=backend_root,
+            env=environment,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        try:
+            _wait_for_local_api(process, url=url, log_file=log_file)
+            yield url
+        finally:
+            _stop_local_api(process)
 
 
 @pytest.fixture(scope="session")

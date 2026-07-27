@@ -97,3 +97,43 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: shared category colors and Material Symbol names belong in the database catalog, not in per-client mappings.
 - Exploration: an idempotent migration updated all 50 seeded categories by stable `(name, type)` and the category API exposed the values unchanged.
 - Prevention rule: add every predefined category's icon and validated `#RRGGBB` color to the catalog migration and cover the API response in integration tests.
+
+### 2026-07-25 - Zed FastAPI launcher
+- Takeaway: this FastAPI service must launch the `uvicorn` module from `backend_new`; a Django-style `main.py runserver` profile cannot start it.
+- Exploration: `python -m uvicorn app.main:app` returned `OK` from `/health`; the inherited `uvicorn` console script was ruled out because its interpreter path is stale after a moved checkout.
+- Prevention rule: configure Zed Debugpy with `module: "uvicorn"` and `cwd: "$ZED_WORKTREE_ROOT/backend_new"`; recreate `.venv` before relying on console-script executables.
+
+### 2026-07-25 - AI Chat Transaction Pagination
+- Takeaway: pair a paginated data query with a matching database-side count query and deterministic ordering.
+- Exploration: the focused AI-chat tool suite passed after applying the same predicates to `COUNT(*)` and adding `OFFSET` / `LIMIT` before execution.
+- Prevention rule: every new raw paginated transaction query must return its requested page, unpaged total, and `has_more` from one shared predicate fragment.
+
+### 2026-07-26 - Array Tag Filtering
+- Takeaway: a PostgreSQL `SELECT` alias is not available to a `WHERE` predicate in the same query level.
+- Exploration: case-insensitive tag filtering failed with `column "tag" does not exist`; default retrieval and pagination ruled out array storage and ordering defects.
+- Prevention rule: expand tag arrays with `CROSS JOIN LATERAL UNNEST(...) AS alias(tag)` and reference `alias.tag` for all filter predicates.
+
+### 2026-07-26 - AI Chat Aggregate Parameter Order
+- Takeaway: raw-query argument order follows placeholder position in the complete SQL string, not query-construction order.
+- Exploration: business-timezone grouping placed its placeholder before the nested user-scope predicate, so a user ID was bound where PostgreSQL expected a timezone string.
+- Prevention rule: build raw SQL parameter lists in textual placeholder order and keep a local-time boundary integration test for every date-grouping query.
+
+### 2026-07-26 - AI Chat Structured Tool Output
+- Takeaway: ordinary Pydantic models and lists are stringified before the Agents SDK returns them to the model.
+- Exploration: aggregate output reached the model as `TransactionAggregationResult(... Decimal(...))`; `ToolOutputText` preserved model-generated JSON as text instead.
+- Prevention rule: return `ToolOutputText(text=<validated JSON>)` from every AI Chat tool and assert the model-facing text parses as JSON in its integration test.
+
+### 2026-07-26 - AI Chat Factual Response Boundary
+- Takeaway: keep every client-visible fact in a deterministic presentation response, not in model output.
+- Exploration: a strict directive rejected a model-authored fact field, while the scoped presentation integration suite covered summary, table, chart, share, and comparison output.
+- Prevention rule: add a presentation-tool regression for every new AI Chat analysis and reject any directive schema field that could carry prose, titles, values, or rows.
+
+### 2026-07-26 - AI Chat Negative-Expense Ranking
+- Takeaway: sort negative expense aggregates by absolute value before applying a top-N visual cap.
+- Exploration: descending raw sums put `-10` before `-100`; absolute-value SQL ordering preserved the largest displayed expenses and the comparison candidates.
+- Prevention rule: any user-visible expense ranking must test unequal negative magnitudes and assert the largest displayed amount appears first.
+
+### 2026-07-27 - AI Chat Analysis Defaults
+- Takeaway: do not rely on a model prompt alone to apply an omitted analysis period; resolve the same default at the deterministic presentation boundary and preserve explicit all-time intent with a typed scope.
+- Exploration: presentation-tool integration tests proved an undated single-period request uses the inclusive current calendar year, an explicit all-time request retains prior-year records, same-flow amounts aggregate under the single-currency assumption, and results show their derived period.
+- Prevention rule: whenever an AI Chat analysis default changes, update the prompt and add a presentation-tool regression that asserts selected records, explicit period scope, and the server-rendered period label.

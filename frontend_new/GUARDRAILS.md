@@ -15,6 +15,24 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Reserve the shared top host-controls clearance on every primary and fixed nested page; do not add one-off per-page offsets.
 - Treat browser emulation as supporting evidence only. State the missing real-device condition when it cannot be run.
 
+## AI Chat timeline — 2026-07-26
+
+- Takeaway: do not auto-scroll the initial welcome timeline on a short Telegram viewport.
+- Exploration: the initial `scrollIntoView` shifted iPhone SE AI Chat into the 96 px host-control clearance; larger phone profiles did not reproduce it.
+- Prevention rule: trigger timeline auto-scroll only after a user sends or retries a prompt, then run the full mobile matrix and inspect the iPhone SE AI Chat capture.
+
+## AI Chat completed-history pairing — 2026-07-26
+
+- Takeaway: submit only capped, complete user/assistant pairs; a failed visible user turn is retryable, not completed history.
+- Exploration: a failed turn made the next history end with `user`, while a retried turn needed its original user bubble restored after success.
+- Prevention rule: cover failed-then-new, failed-then-retry-then-follow-up, and more-than-six-turn requests in the AI Chat page test.
+
+## AI Chat fixed-shell composition — 2026-07-26
+
+- Takeaway: make `/chat` an `overflow-hidden` flex surface and give only its timeline `min-h-0 overflow-y-auto`; keep header and composer as shrink-proof siblings.
+- Exploration: AppShell page scrolling moved the chat controls with long content, while a focused composer needs `data-skip-focus-position="true"` so the keyboard-resized flex layout retains ownership.
+- Prevention rule: after chat-layout changes, assert fixed header/composer rectangles and outer/inner scroll ownership in Phase 4, then run the complete dark/light mobile matrix with a long mocked response.
+
 ## UI and data
 
 - Preserve existing callbacks and `data-testid` hooks through visual refactors, then verify the real interaction contract.

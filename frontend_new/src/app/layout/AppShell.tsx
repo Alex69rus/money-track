@@ -34,6 +34,7 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
   const isPrimaryDestination = ["/", "/transactions", "/analytics", "/chat", "/settings"].includes(
     location.pathname,
   );
+  const usesDedicatedScrollSurface = location.pathname === "/chat";
   const shouldShowNavigation = !isKeyboardOpen && (!isTelegramHost || isPrimaryDestination);
 
   useFocusedInputPosition(mainRef);
@@ -63,7 +64,8 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
       <main
         ref={mainRef}
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto px-4",
+          "flex min-h-0 flex-1 flex-col px-4",
+          usesDedicatedScrollSurface && !fallbackMode.active ? "overflow-hidden" : "overflow-y-auto",
           isTelegramHost
             ? shouldShowNavigation
               ? "mt-scroll-primary pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]"

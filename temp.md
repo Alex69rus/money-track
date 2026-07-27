@@ -4,6 +4,9 @@
 
 ## Feature requests:
 
+### 0. User time zone support
+We need to fetch user time zone automatically from the browser or telegram on-fly. All transactions should be stored in UTC and displayed to the user in his time zone (based on browser info or telegram info)
+
 ### 1. Multi-currency support. 
 Support all transactions in different currencies and provide automatic conversion at the trx update point based on current exchange rates. User selects single currency for analytics and all conversions are done to that currency for reporting purposes.
 + settings page with ability to select that currenct and sync exchange rates automatically by clicking button. and ability to see the current excange rate that will be applied to the transactions.
@@ -19,3 +22,12 @@ Sending bot messages also should be supported per wallet, so I can have my walle
 ### 4. How can user represent refunds in our app
 We need to come up with UX for representing refunds in our app. 
 For example, if user has a transaction with amount 100 and then he got a refund of 20, how can he represent it in our app? Should we have a separate transaction type for refunds or should we have a way to link refund to the original transaction or should we provide convinient way to edit existing transaction?
+
+
+
+To adjust AI Chat tools:
+- extract pagination fields from filter object to the tool params level
+- having filter parameter for aggregate_tool
+- pagination for aggregate_tool
+- add sort fields: `sort_by: Literal["transaction_date_time", "amount"]` and `sort_order_ask: bool`
+- refactor tools tests (and most probably integration tests) to reuse infrastructure methods for preparing data **if possible**

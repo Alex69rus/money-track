@@ -97,3 +97,68 @@ Running the full mobile QA matrix → the terminal capture ended after six profi
 ## 2026-07-20 19:47 — GPT-5.6-Terra
 
 Following the frontend guide's QA reference → it names `docs/qa-acceptance-checklist.md`, but the checklist lives at `frontend_new/docs/qa-acceptance-checklist.md`. Update the scoped guide to its actual path.
+
+## 2026-07-26 22:57 — GPT-5.6
+
+Applying the AI Chat composition patch → a broad patch context assumed adjacent alert-dialog imports and did not match the component's full import block. Use smaller exact contexts for independently formatted import groups.
+
+## 2026-07-25 00:00 — GPT-5
+
+Looking up current Zed debugger documentation → assumed the web result used a structured `content` array, but this connector returns a text value. Serialize connector responses first when their result shape is unknown.
+
+## 2026-07-25 00:00 — GPT-5
+
+Starting the backend with `uv run uvicorn` → the inherited `.venv/bin/uvicorn` script has a stale interpreter path from a moved checkout, although `python -m uvicorn` imports and runs correctly. Use module invocation while the virtual environment is recreated.
+
+## 2026-07-25 00:00 — GPT-5
+
+Checking the local Docker stack → sandboxed `docker compose ps` could not access the Docker daemon socket. Run the check with approved elevated local-process permission when container status is required.
+
+## 2026-07-25 00:00 — GPT-5
+
+Running the repository-wide formatter gate → `ruff format --check .` stopped on the unrelated pre-existing `app/services/ai_chat/aggregate_tool.py`. Keep the task scope narrow and run changed-file formatting while separately reporting the repository baseline mismatch.
+
+## 2026-07-26 15:15 — GPT-5
+
+Capturing an AI Chat bug batch → a combined `apply_patch` rejected a task-register context because the Markdown separator had the wrong column count. Re-read table delimiters before patching task registers.
+
+## 2026-07-26 15:25 — GPT-5
+
+Running the full backend suite in the sandbox → `uv` panicked while accessing macOS dynamic configuration before startup. Classify this as `sandbox/permission` and rerun the same health-checked orchestration with approved local-process access.
+
+## 2026-07-26 15:30 — GPT-5
+
+Diagnosing stale PostgreSQL fixtures with an inline shell snippet → the shell expanded `$1` query placeholders and asyncpg rejected string timestamp values. Use a literal heredoc and typed `datetime` query parameters for read-only database diagnostics.
+
+## 2026-07-26 16:00 — GPT-5
+
+Reloading the E2E-validation skill from `backend_new` → used the root-relative `.agents` path and the read failed. Resolve repository-owned skills with `../.agents/...` when the working directory is `backend_new`.
+## 2026-07-26  — GPT-5
+
+Reviewing the AI Chat frontend guide references → `frontend_new/AGENTS.MD` points to `frontend_new/docs/api-evolution-plan.md`, but that file is absent. Update the guide or restore the contract reference so API work has an authoritative local source.
+
+## 2026-07-26  — GPT-5
+
+Adding shadcn Chart/Field primitives → the CLI treated both `@/` and `src/` aliases as literal import/write paths, creating an `@/` directory and `src/...` imports. Keep `components.json` source-relative for generation, delete only generated misplaced files, and patch generated imports to the project’s `@/` alias before use.
+
+## 2026-07-26  — GPT-5
+
+Linting the generated shadcn Chart component → the upstream Recharts wrapper uses callback `any` values that violate this repository’s strict ESLint rules. Keep a narrowly scoped rule disable at the generated component boundary rather than relaxing project lint or leaking unsafe values into app code.
+
+## 2026-07-26  — GPT-5
+
+Building the frontend after adding Recharts → Vite reports a minified chunk above 500 kB. Evaluate route-level lazy loading for chart code if bundle size becomes a measured mobile performance problem; do not change chunking speculatively in this feature slice.
+
+## 2026-07-26  — GPT-5
+
+Starting root Phase 4 browser QA in the sandbox → `uv` panicked in macOS `system-configuration` while creating the backend runtime. Re-run the same repository-owned QA command with elevated local-service access; classify this as sandbox/environment until an assertion runs.
+## 2026-07-26 22:22 — Codex
+
+Running a frontend command from `frontend_new/` with a repository-prefixed test path → `sed` could not find the file. Use paths relative to the command worktree when checking a scoped file.
+## 2026-07-26 22:43 — Codex
+
+Adding an AI Chat integration fixture in the same shared test-user/date range as API-parity analytics → the full backend suite saw the fixture's rows. Namespace alone does not isolate unfiltered date-range tests; use a disjoint future date window for cross-suite seed data.
+
+## 2026-07-27 08:15 — Codex
+
+Linting a new exact-prompt assertion → an unwrapped literal exceeded Ruff's 120-character limit. Split long assertion text into adjacent literals before running the focused lint check.

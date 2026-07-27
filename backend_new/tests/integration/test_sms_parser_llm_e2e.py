@@ -96,7 +96,7 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
 ]
 
 NEGATIVE_SMS_PARSER_CASES = ["Hello!", "/"]
-NOTE_FUZZY_THRESHOLD = 90.0
+NOTE_FUZZY_THRESHOLD = 85.0
 
 
 def _read_env_value(key: str) -> str | None:

@@ -229,6 +229,19 @@ async function installApiFixtures(page) {
   await page.route(/\/api\/transactions\/by-months(?:\?.*)?$/, async (route) => {
     await route.fulfill({ contentType: "application/json", status: 200, body: JSON.stringify(monthlyBreakdownResponse) });
   });
+  await page.route(/\/api\/chat$/, async (route) => {
+    const payload = JSON.parse(route.request().postData() ?? "{}") ?? {};
+    await route.fulfill({
+      contentType: "application/json",
+      status: 200,
+      body: JSON.stringify({
+        version: "v1",
+        kind: "answer",
+        message: `Mobile QA answer: ${String(payload.message ?? "")}\n${"Supporting detail.\n".repeat(64)}`,
+        visual: null,
+      }),
+    });
+  });
 }
 
 async function launchBrowserWithFallback() {
@@ -446,6 +459,73 @@ async function assertScrollable(page, selector, label, required = true) {
   return canScroll;
 }
 
+async function assertAiChatFixedComposition(page, label) {
+  const result = await page.evaluate(() => {
+    const main = document.querySelector('[data-testid="app-shell-main"]');
+    const header = document.querySelector('[data-testid="ai-chat-header"]');
+    const composer = document.querySelector('[data-testid="ai-chat-composer"]');
+    const input = document.querySelector('[data-testid="ai-chat-input"]');
+    const navigation = document.querySelector('[data-testid="app-shell-nav"]');
+    const reset = document.querySelector('[data-testid="ai-chat-reset-trigger"]');
+    const send = document.querySelector('[data-testid="ai-chat-send"]');
+    const timeline = document.querySelector('[data-testid="ai-chat-timeline"]');
+    if (
+      !(main instanceof HTMLElement) ||
+      !(header instanceof HTMLElement) ||
+      !(composer instanceof HTMLElement) ||
+      !(input instanceof HTMLTextAreaElement) ||
+      !(navigation instanceof HTMLElement) ||
+      !(timeline instanceof HTMLElement)
+    ) {
+      return { controlsPresent: false };
+    }
+
+    main.scrollTop = 0;
+    const headerBefore = header.getBoundingClientRect();
+    const composerBefore = composer.getBoundingClientRect();
+    const navigationRect = navigation.getBoundingClientRect();
+    timeline.scrollTop = timeline.scrollHeight;
+    const headerAfter = header.getBoundingClientRect();
+    const composerAfter = composer.getBoundingClientRect();
+    const bodyText = document.body.innerText;
+
+    return {
+      composerAboveNavigation: composerAfter.bottom <= navigationRect.top + 1,
+      composerStayedFixed: Math.abs(composerBefore.top - composerAfter.top) < 1,
+      controlsPresent: true,
+      headerStayedFixed: Math.abs(headerBefore.top - headerAfter.top) < 1,
+      inputSkipsOuterFocusScroll: input.dataset.skipFocusPosition === "true",
+      mainOverflowY: window.getComputedStyle(main).overflowY,
+      mainScrollTop: main.scrollTop,
+      resetHasNoVisibleText: reset?.textContent?.trim() === "",
+      sendHasNoVisibleText: send?.textContent?.trim() === "",
+      timelineCanScroll: timeline.scrollHeight > timeline.clientHeight && timeline.scrollTop > 0,
+      timelineOverflowY: window.getComputedStyle(timeline).overflowY,
+      unwantedChromeAbsent:
+        !bodyText.includes("Conversation") &&
+        !bodyText.includes("Enter to send, Shift+Enter for a new line.") &&
+        !bodyText.includes("How much did I spend this month?"),
+    };
+  });
+
+  if (
+    !result.controlsPresent ||
+    !result.composerAboveNavigation ||
+    !result.composerStayedFixed ||
+    !result.headerStayedFixed ||
+    !result.inputSkipsOuterFocusScroll ||
+    result.mainOverflowY !== "hidden" ||
+    result.mainScrollTop !== 0 ||
+    !result.resetHasNoVisibleText ||
+    !result.sendHasNoVisibleText ||
+    !result.timelineCanScroll ||
+    result.timelineOverflowY !== "auto" ||
+    !result.unwantedChromeAbsent
+  ) {
+    throw new Error(`${label}: compact fixed-shell chat composition failed: ${JSON.stringify(result)}.`);
+  }
+}
+
 async function runProfile(browser, profile, colorScheme, artifactDirectory, frontendBaseUrl) {
   const context = await browser.newContext({
     deviceScaleFactor: 3,
@@ -603,11 +683,11 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     await assertScrollable(page, '[data-testid="tx-edit-scroll"]', "transaction editor", false);
     await assertWithinViewport(page, '[data-testid="tx-edit-save"]', "transaction editor action");
     await page.locator('#transaction-edit-note').focus();
-    const keyboardViewportHeight = Math.max(420, profile.height - 320);
-    await page.setViewportSize({ width: profile.width, height: keyboardViewportHeight });
+    const editorKeyboardViewportHeight = Math.max(420, profile.height - 320);
+    await page.setViewportSize({ width: profile.width, height: editorKeyboardViewportHeight });
     await page.evaluate((viewportHeight) => {
       window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: window.__qaTelegram.getState().viewportStableHeight });
-    }, keyboardViewportHeight);
+    }, editorKeyboardViewportHeight);
     await page.waitForTimeout(250);
     const focusPosition = await page.locator('#transaction-edit-note').evaluate((element) => {
       const scrollContainer = element.closest('[data-focus-scroll-container]');
@@ -788,6 +868,44 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     await page.waitForSelector('[data-testid="ai-chat-page"]', { timeout: 30000 });
     await assertThemePalette(page, colorScheme);
     await assertBelowTelegramTopInset(page, '[data-testid="ai-chat-page"]', "AI Chat primary page");
+    await page.fill('[data-testid="ai-chat-input"]', "mobile composition proof");
+    await page.click('[data-testid="ai-chat-send"]');
+    await page.getByText("Mobile QA answer: mobile composition proof", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+    await assertAiChatFixedComposition(page, "AI Chat");
+
+    await page.locator('[data-testid="ai-chat-input"]').focus();
+    const chatKeyboardViewportHeight = Math.max(420, profile.height - 320);
+    await page.setViewportSize({ width: profile.width, height: chatKeyboardViewportHeight });
+    await page.evaluate((viewportHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: window.__qaTelegram.getState().viewportStableHeight });
+    }, chatKeyboardViewportHeight);
+    await page.waitForTimeout(250);
+    const keyboardComposition = await page.evaluate(() => {
+      const composer = document.querySelector('[data-testid="ai-chat-composer"]');
+      const input = document.querySelector('[data-testid="ai-chat-input"]');
+      const main = document.querySelector('[data-testid="app-shell-main"]');
+      return {
+        composerBottom: composer?.getBoundingClientRect().bottom ?? null,
+        inputFocused: document.activeElement === input,
+        mainScrollTop: main instanceof HTMLElement ? main.scrollTop : null,
+        navigationVisible: document.querySelector('[data-testid="app-shell-nav"]') !== null,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    if (
+      !keyboardComposition.inputFocused ||
+      keyboardComposition.composerBottom === null ||
+      keyboardComposition.composerBottom > keyboardComposition.viewportHeight + 1 ||
+      keyboardComposition.mainScrollTop !== 0 ||
+      keyboardComposition.navigationVisible
+    ) {
+      throw new Error(`AI Chat keyboard composition failed: ${JSON.stringify(keyboardComposition)}.`);
+    }
+    await page.setViewportSize({ width: profile.width, height: profile.height });
+    await page.evaluate((viewportHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: viewportHeight });
+    }, profile.height);
+    await page.waitForTimeout(100);
     await screenshot(page, profileDirectory, "ai-chat");
 
     return {

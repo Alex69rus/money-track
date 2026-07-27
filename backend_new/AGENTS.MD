@@ -64,6 +64,7 @@ backend_new/
 - Preserve error contract with explicit handlers where needed.
 - When tests add third-party imports, update `pyproject.toml` dependencies in the same change.
 - Use one canonical engine factory shared by runtime and `piccolo_conf.py`.
+- Amend the existing migration for a change that remains in the same unreleased work; do not add several migrations for one release slice.
 
 ## Iteration Workflow
 

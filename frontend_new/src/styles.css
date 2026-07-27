@@ -36,6 +36,11 @@
   --mt-color-border: #d7e0ea;
   --mt-color-input: #e7edf5;
   --mt-color-ring: #57a7ff;
+  --chart-1: #137fec;
+  --chart-2: #0f9f7f;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
   --mt-safe-area-inset-bottom: var(
     --tg-content-safe-area-inset-bottom,
     var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
@@ -60,6 +65,11 @@
   --mt-color-border: #20344f;
   --mt-color-input: #35435a;
   --mt-color-ring: #57a7ff;
+  --chart-1: #57a7ff;
+  --chart-2: #3dd6ad;
+  --chart-3: #a78bfa;
+  --chart-4: #fbbf24;
+  --chart-5: #fb7185;
 }
 
 :root[data-mt-theme="light"] [class~="text-slate-50"],
