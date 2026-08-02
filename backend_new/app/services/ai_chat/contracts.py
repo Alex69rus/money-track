@@ -77,7 +77,7 @@ class BarVisualV1(BaseModel):
     kind: Literal["bar"]
     title: str = Field(min_length=1, max_length=120)
     period: PeriodV1
-    items: list[BarVisualItemV1] = Field(min_length=1, max_length=10)
+    items: list[BarVisualItemV1] = Field(min_length=1)
 
 
 class LinePointV1(BaseModel):
@@ -94,7 +94,7 @@ class LineVisualV1(BaseModel):
     kind: Literal["line"]
     title: str = Field(min_length=1, max_length=120)
     period: PeriodV1
-    points: list[LinePointV1] = Field(min_length=2, max_length=12)
+    points: list[LinePointV1] = Field(min_length=2)
 
 
 class PieChartItemV1(BaseModel):

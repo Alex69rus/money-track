@@ -30,6 +30,17 @@ def _money(amount: str) -> dict[str, str]:
     return {"amount": amount, "currency": "AED", "display": f"AED {amount}"}
 
 
+def _bar_items(count: int) -> list[dict[str, object]]:
+    return [{"label": f"Category {index}", "value": _money(f"{index}.00")} for index in range(1, count + 1)]
+
+
+def _line_points(count: int) -> list[dict[str, object]]:
+    return [
+        {"label": f"Month {index}", "spending": _money(f"-{index}.00"), "income": _money(f"{index}.00")}
+        for index in range(1, count + 1)
+    ]
+
+
 @pytest.mark.parametrize(
     ("tool", "data", "expected_kind"),
     [
@@ -107,6 +118,46 @@ def test_widget_data_models_have_concise_descriptions_without_output_discriminat
     assert set(table_properties) == {"title", "period", "columns", "rows"}
     assert "tableKind" not in table_properties
     assert "dimension" not in PieChartWidgetData.model_json_schema()["properties"]
+    assert "Up to 20" in table_properties["rows"]["description"]
+    assert "maxItems" not in BarChartWidgetData.model_json_schema()["properties"]["items"]
+    assert "maxItems" not in LineChartWidgetData.model_json_schema()["properties"]["points"]
+
+
+@pytest.mark.parametrize(
+    ("tool", "data", "expected_count"),
+    [
+        (
+            prepare_bar_chart_widget,
+            {
+                "title": "Spending by category",
+                "period": {"label": "January 2099"},
+                "items": _bar_items(20),
+            },
+            20,
+        ),
+        (
+            prepare_line_chart_widget,
+            {
+                "title": "Balance growth",
+                "period": {"label": "2025 to 2026"},
+                "points": _line_points(24),
+            },
+            24,
+        ),
+    ],
+)
+def test_widget_tools_accept_extended_chart_data(
+    tool: FunctionTool, data: dict[str, object], expected_count: int
+) -> None:
+    context = ChatAgentContext(user_id=123)
+    asyncio.run(invoke_ai_chat_tool(tool=tool, user_id=123, arguments={"data": data}, context=context))
+
+    assert context.visual is not None
+    if context.visual.kind == "bar":
+        assert len(context.visual.items) == expected_count
+    else:
+        assert context.visual.kind == "line"
+        assert len(context.visual.points) == expected_count
 
 
 def test_pie_widget_calculates_percentages_from_retrieved_amounts() -> None:

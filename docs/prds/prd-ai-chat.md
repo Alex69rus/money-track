@@ -65,6 +65,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 - The assistant may return a visual representation when it makes an answer easier to understand.
 - Supported visual forms include tables, bar charts, line charts, and category-share pie charts. Single values and compact aggregates are stated in the assistant's text response.
 - The Mini App renders visual results in the product’s established visual style and remains usable in Telegram viewport constraints.
+- Line charts remain full-width and do not require horizontal scrolling. When a bar chart has many items, only its chart region scrolls horizontally; the chat page does not.
 - The agent may call one widget-preparation tool after its read-tool calls. The widget tool accepts validated display data only; it cannot filter or retrieve transaction data.
 - Widget tools validate payload shape, numeric values, and display limits. They do not reconcile agent-formatted values against prior read-tool results.
 

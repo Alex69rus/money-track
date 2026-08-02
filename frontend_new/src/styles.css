@@ -49,7 +49,9 @@
     --tg-content-safe-area-inset-top,
     var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px))
   );
+  --mt-page-gutter: 1rem;
   --mt-twa-host-controls-inset-top: max(5rem, var(--mt-safe-area-inset-top));
+  --mt-primary-navigation-height: calc(var(--mt-safe-area-inset-bottom) + 4.275rem);
 }
 
 :root[data-mt-theme="dark"] {
@@ -223,4 +225,20 @@ body {
 .mt-scroll-nested {
   scroll-padding-block: calc(var(--mt-page-top-inset, var(--mt-safe-area-inset-top)) + 1rem)
     calc(var(--mt-safe-area-inset-bottom) + 1rem);
+}
+
+/*
+ * The Telegram stable viewport can end above the visual viewport when native
+ * chrome is present. Reserve only the portion of product navigation that
+ * overlaps that stable viewport, then keep the product's page-gutter visual
+ * breathing room above navigation in both full-screen and normal-host modes.
+ */
+.mt-chat-composer-reserve {
+  padding-bottom: max(
+    var(--mt-page-gutter),
+    calc(
+      var(--mt-page-gutter) + var(--mt-primary-navigation-height) -
+        (100dvh - var(--mt-viewport-stable-height, 100dvh))
+    )
+  );
 }

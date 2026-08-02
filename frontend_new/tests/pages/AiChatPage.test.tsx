@@ -102,19 +102,21 @@ describe("AiChatPage", () => {
     expect((textarea as HTMLTextAreaElement).value).toBe("line one");
   });
 
-  it("keeps the initial chat at the primary-page top, then scrolls after a user prompt", async () => {
-    const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+  it("keeps the initial chat at the primary-page top, then scrolls only its timeline after a user prompt", async () => {
+    const timelineScrollTo = vi.spyOn(HTMLElement.prototype, "scrollTo");
+    const documentScrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
     global.fetch = vi.fn().mockResolvedValue(response("Answered.")) as unknown as typeof fetch;
 
     renderChatPage();
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(timelineScrollTo).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Show spending" } });
     fireEvent.click(screen.getByTestId("ai-chat-send"));
 
     await waitFor(() => {
-      expect(scrollIntoView).toHaveBeenCalled();
+      expect(timelineScrollTo).toHaveBeenCalled();
     });
+    expect(documentScrollIntoView).not.toHaveBeenCalled();
   });
 
   it("retries the same history without inventing or duplicating a user message, then starts a new chat", async () => {

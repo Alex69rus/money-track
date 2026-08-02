@@ -34,6 +34,7 @@ const LINE_CHART_CONFIG = {
 } satisfies ChartConfig;
 
 const SHARE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+const MINIMUM_BAR_WIDTH = 72;
 
 function toChartValue(amount: string): number {
   const value = Number(amount);
@@ -93,23 +94,36 @@ function BarVisual({ visual }: { visual: ChatBarVisual }): JSX.Element {
   const displayByValue = new Map(chartData.map((item, index) => [item.value, visual.items[index]!.value.display]));
   return (
     <VisualCard period={visual.period.label} title={visual.title}>
-      <ChartContainer className="min-h-56 w-full" config={BAR_CHART_CONFIG} data-testid="ai-chat-visual-bar">
-        <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
-          <CartesianGrid vertical={false} />
-          <XAxis axisLine={false} dataKey="label" tickLine={false} tickMargin={8} />
-          <YAxis axisLine={false} tickLine={false} width={36} />
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                formatter={(value) =>
-                  typeof value === "number" ? displayByValue.get(value) ?? "Not available" : "Not available"
-                }
-              />
-            }
-          />
-          <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-        </BarChart>
-      </ChartContainer>
+      <div
+        aria-label="Scroll horizontally to view all bar values"
+        className="overflow-x-auto pb-2"
+        data-testid="ai-chat-visual-bar-scroll"
+        role="region"
+        tabIndex={0}
+      >
+        <ChartContainer
+          className="h-72 min-h-72 w-full"
+          config={BAR_CHART_CONFIG}
+          data-testid="ai-chat-visual-bar"
+          style={{ aspectRatio: "auto", minWidth: `${Math.max(MINIMUM_BAR_WIDTH * visual.items.length, MINIMUM_BAR_WIDTH * 4)}px` }}
+        >
+          <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis angle={-35} axisLine={false} dataKey="label" height={60} textAnchor="end" tickLine={false} tickMargin={8} />
+            <YAxis axisLine={false} tickLine={false} width={36} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) =>
+                    typeof value === "number" ? displayByValue.get(value) ?? "Not available" : "Not available"
+                  }
+                />
+              }
+            />
+            <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </div>
       <ChartFacts facts={visual.items.map((item) => `${item.label}: ${item.value.display}`)} />
     </VisualCard>
   );
@@ -134,7 +148,7 @@ function LineVisual({ visual }: { visual: ChatLineVisual }): JSX.Element {
       <ChartContainer className="min-h-56 w-full" config={LINE_CHART_CONFIG} data-testid="ai-chat-visual-line">
         <LineChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
           <CartesianGrid vertical={false} />
-          <XAxis axisLine={false} dataKey="label" tickLine={false} tickMargin={8} />
+          <XAxis axisLine={false} dataKey="label" interval="preserveStartEnd" minTickGap={24} tickLine={false} tickMargin={8} />
           <YAxis axisLine={false} tickLine={false} width={36} />
           <ChartTooltip
             content={

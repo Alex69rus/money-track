@@ -25,7 +25,10 @@ async def aggregate_transactions(
     skip: PaginationSkip = 0,
     take: PaginationTake = 10,
 ) -> ToolOutputText:
-    """Return user-scoped, paginated aggregate data using only fixed query expressions."""
+    """Return user-scoped, paginated aggregate data using only fixed query expressions.
+    Aggregations preserve signed amount values; for example, summing unfiltered
+    amounts yields the net change for the selected grouping.
+    """
     result = await query_aggregations(
         user_id=ctx.context.user_id,
         filters=filters,

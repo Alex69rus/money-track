@@ -68,10 +68,14 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
           usesDedicatedScrollSurface && !fallbackMode.active ? "overflow-hidden" : "overflow-y-auto",
           isTelegramHost
             ? shouldShowNavigation
-              ? "mt-scroll-primary pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]"
+              ? usesDedicatedScrollSurface
+                ? "mt-chat-composer-reserve mt-scroll-primary pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)]"
+                : "mt-scroll-primary pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]"
               : "mt-scroll-nested pt-[calc(var(--mt-twa-host-controls-inset-top)+1rem)] pb-[calc(var(--mt-safe-area-inset-bottom)+1rem)]"
             : isKeyboardOpen
               ? "mt-scroll-nested py-4 pb-4"
+              : usesDedicatedScrollSurface
+                ? "mt-chat-composer-reserve mt-scroll-primary py-4"
               : "mt-scroll-primary py-4 pb-[calc(var(--mt-safe-area-inset-bottom)+6rem)]",
         )}
         data-testid="app-shell-main"

@@ -199,15 +199,6 @@ async def query_aggregations(
     )
 
 
-async def query_distinct_currencies(*, user_id: int, filters: TransactionFilter) -> list[str]:
-    parameters: list[object] = [user_id]
-    from_and_where_sql = build_filtered_transaction_scope_sql(filters, parameters)
-    rows = await TransactionsWithCategory.raw(
-        f'SELECT DISTINCT "currency" AS currency {from_and_where_sql} ORDER BY currency ASC', *parameters
-    ).run()
-    return [cast(str, row["currency"]) for row in rows if row["currency"] is not None]
-
-
 def build_grouped_aggregation_sql(
     *,
     user_id: int,

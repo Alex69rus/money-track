@@ -105,13 +105,14 @@ export function AiChatPage(): JSX.Element {
   const messageSequenceRef = useRef(0);
   const pendingRequestRef = useRef<AbortController | null>(null);
   const shouldScrollTimelineRef = useRef(false);
-  const timelineEndRef = useRef<HTMLDivElement | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef(messages);
 
   useEffect(() => {
     messagesRef.current = messages;
     if (shouldScrollTimelineRef.current) {
-      timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      const timeline = timelineRef.current;
+      timeline?.scrollTo({ behavior: "smooth", top: timeline.scrollHeight });
     }
   }, [messages]);
 
@@ -301,6 +302,7 @@ export function AiChatPage(): JSX.Element {
           className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain py-2 pr-1"
           data-focus-scroll-container
           data-testid="ai-chat-timeline"
+          ref={timelineRef}
         >
           {messages.map((message) => (
             <article
@@ -335,7 +337,7 @@ export function AiChatPage(): JSX.Element {
               )}
             </article>
           ))}
-          <div ref={timelineEndRef} />
+          <div />
         </div>
       </div>
 

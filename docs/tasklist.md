@@ -6,9 +6,47 @@ Use this file only for approved, active multi-iteration work that needs decompos
 
 | ID  | Source / evidence | Priority | State | Summary |
 | --- | ----------------- | -------- | ----- | ------- |
+| BR-018 | `bugs_reports/ai-chat-widget-limits-2026-08-02.md` | P2 | Verified | Removed arbitrary line/bar widget caps, added card-scoped bar scrolling, and disclosed the table row limit to the agent. |
 | AI-CHAT-07 | `bugs_reports/ai-chat-review-findings-2026-07-26.md` (BR-013) | P2 | Planned | Decide how a comparison must rank growth when either period has more than 100 category/tag groups. |
 
 <!-- Add active multi-iteration work here. -->
+
+## BR-018 — Usable extended AI Chat charts
+
+Source: `bugs_reports/ai-chat-widget-limits-2026-08-02.md`.
+
+### Problem
+
+Current response schemas impose arbitrary 12-point line and 10-bar limits. A 24-month requested trend is rejected even though the read tool returns up to 100 grouped values, and the model can promise a table longer than its undisclosed 20-row limit.
+
+### Required behavior
+
+- Remove the widget-level line-point limit; preserve a non-scrollable, responsive line chart with sparse readable axis labels.
+- Allow bar-chart item counts returned by one read-tool call. At 20 items, use horizontal scrolling only inside the chart card and keep a usable bar width.
+- State the table's 20-row maximum in the model-facing field description.
+
+### Acceptance criteria
+
+- Backend and frontend accept a 24-point line chart and a 20-item bar chart.
+- The line chart has no horizontal scroll region; its chart card never creates page-level horizontal overflow.
+- At 390×844 DPR 3, a 20-item bar chart scrolls horizontally within its own card, retains server-provided tooltip/display values, and does not move the fixed chat header or composer.
+- The model-facing table schema includes the 20-row limit in its `rows` description.
+
+### Plan
+
+1. Align the Pydantic widget inputs, response contracts, and frontend parser limits with the read tool's bounded result size; add direct regressions for 24 line points and 20 bars.
+2. Give bar charts a card-scoped scroll container and a minimum per-bar width; keep line charts full-width with sparse X-axis labels and no horizontal scroll.
+3. Extend component and 390×844 browser/mobile QA fixtures to prove scroll ownership, visual reachability, tooltip facts, and absence of page-level overflow.
+4. Run backend static/full deterministic checks, frontend lint/type/unit/build checks, affected Phase QA, and mobile QA; inspect the generated phone screenshots.
+
+### Delivery record — 2026-08-02
+
+- Removed the 12-point line and 10-item bar schema/parser limits. The read tool remains independently bounded to 100 results per request.
+- Added explicit `Up to 20 display rows` guidance to the table widget's model-facing schema.
+- Bar charts now reserve 72px per item, scroll only inside the chart card, and use a fixed 18rem height; line charts remain full-width with sparse X-axis labels and no scroll region.
+- Added backend, API-parser, component, Phase 4, and mobile regressions for 24 line points, 20 bars, card-only scrolling, server display facts, fixed controls, and page-overflow prevention.
+- Verification: backend format/lint/types and focused AI Chat tests — 18 passed; health-checked deterministic backend suite — passed, 2 expected skips; frontend lint/typecheck/tests — 19 files / 55 tests passed; build — passed; Phase 4 — all passed at 390×844 DPR 3; focused iPhone 12 Pro mobile QA — dark/light passed and screenshots inspected at `frontend_new/.codex-tmp/mobile-qa/2026-08-02T09-19-45-414Z`.
+- Remaining exception: a final full mobile-matrix terminal run ended without a report after its runner exited; a prior full-matrix run passed before the test-only screenshot capture adjustment. The final product behavior was independently verified on the required 390×844 dark/light profile.
 
 ## Task Detail Template
 

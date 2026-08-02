@@ -53,13 +53,15 @@ describe("AppShell", () => {
     });
   });
 
-  it("delegates scrolling to the AI Chat timeline without changing other primary pages", () => {
+  it("delegates scrolling to the AI Chat timeline and gives its composer the standard navigation gutter", () => {
     renderShell("/chat");
     expect(screen.getByTestId("app-shell-main")).toHaveClass("overflow-hidden");
     expect(screen.getByTestId("app-shell-main")).not.toHaveClass("overflow-y-auto");
+    expect(screen.getByTestId("app-shell-main")).toHaveClass("mt-chat-composer-reserve");
 
     cleanup();
     renderShell("/transactions");
     expect(screen.getByTestId("app-shell-main")).toHaveClass("overflow-y-auto");
+    expect(screen.getByTestId("app-shell-main")).not.toHaveClass("mt-chat-composer-reserve");
   });
 });

@@ -120,8 +120,7 @@ function parseVisual(value: unknown): ChatVisual | null {
   if (
     visual.kind === "bar" &&
     Array.isArray(visual.items) &&
-    visual.items.length >= 1 &&
-    visual.items.length <= 10
+    visual.items.length >= 1
   ) {
     const valid = visual.items.every((item) => {
       const row = asRecord(item);
@@ -130,7 +129,7 @@ function parseVisual(value: unknown): ChatVisual | null {
     return valid ? (visual as unknown as ChatBarVisual) : null;
   }
 
-  if (visual.kind === "line" && Array.isArray(visual.points) && visual.points.length >= 2 && visual.points.length <= 12) {
+  if (visual.kind === "line" && Array.isArray(visual.points) && visual.points.length >= 2) {
     const valid = visual.points.length >= 2 && visual.points.every((point) => {
       const row = asRecord(point);
       return (

@@ -136,3 +136,15 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Match the mobile transaction-card category affordance to the selector's 44px rounded-square tile.
 - Exploration: The dark and light iPhone SE fixture retained readable configured icons and iconless initials without affecting card-level editing.
 - Prevention rule: Assert the shared `size-11 rounded-2xl` geometry for both categorized and uncategorized card actions, then inspect a phone screenshot.
+
+## AI Chat extended chart composition — 2026-08-02
+
+- Takeaway: give a long bar chart its own horizontal scroll region and fixed height; keep a time-series line full-width with sparse axis labels.
+- Exploration: expanding a chart's width while retaining `aspect-video` made its height scale with every added bar. A fixed 18rem height plus `aspect-ratio: auto` kept 20 bars usable at 390×844 without page overflow.
+- Prevention rule: test the chart region's scroll width, the document's non-overflow, fixed chat controls, and chart height whenever a chat visual has data-dependent width.
+
+## AI Chat composer viewport ownership — 2026-08-02
+
+- Takeaway: scroll a new chat response through the timeline element, never `scrollIntoView` on a descendant, so document scrolling cannot move the fixed chat shell.
+- Exploration: a broad 12–20px geometry range certified a visibly flush composer; the same long response must be exercised with both full-height and normal-host stable viewports.
+- Prevention rule: keep `--mt-page-gutter` at `1rem`; Phase 4 and the phone matrix must reject any composer-to-navigation gap outside that exact token’s 2px rendering tolerance, retain normal-host screenshots/measurements, and assert that `scrollIntoView` is never called.

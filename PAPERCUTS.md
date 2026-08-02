@@ -141,6 +141,10 @@ Reviewing the AI Chat frontend guide references → `frontend_new/AGENTS.MD` poi
 
 Adding shadcn Chart/Field primitives → the CLI treated both `@/` and `src/` aliases as literal import/write paths, creating an `@/` directory and `src/...` imports. Keep `components.json` source-relative for generation, delete only generated misplaced files, and patch generated imports to the project’s `@/` alias before use.
 
+## 2026-08-02 13:17 — GPT-5
+
+Capturing a long AI Chat bar chart → Playwright's `scrollIntoViewIfNeeded` retried after the visual detached during mobile keyboard reset. Use one synchronous DOM `scrollIntoView` call after confirming the chart exists when the action is only for screenshot framing.
+
 ## 2026-07-26  — GPT-5
 
 Linting the generated shadcn Chart component → the upstream Recharts wrapper uses callback `any` values that violate this repository’s strict ESLint rules. Keep a narrowly scoped rule disable at the generated component boundary rather than relaxing project lint or leaking unsafe values into app code.
@@ -174,3 +178,15 @@ Adding typed widget-data models → Ruff caught an import-order issue and a self
 ## 2026-08-02 08:15 — Codex
 
 Building the free-form table response validator → Vite's project build applied stricter narrowing than the standalone typecheck for `Record<string, unknown>` fields. Assign and narrow `columns` and `rows` once before using their lengths in callbacks.
+
+## 2026-08-02 16:04 — Codex
+
+Starting the backend for a live Telegram smoke test with the README's `test-token` example → application startup contacted Telegram and correctly rejected the placeholder token. For a real Mini App smoke test, restart the already confirmed port-8000 service using the repository `.env`; reserve `test-token` for test-only runs that do not initialise Telegram.
+
+## 2026-08-02 20:37 — Codex
+
+Correcting the AI Chat composer after a device screenshot → a near-zero geometry assertion turned an oversized gap into a flush control. Express the intended visual gutter as an exact named product token with a small rendering tolerance, and exercise both full-height and normal-host Telegram viewport states before accepting a fixed-control layout.
+
+## 2026-08-02 20:55 — Codex
+
+Searching scoped frontend files with `rg` → placing `-g` after positional paths made ripgrep treat it as a file and Zsh reported a glob error. Put all `rg` options before the pattern and paths, and quote globs.

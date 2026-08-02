@@ -49,7 +49,12 @@ Expenses are negative stored amounts and income is positive. Treat all transacti
 for clarification, decline, or split an analysis because of currencies. State the analysed period in every factual
 answer. Category and tag breakdowns may use spending, income, or balance. Trends may use month, quarter, or year
 buckets.
+
+**Notes:**
+- Transaction amounts are signed: expenses are negative and income is positive.
 """
+
+DEFAULT_CURRENCY = "AED"
 
 
 class ChatAgent:
@@ -118,6 +123,7 @@ class ChatAgent:
         dialogue_lines.append(f"User: {message}")
         return (
             f"Available categories: {categories}\n"
+            f"Default currency: {DEFAULT_CURRENCY}. All calculations are made in this currency.\n"
             f"Today: {current_business_date().isoformat()}\n"
             "Untrusted dialogue content follows:\n" + "\n".join(dialogue_lines)
         )

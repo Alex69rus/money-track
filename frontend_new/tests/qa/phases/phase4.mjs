@@ -1,4 +1,5 @@
 import { fail, pass } from "./scaffold-utils.mjs";
+import { assessAiChatComposerNavigationGutter } from "../ai-chat-layout.mjs";
 
 const PHASE4_FR_IDS = ["FR-023", "FR-024", "FR-025", "FR-026", "FR-027"];
 
@@ -13,6 +14,31 @@ function parseJsonSafely(value) {
 
 function chatResponse(message, visual = null) {
   return JSON.stringify({ version: "v1", kind: "answer", message, visual });
+}
+
+function twentyBarChart() {
+  return {
+    kind: "bar",
+    title: "Spending by category",
+    period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
+    items: Array.from({ length: 20 }, (_, index) => ({
+      label: `Category ${index + 1}`,
+      value: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+    })),
+  };
+}
+
+function twentyFourPointLineChart() {
+  return {
+    kind: "line",
+    title: "Balance growth",
+    period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
+    points: Array.from({ length: 24 }, (_, index) => ({
+      label: `Month ${index + 1}`,
+      spending: { amount: `-${index + 1}.00`, currency: "AED", display: `AED -${index + 1}.00` },
+      income: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+    })),
+  };
 }
 
 export const phase4Definition = {
@@ -37,7 +63,10 @@ export const phase4Definition = {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: chatResponse(responseMessage),
+        body: chatResponse(
+          responseMessage,
+          requestIndex === 1 ? twentyBarChart() : requestIndex === 2 ? twentyFourPointLineChart() : null,
+        ),
       });
     });
 
@@ -60,14 +89,37 @@ export const phase4Definition = {
       .getByText(`Grounded answer: ${enterPrompt}`, { exact: false })
       .isVisible()
       .catch(() => false);
+    const barChartExperience = await page.evaluate(() => {
+      const scrollRegion = document.querySelector('[data-testid="ai-chat-visual-bar-scroll"]');
+      const barChart = document.querySelector('[data-testid="ai-chat-visual-bar"]');
+      if (!(scrollRegion instanceof HTMLElement) || !(barChart instanceof HTMLElement)) {
+        return { present: false };
+      }
+      scrollRegion.scrollLeft = Math.min(120, scrollRegion.scrollWidth - scrollRegion.clientWidth);
+      return {
+        chartHeight: barChart.getBoundingClientRect().height,
+        chartMinimumWidth: barChart.style.minWidth,
+        pageHasNoHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+        present: true,
+        scrollable: scrollRegion.scrollWidth > scrollRegion.clientWidth,
+        scrolled: scrollRegion.scrollLeft > 0,
+      };
+    });
     const chatComposition = await page.evaluate(() => {
       const main = document.querySelector('[data-testid="app-shell-main"]');
       const header = document.querySelector('[data-testid="ai-chat-header"]');
       const composer = document.querySelector('[data-testid="ai-chat-composer"]');
+      const navigation = document.querySelector('[data-testid="app-shell-nav"]');
       const timeline = document.querySelector('[data-testid="ai-chat-timeline"]');
       const reset = document.querySelector('[data-testid="ai-chat-reset-trigger"]');
       const send = document.querySelector('[data-testid="ai-chat-send"]');
-      if (!(main instanceof HTMLElement) || !(header instanceof HTMLElement) || !(composer instanceof HTMLElement) || !(timeline instanceof HTMLElement)) {
+      if (
+        !(main instanceof HTMLElement) ||
+        !(header instanceof HTMLElement) ||
+        !(composer instanceof HTMLElement) ||
+        !(navigation instanceof HTMLElement) ||
+        !(timeline instanceof HTMLElement)
+      ) {
         return { controlsPresent: false };
       }
 
@@ -78,13 +130,18 @@ export const phase4Definition = {
       const headerAfter = header.getBoundingClientRect();
       const composerAfter = composer.getBoundingClientRect();
       const bodyText = document.body.innerText;
+      const rootStyles = window.getComputedStyle(document.documentElement);
 
       return {
         controlsPresent: true,
+        composerNavigationGap: navigation.getBoundingClientRect().top - composerAfter.bottom,
         composerStayedFixed: Math.abs(composerBefore.top - composerAfter.top) < 1,
         headerStayedFixed: Math.abs(headerBefore.top - headerAfter.top) < 1,
         mainOverflowY: window.getComputedStyle(main).overflowY,
         mainScrollTop: main.scrollTop,
+        pageGutterCssValue: rootStyles.getPropertyValue("--mt-page-gutter").trim(),
+        pageGutterPx: Number.parseFloat(rootStyles.fontSize),
+        pageScrollTop: window.scrollY,
         resetHasNoVisibleText: reset?.textContent?.trim() === "",
         sendHasNoVisibleText: send?.textContent?.trim() === "",
         timelineCanScroll: timeline.scrollHeight > timeline.clientHeight && timeline.scrollTop > 0,
@@ -95,19 +152,55 @@ export const phase4Definition = {
           !bodyText.includes("How much did I spend this month?"),
       };
     });
+    const fullHeightGutter = assessAiChatComposerNavigationGutter(chatComposition);
+    const normalHostStableHeight = await page.locator('[data-testid="app-shell-nav"]').evaluate((navigation) =>
+      Math.round(navigation.getBoundingClientRect().top),
+    );
+    await page.evaluate((viewportStableHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight: window.innerHeight, viewportStableHeight });
+    }, normalHostStableHeight);
+    await page.waitForTimeout(100);
+    const normalHostGutter = assessAiChatComposerNavigationGutter(await page.evaluate(() => {
+      const composer = document.querySelector('[data-testid="ai-chat-composer"]');
+      const navigation = document.querySelector('[data-testid="app-shell-nav"]');
+      const rootStyles = window.getComputedStyle(document.documentElement);
+      return {
+        composerNavigationGap:
+          composer instanceof HTMLElement && navigation instanceof HTMLElement
+            ? navigation.getBoundingClientRect().top - composer.getBoundingClientRect().bottom
+            : Number.NaN,
+        pageGutterCssValue: rootStyles.getPropertyValue("--mt-page-gutter").trim(),
+        pageGutterPx: Number.parseFloat(rootStyles.fontSize),
+      };
+    }));
+    await page.evaluate(() => {
+      const viewportHeight = window.innerHeight;
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: viewportHeight });
+    });
     if (
       !chatComposition.controlsPresent ||
+      !fullHeightGutter.valid ||
+      !normalHostGutter.valid ||
       !chatComposition.headerStayedFixed ||
       !chatComposition.composerStayedFixed ||
       chatComposition.mainOverflowY !== "hidden" ||
       chatComposition.mainScrollTop !== 0 ||
+      Math.abs(chatComposition.pageScrollTop) > 4 ||
       !chatComposition.timelineCanScroll ||
       chatComposition.timelineOverflowY !== "auto" ||
       !chatComposition.unwantedChromeAbsent ||
       !chatComposition.resetHasNoVisibleText ||
-      !chatComposition.sendHasNoVisibleText
+      !chatComposition.sendHasNoVisibleText ||
+      !barChartExperience.present ||
+      !barChartExperience.scrollable ||
+      !barChartExperience.scrolled ||
+      !barChartExperience.pageHasNoHorizontalOverflow ||
+      barChartExperience.chartMinimumWidth !== "1440px" ||
+      barChartExperience.chartHeight > 300
     ) {
-      throw new Error(`AI Chat compact fixed-shell composition failed: ${JSON.stringify(chatComposition)}.`);
+      throw new Error(
+        `AI Chat compact fixed-shell composition failed: ${JSON.stringify({ barChartExperience, chatComposition, fullHeightGutter, normalHostGutter })}.`,
+      );
     }
     fr["FR-023"] =
       userMessagesAfterEnter === 1 && assistantMessagesAfterEnter === 1 && assistantVisible
@@ -128,6 +221,23 @@ export const phase4Definition = {
     await page.getByText(`Grounded answer: ${buttonPrompt}`).waitFor({ state: "visible", timeout: 15000 });
     const enterPayload = capturedRequests.find((payload) => payload.message === enterPrompt);
     const buttonPayload = capturedRequests.find((payload) => payload.message === buttonPrompt);
+    const lineChartExperience = await page.evaluate(() => {
+      const lineChart = document.querySelector('[data-testid="ai-chat-visual-line"]');
+      return {
+        hasNoScrollRegion: document.querySelector('[data-testid="ai-chat-visual-line-scroll"]') === null,
+        pageHasNoHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+        present: lineChart instanceof HTMLElement,
+        fitsCard: lineChart instanceof HTMLElement && lineChart.scrollWidth <= lineChart.clientWidth + 1,
+      };
+    });
+    if (
+      !lineChartExperience.present ||
+      !lineChartExperience.fitsCard ||
+      !lineChartExperience.hasNoScrollRegion ||
+      !lineChartExperience.pageHasNoHorizontalOverflow
+    ) {
+      throw new Error(`AI Chat long-line composition failed: ${JSON.stringify(lineChartExperience)}.`);
+    }
     fr["FR-024"] =
       shiftEnterPreserved &&
       Array.isArray(enterPayload?.history) &&

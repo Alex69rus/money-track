@@ -55,4 +55,27 @@ describe("ChatVisual", () => {
     expect(screen.getByText("January: AED 50.00 spending, AED 100.00 income")).toBeInTheDocument();
     expect(screen.getByText("100.0% · AED 50.00")).toBeInTheDocument();
   });
+
+  it("keeps long trends full-width and gives long bar charts a card-scoped scroll region", () => {
+    const barItems = Array.from({ length: 20 }, (_, index) => ({ label: `Category ${index + 1}`, value: aed(`${index + 1}.00`) }));
+    const linePoints = Array.from({ length: 24 }, (_, index) => ({
+      income: aed(`${index + 1}.00`),
+      label: `Month ${index + 1}`,
+      spending: aed(`-${index + 1}.00`),
+    }));
+
+    render(
+      <>
+        <ChatVisual visual={{ items: barItems, kind: "bar", period, title: "Spending by category" }} />
+        <ChatVisual visual={{ kind: "line", period, points: linePoints, title: "Balance growth" }} />
+      </>,
+    );
+
+    expect(screen.getByRole("region", { name: "Scroll horizontally to view all bar values" })).toHaveClass("overflow-x-auto");
+    expect(screen.getByTestId("ai-chat-visual-bar")).toHaveStyle({ minWidth: "1440px" });
+    expect(screen.getByTestId("ai-chat-visual-bar")).toHaveClass("h-72");
+    expect(screen.queryByTestId("ai-chat-visual-line-scroll")).not.toBeInTheDocument();
+    expect(screen.getByText("Category 20: AED 20.00")).toBeInTheDocument();
+    expect(screen.getByText("Month 24: AED -24.00 spending, AED 24.00 income")).toBeInTheDocument();
+  });
 });

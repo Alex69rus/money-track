@@ -136,8 +136,8 @@ The backend response model uses equivalent Pydantic discriminated unions. Widget
 Cardinality and ordering are part of the contract:
 
 - tables contain one to eight columns and at most 20 matching-width rows;
-- bar and pie charts contain at most 10 items;
-- line charts contain two to 12 monthly/quarterly/yearly points in chronological order; daily points are not a v1 chart mode;
+- pie charts contain at most 10 items; bar charts accept all retrieved items and scroll only within their card when needed;
+- line charts contain at least two chronological points and remain full-width without horizontal scrolling; their X axis may omit intermediate labels to stay readable;
 - a response contains zero or one visual. No visual is returned for no-data, clarification, or limitation responses.
 
 ### 3.3 Deterministic analyses and allowed presentations
@@ -216,7 +216,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
    - Render the server-produced assistant message in a clearly distinct bubble; below it render one optional visual card with its server-derived title and period.
    - Use existing Card, Alert, Button, Badge, Table, and Textarea primitives. Add the official shadcn `chart`, `field`, `input-group`, `empty`, and `spinner` components only after CLI preview/review; use Recharts via the installed chart primitive rather than a bespoke chart implementation.
    - Support every visual union form: transaction tables in a captioned horizontally-scrollable table, bars and pies with accessible labels/tooltips, and trends with an accessible line chart. Provide a semantic text/table equivalent for chart values so a visual is not the sole carrier of facts.
-   - Constrain charts/tables to one-column mobile cards, reasonable category/point limits, a fixed measurable chart height, and the existing safe-area-aware page scroll container. Keep composer focused and visible above Telegram keyboard changes using the established shell behavior.
+   - Constrain charts/tables to one-column mobile cards. Keep line charts full-width with sparse X-axis labels; give wide bar charts a card-scoped horizontal scroll region with a readable minimum bar width. Preserve a fixed measurable chart height and the existing safe-area-aware page scroll container. Keep composer focused and visible above Telegram keyboard changes using the established shell behavior.
    - Preserve text-only operation when `visual` is omitted, no data exists, a visual cannot be safely rendered, or the host is a normal browser.
 
 4. **Frontend tests and QA harnesses**

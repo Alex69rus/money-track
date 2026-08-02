@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
+import { assessAiChatComposerNavigationGutter } from "./ai-chat-layout.mjs";
 import { installTelegramFixture } from "./telegram-fixture.mjs";
 
 const PROFILES = [
@@ -238,7 +239,15 @@ async function installApiFixtures(page) {
         version: "v1",
         kind: "answer",
         message: `Mobile QA answer: ${String(payload.message ?? "")}\n${"Supporting detail.\n".repeat(64)}`,
-        visual: null,
+        visual: {
+          kind: "bar",
+          title: "Spending by category",
+          period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
+          items: Array.from({ length: 20 }, (_, index) => ({
+            label: `Category ${index + 1}`,
+            value: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+          })),
+        },
       }),
     });
   });
@@ -488,15 +497,20 @@ async function assertAiChatFixedComposition(page, label) {
     const headerAfter = header.getBoundingClientRect();
     const composerAfter = composer.getBoundingClientRect();
     const bodyText = document.body.innerText;
+    const rootStyles = window.getComputedStyle(document.documentElement);
 
     return {
       composerAboveNavigation: composerAfter.bottom <= navigationRect.top + 1,
+      composerNavigationGap: navigationRect.top - composerAfter.bottom,
       composerStayedFixed: Math.abs(composerBefore.top - composerAfter.top) < 1,
       controlsPresent: true,
       headerStayedFixed: Math.abs(headerBefore.top - headerAfter.top) < 1,
       inputSkipsOuterFocusScroll: input.dataset.skipFocusPosition === "true",
       mainOverflowY: window.getComputedStyle(main).overflowY,
       mainScrollTop: main.scrollTop,
+      pageGutterCssValue: rootStyles.getPropertyValue("--mt-page-gutter").trim(),
+      pageGutterPx: Number.parseFloat(rootStyles.fontSize),
+      pageScrollTop: window.scrollY,
       resetHasNoVisibleText: reset?.textContent?.trim() === "",
       sendHasNoVisibleText: send?.textContent?.trim() === "",
       timelineCanScroll: timeline.scrollHeight > timeline.clientHeight && timeline.scrollTop > 0,
@@ -507,23 +521,28 @@ async function assertAiChatFixedComposition(page, label) {
         !bodyText.includes("How much did I spend this month?"),
     };
   });
+  const gutter = assessAiChatComposerNavigationGutter(result);
 
   if (
     !result.controlsPresent ||
     !result.composerAboveNavigation ||
+    !gutter.valid ||
     !result.composerStayedFixed ||
     !result.headerStayedFixed ||
     !result.inputSkipsOuterFocusScroll ||
     result.mainOverflowY !== "hidden" ||
     result.mainScrollTop !== 0 ||
+    Math.abs(result.pageScrollTop) > 4 ||
     !result.resetHasNoVisibleText ||
     !result.sendHasNoVisibleText ||
     !result.timelineCanScroll ||
     result.timelineOverflowY !== "auto" ||
     !result.unwantedChromeAbsent
   ) {
-    throw new Error(`${label}: compact fixed-shell chat composition failed: ${JSON.stringify(result)}.`);
+    throw new Error(`${label}: compact fixed-shell chat composition failed: ${JSON.stringify({ gutter, result })}.`);
   }
+
+  return gutter;
 }
 
 async function runProfile(browser, profile, colorScheme, artifactDirectory, frontendBaseUrl) {
@@ -871,7 +890,53 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     await page.fill('[data-testid="ai-chat-input"]', "mobile composition proof");
     await page.click('[data-testid="ai-chat-send"]');
     await page.getByText("Mobile QA answer: mobile composition proof", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-    await assertAiChatFixedComposition(page, "AI Chat");
+    const aiChatLayoutStates = [
+      { mode: "full-height", ...await assertAiChatFixedComposition(page, "AI Chat full-height viewport") },
+    ];
+    const normalHostStableHeight = await page.locator('[data-testid="app-shell-nav"]').evaluate((navigation) =>
+      Math.round(navigation.getBoundingClientRect().top),
+    );
+    await page.evaluate((viewportStableHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight: window.innerHeight, viewportStableHeight });
+    }, normalHostStableHeight);
+    await page.waitForTimeout(100);
+    aiChatLayoutStates.push({
+      mode: "normal-host",
+      ...await assertAiChatFixedComposition(page, "AI Chat normal-host viewport"),
+    });
+    await screenshot(page, profileDirectory, "ai-chat-normal-host");
+    await page.evaluate((viewportHeight) => {
+      window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: viewportHeight });
+    }, profile.height);
+    mkdirSync(profileDirectory, { recursive: true });
+    writeFileSync(resolve(profileDirectory, "ai-chat-layout.json"), `${JSON.stringify(aiChatLayoutStates, null, 2)}\n`);
+    await assertNoHorizontalOverflow(page, "AI Chat");
+    const longBarChart = await page.evaluate(() => {
+      const scrollRegion = document.querySelector('[data-testid="ai-chat-visual-bar-scroll"]');
+      const barChart = document.querySelector('[data-testid="ai-chat-visual-bar"]');
+      if (!(scrollRegion instanceof HTMLElement) || !(barChart instanceof HTMLElement)) {
+        return { present: false };
+      }
+      scrollRegion.scrollLeft = Math.min(120, scrollRegion.scrollWidth - scrollRegion.clientWidth);
+      return {
+        chartHeight: barChart.getBoundingClientRect().height,
+        chartMinimumWidth: barChart.style.minWidth,
+        pageHasNoHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+        present: true,
+        scrollable: scrollRegion.scrollWidth > scrollRegion.clientWidth,
+        scrolled: scrollRegion.scrollLeft > 0,
+      };
+    });
+    if (
+      !longBarChart.present ||
+      !longBarChart.scrollable ||
+      !longBarChart.scrolled ||
+      !longBarChart.pageHasNoHorizontalOverflow ||
+      longBarChart.chartMinimumWidth !== "1440px" ||
+      longBarChart.chartHeight > 300
+    ) {
+      throw new Error(`AI Chat long-bar composition failed: ${JSON.stringify(longBarChart)}.`);
+    }
 
     await page.locator('[data-testid="ai-chat-input"]').focus();
     const chatKeyboardViewportHeight = Math.max(420, profile.height - 320);
@@ -906,6 +971,21 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
       window.__qaTelegram.setViewport({ viewportHeight, viewportStableHeight: viewportHeight });
     }, profile.height);
     await page.waitForTimeout(100);
+    const chartScrolledIntoView = await page.evaluate(() => {
+      const barChart = document.querySelector('[data-testid="ai-chat-visual-bar"]');
+      if (!(barChart instanceof HTMLElement)) {
+        return false;
+      }
+      const scrollRegion = barChart.parentElement;
+      if (scrollRegion instanceof HTMLElement) {
+        scrollRegion.scrollLeft = 0;
+      }
+      barChart.scrollIntoView({ block: "nearest" });
+      return true;
+    });
+    if (!chartScrolledIntoView) {
+      throw new Error("AI Chat long-bar chart was missing before screenshot capture.");
+    }
     await screenshot(page, profileDirectory, "ai-chat");
 
     return {

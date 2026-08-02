@@ -33,7 +33,7 @@ class TableWidgetData(BaseModel):
     period: PeriodV1 = Field(description="Analysed period shown below the title.")
     columns: list[TableColumnV1] = Field(min_length=1, max_length=8, description="Column headings in display order.")
     rows: list[list[TableCellV1]] = Field(
-        min_length=1, max_length=20, description="Display rows; each row follows the column order."
+        min_length=1, max_length=20, description="Up to 20 display rows; each row follows the column order."
     )
 
     @model_validator(mode="after")
@@ -48,9 +48,7 @@ class BarChartWidgetData(BaseModel):
 
     title: str = Field(min_length=1, max_length=120, description="Short chart title.")
     period: PeriodV1 = Field(description="Analysed period shown below the title.")
-    items: list[BarVisualItemV1] = Field(
-        min_length=1, max_length=10, description="Retrieved labelled values for the bars."
-    )
+    items: list[BarVisualItemV1] = Field(min_length=1, description="Retrieved labelled values for the bars.")
 
 
 class LineChartWidgetData(BaseModel):
@@ -58,7 +56,7 @@ class LineChartWidgetData(BaseModel):
 
     title: str = Field(min_length=1, max_length=120, description="Short chart title.")
     period: PeriodV1 = Field(description="Analysed period shown below the title.")
-    points: list[LinePointV1] = Field(min_length=2, max_length=12, description="Retrieved values in timeline order.")
+    points: list[LinePointV1] = Field(min_length=2, description="Retrieved values in timeline order.")
 
 
 class PieChartItemData(BaseModel):

@@ -60,6 +60,7 @@ Execution requirement:
 - [ ] Unsupported methods are guarded with version checks.
 - [ ] App behavior is verified in Telegram iOS, Android, and Desktop clients.
 - [ ] Phone QA checks 390x844/DPR3 plus small and large phone profiles, Telegram safe-area/viewport events, keyboard state, and collision assertions.
+- [ ] AI Chat’s fixed composer keeps exactly the standard `1rem` page gutter above persistent navigation (within 2px rendering tolerance) in full-height and normal-host Telegram viewport states; phone artifacts retain both the normal-host screenshot and its measured layout data.
 - [ ] Layout/input/sheet changes include a real Telegram iPhone smoke result or an explicitly recorded exception.
 
 ## F. API and Resilience

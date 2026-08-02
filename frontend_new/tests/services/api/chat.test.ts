@@ -69,6 +69,28 @@ describe("AI Chat API contract", () => {
     });
   });
 
+  it("accepts extended bar and line datasets", async () => {
+    const period = { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" };
+    const money = (amount: string) => ({ amount, currency: "AED", display: `AED ${amount}` });
+    const linePoints = Array.from({ length: 24 }, (_, index) => ({
+      income: money(`${index + 1}.00`),
+      label: `Month ${index + 1}`,
+      spending: money(`-${index + 1}.00`),
+    }));
+    const barItems = Array.from({ length: 20 }, (_, index) => ({ label: `Category ${index + 1}`, value: money(`${index + 1}.00`) }));
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(answer({ kind: "line", period, points: linePoints, title: "Balance growth" }))
+      .mockResolvedValueOnce(answer({ items: barItems, kind: "bar", period, title: "Spending by category" })) as unknown as typeof fetch;
+
+    await expect(sendChatMessage({ history: [], message: "Show two years by month" })).resolves.toMatchObject({
+      visual: { kind: "line", points: linePoints },
+    });
+    await expect(sendChatMessage({ history: [], message: "Show 20 categories" })).resolves.toMatchObject({
+      visual: { items: barItems, kind: "bar" },
+    });
+  });
+
   it("rejects the retired summary widget", async () => {
     global.fetch = vi.fn().mockResolvedValue(
       answer({
