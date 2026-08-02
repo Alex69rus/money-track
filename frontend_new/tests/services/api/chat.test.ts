@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { sendChatMessage } from "@/services/api/chat";
 
 function answer(visual: object | null): Response {
-  return new Response(JSON.stringify({ kind: "answer", message: "Server-rendered answer.", version: "v1", visual }), {
+  return new Response(JSON.stringify({ kind: "answer", message: "Agent-authored answer.", version: "v1", visual }), {
     headers: { "Content-Type": "application/json" },
   });
 }
@@ -39,13 +39,55 @@ describe("AI Chat API contract", () => {
       answer({
         items: [{ label: "Food", value: { amount: "not-a-number", currency: "AED", display: "AED 50" } }],
         kind: "bar",
-        measure: "spending",
         period: { fromDate: "2099-01-01", label: "January", toDate: "2099-01-31" },
         title: "Spending by category",
       }),
     ) as unknown as typeof fetch;
 
     await expect(sendChatMessage({ history: [], message: "Show spending" })).rejects.toMatchObject({
+      status: 502,
+    });
+  });
+
+  it("accepts a free-form table", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      answer({
+        kind: "table",
+        columns: ["Month", "Difference"],
+        period: { fromDate: "2099-01-01", label: "January 2099", toDate: "2099-01-31" },
+        rows: [["January", "AED 50.00"]],
+        title: "Monthly difference",
+      }),
+    ) as unknown as typeof fetch;
+
+    await expect(sendChatMessage({ history: [], message: "Show the difference" })).resolves.toMatchObject({
+      visual: {
+        columns: ["Month", "Difference"],
+        kind: "table",
+        rows: [["January", "AED 50.00"]],
+      },
+    });
+  });
+
+  it("rejects the retired summary widget", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      answer({
+        kind: "summary",
+        metrics: [
+          {
+            count: null,
+            key: "largest_purchase",
+            label: "Largest purchase",
+            money: { amount: "50.00", currency: "AED", display: "AED 50.00" },
+            percentage: null,
+          },
+        ],
+        period: { fromDate: "2099-01-01", label: "January 2099", toDate: "2099-01-31" },
+        title: "Spending summary",
+      }),
+    ) as unknown as typeof fetch;
+
+    await expect(sendChatMessage({ history: [], message: "Show my largest purchase" })).rejects.toMatchObject({
       status: 502,
     });
   });

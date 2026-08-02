@@ -1,6 +1,17 @@
 # AI Transaction Chat — implementation plan
 
-**Status:** P0/P1 review remediation verified; one P2 scalability decision tracked (2026-07-26)
+**Status:** P0/P1 review remediation verified; widget-tool refactor implemented (2026-08-02)
+
+## 0. 2026-08-02 approved widget-tool adjustment
+
+This amendment supersedes earlier deterministic-presentation statements in this document:
+
+1. The agent retrieves authenticated data through one or more existing read tools, then writes the final text response.
+2. A response may include one optional widget prepared by exactly one dedicated data-only tool: table, bar chart, line chart, or pie chart. Single values and compact aggregates belong in the agent's text response.
+3. Widget tools accept validated, bounded display data only. They do not accept filters, a user identity, SQL, or database access, and they validate schema rather than reconcile model-formatted values with read-tool results.
+4. Each widget's `data` argument is a concise Pydantic input model with field descriptions. It omits renderer-owned discriminators such as `kind`, `table_kind`, `measure`, and `dimension`; the backend adds the response `kind` after the selected widget tool validates the data.
+5. Tables accept ordered `columns` and matching string `rows`, not hard-coded row variants. Pie widgets receive labels and values only; backend code derives each percentage from the supplied values.
+6. `ChatResponseV1` continues to return agent-authored `message` plus an optional visual. The Mini App consumes the corresponding generic table and pie response shapes.
 
 ## 1. Scope and approved decisions
 
@@ -32,7 +43,7 @@ The first release remains read-only. The frontend will not compute analytical re
 | PRD requirement | Current implementation | Plan outcome |
 | --- | --- | --- |
 | Ephemeral multi-turn dialogue | Client sends a random `sessionId`, but the API ignores it and receives only the latest message. | Send bounded in-memory history; clear it on reset, reload, and route unmount. |
-| Visual answers | API returns only `{ "response": string }`; UI only renders text. | Return an optional typed, backend-produced visual and render it as a summary, table, bar, line, or category-share card. |
+| Visual answers | API returns only `{ "response": string }`; UI only renders text. | Return an optional typed, backend-produced visual and render it as a table, bar, line, or pie chart. |
 | Grounded failure UX | A failed request appends a generic assistant “fallback response”, which can be mistaken for an answer. | Retain the user question, show a retryable error, and never create a synthetic analytical answer. |
 | Production-facing chat UX | UI exposes session IDs and API/environment implementation details; one suggestion requests unsupported anomaly detection. | Replace with concise feature guidance and supported suggestions; retain no client identity/session fields. |
 | Factual assistant content | The LLM currently returns a free-text response, so prompt wording alone cannot prevent invented values or claims. | A server-rendered presentation is the only successful response; model prose, titles, numbers, and rows are discarded. |
@@ -89,62 +100,43 @@ type PercentageV1 = { value: string; display: string };
 
 `amount` and percentage `value` are exact decimal strings. `display` is server-formatted and is the sole textual fact shown in the UI. Charts may convert an already-validated `amount` to a finite JavaScript number for positioning only; the frontend never sums, compares, rounds, labels, or otherwise derives a financial fact.
 
-`ChatVisualV1` is the following closed discriminated union. All `title`, `label`, `display`, and `period` strings are deterministic templates/mappings in backend code; none is model-provided.
+`ChatVisualV1` is a closed response union. The selected widget tool adds its `kind`; the agent supplies validated data after its read-tool calls.
 
 ```ts
 type ChatVisualV1 =
   | {
-      kind: "summary";
-      title: string;
-      period: PeriodV1;
-      metrics: Array<{
-        key: "spending" | "income" | "balance" | "transaction_count" |
-             "current_period" | "previous_period" | "change" | "change_percent";
-        label: string;
-        money: MoneyV1 | null;
-        count: number | null;
-        percentage: PercentageV1 | null;
-      }>;
-    }
-  | {
       kind: "table";
       title: string;
       period: PeriodV1;
-      tableKind: "transactions" | "breakdown" | "comparison";
-      rows:
-        | Array<{ id: number; dateTime: string; category: string | null; tags: string[]; note: string | null; amount: MoneyV1 }>
-        | Array<{ label: string; value: MoneyV1 }>
-        | Array<{ label: string; current: MoneyV1; previous: MoneyV1; change: MoneyV1; changePercent: PercentageV1 | null }>;
+      columns: string[];
+      rows: string[][];
     }
   | {
       kind: "bar";
       title: string;
       period: PeriodV1;
-      measure: "spending" | "income" | "balance" | "change";
       items: Array<{ label: string; value: MoneyV1 }>;
     }
   | {
       kind: "line";
       title: string;
       period: PeriodV1;
-      points: Array<{ bucket: string; label: string; spending: MoneyV1; income: MoneyV1 }>;
+      points: Array<{ label: string; spending: MoneyV1; income: MoneyV1 }>;
     }
   | {
-      kind: "category_share";
+      kind: "pie";
       title: string;
       period: PeriodV1;
-      dimension: "category" | "tag";
       items: Array<{ label: string; value: MoneyV1; share: PercentageV1 }>;
     };
 ```
 
-The backend response model uses equivalent Pydantic discriminated unions and validates the matching row shape for each `tableKind`; the frontend validates the discriminator, required fields, finite chart values, and cardinality before rendering. It rejects a malformed 2xx response as a retryable error.
+The backend response model uses equivalent Pydantic discriminated unions. Widget input models expose only the fields the agent needs, with concise descriptions; the backend supplies the discriminator. It validates table-row width and calculates pie percentages from the supplied values. The frontend validates the discriminator, required fields, finite chart values, and cardinality before rendering. It rejects a malformed 2xx response as a retryable error.
 
 Cardinality and ordering are part of the contract:
 
-- summaries contain two to four metrics in the server-defined order;
-- transaction tables contain at most 20 rows, newest first by `(transaction_date_time, id)`;
-- breakdown and comparison tables, bar, and category-share contain at most 10 rows/items; magnitude order is descending with label as the stable tie-breaker;
+- tables contain one to eight columns and at most 20 matching-width rows;
+- bar and pie charts contain at most 10 items;
 - line charts contain two to 12 monthly/quarterly/yearly points in chronological order; daily points are not a v1 chart mode;
 - a response contains zero or one visual. No visual is returned for no-data, clarification, or limitation responses.
 
@@ -156,13 +148,13 @@ The only allowed query/presentation combinations are:
 
 | Deterministic analysis | Optional visual | Server-rendered message/title |
 | --- | --- | --- |
-| Expense, income, balance, or transaction-count aggregate for one period | `summary` | Metric and resolved period template. |
+| Expense, income, balance, or transaction-count aggregate for one period | None | Concise text with the resolved period. |
 | Matching transaction lookup | `table` (`transactions`) | Result-count and resolved-period template. |
 | Expense/income/balance category or tag breakdown | `bar` or `table` (`breakdown`) | Dimension/metric/period template. |
-| Expense category or tag composition | `category_share` | Dimension/period template; share uses the backend-computed total. |
+| Expense category or tag composition | `pie` | Agent-selected labels and period; the widget computes each share from the supplied values. |
 | Income and expense trend grouped by month, quarter, or year | `line` | Trend/period template. |
-| Two-period total comparison | `summary` | Current, previous, delta, and percentage/zero-baseline template. |
-| Two-period category or tag growth | `table` (`comparison`) or `bar` with `measure: "change"` | Dimension/current-vs-previous template. |
+| Two-period total comparison | None | Concise text with current, previous, delta, percentage/zero-baseline, and both periods. |
+| Two-period category or tag growth | `table` or `bar` | Agent-selected display columns or labels from retrieved comparison data. |
 
 Add category-name grouping to the existing fixed grouping allowlist so a category visual has user-facing labels. Retain tag and business-timezone date grouping. Never add merchant grouping.
 
@@ -196,7 +188,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
 
 3. **Grounded presentation tool and agent context**
    - Extend `ChatAgentContext` with request-local `ChatResponseV1` state, never a database-backed session.
-   - Implement `present_analysis` as the sole producer of success responses; it supports only the enumerated summary, transaction table, breakdown, comparison, bar, trend-line, and category-share combinations.
+   - Implement `present_analysis` as the sole producer of success responses; it supports only the enumerated transaction table, breakdown, comparison, bar, trend-line, and pie-chart combinations.
    - Render every message/title/period/row/point from server templates and deterministic results. Enforce the stated output limits and ordering before serializing the response.
    - Update prompt, SDK input construction, strict no-prose `AgentDirective`, and final response assembly so free-form model output is never delivered. Default an unspecified single analysis period to the inclusive current calendar year; require the server-rendered response to state its analysed period.
 
@@ -223,7 +215,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
    - Replace developer-facing copy with concise user-facing scope guidance and only supported suggestion prompts (period/category/tag/transaction examples).
    - Render the server-produced assistant message in a clearly distinct bubble; below it render one optional visual card with its server-derived title and period.
    - Use existing Card, Alert, Button, Badge, Table, and Textarea primitives. Add the official shadcn `chart`, `field`, `input-group`, `empty`, and `spinner` components only after CLI preview/review; use Recharts via the installed chart primitive rather than a bespoke chart implementation.
-   - Support every visual union form: summary values as a compact labelled list, transaction tables in a captioned horizontally-scrollable table, bars/category share with accessible labels/tooltips, and trends with an accessible line chart. Provide a semantic text/table equivalent for chart values so a visual is not the sole carrier of facts.
+   - Support every visual union form: transaction tables in a captioned horizontally-scrollable table, bars and pies with accessible labels/tooltips, and trends with an accessible line chart. Provide a semantic text/table equivalent for chart values so a visual is not the sole carrier of facts.
    - Constrain charts/tables to one-column mobile cards, reasonable category/point limits, a fixed measurable chart height, and the existing safe-area-aware page scroll container. Keep composer focused and visible above Telegram keyboard changes using the established shell behavior.
    - Preserve text-only operation when `visual` is omitted, no data exists, a visual cannot be safely rendered, or the host is a normal browser.
 
@@ -238,7 +230,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
 | Evidence | What it proves |
 | --- | --- |
 | Backend unit/router tests | Auth determines user; extra/invalid request fields are rejected; bounded history is forwarded as content; 503 remains clear and retryable; no client session/identity is trusted. |
-| Backend AI-tool integration tests using two users | Query, summary, table, bar, line, and category-share outputs contain only the authenticated user’s rows and values; current-year defaults, stated periods, tag/category, and single-currency aggregation behavior are correct. |
+| Backend AI-tool integration tests using two users | Query, table, bar, line, and pie outputs contain only the authenticated user’s rows and values; current-year defaults, stated periods, tag/category, and single-currency aggregation behavior are correct. |
 | Backend mutation/SQL-safety regression tests | Injection-shaped user/history/note/tag/model values cannot execute prohibited statements, bypass parameterization/scoping, mutate records, or reveal DB details. |
 | Agent behavior tests with a deterministic fake/model fixture | Ambiguous questions map to a concise server clarification; unsupported/write/advice/external-data requests map to a server limitation; a fake fabricated number/title is rejected or discarded, and every delivered fact comes from deterministic presentation output. |
 | Frontend Vitest | Timeline roles, typed API contract, request history, retry without duplication, reset/unmount/reload clearing, error recovery, each visual renderer, accessibility semantics, and text-only fallback all work. |

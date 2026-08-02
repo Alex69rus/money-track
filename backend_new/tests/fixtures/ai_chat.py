@@ -48,10 +48,11 @@ async def invoke_ai_chat_tool(
     tool: FunctionTool,
     user_id: int,
     arguments: dict[str, object],
+    context: ChatAgentContext | None = None,
 ) -> object:
     tool_arguments = json.dumps(arguments)
     context = ToolContext(
-        context=ChatAgentContext(user_id=user_id),
+        context=context or ChatAgentContext(user_id=user_id),
         tool_name=tool.name,
         tool_call_id=f"integration-test-{tool.name}",
         tool_arguments=tool_arguments,

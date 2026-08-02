@@ -211,16 +211,14 @@ describe("AiChatPage", () => {
     expect(payload.history[11]).toEqual({ content: "answer:question:7", role: "assistant" });
   });
 
-  it("renders a server-grounded summary visual", async () => {
+  it("renders a server-grounded table visual", async () => {
     global.fetch = vi.fn().mockResolvedValue(
       response("Spending for July was AED 120.", {
-        kind: "summary",
+        kind: "table",
         period: { fromDate: "2099-07-01", label: "2099-07-01 to 2099-07-31", toDate: "2099-07-31" },
-        metrics: [
-          { count: null, key: "spending", label: "Spending", money: { amount: "120.00", currency: "AED", display: "AED 120.00" }, percentage: null },
-          { count: 3, key: "transaction_count", label: "Matching transactions", money: null, percentage: null },
-        ],
-        title: "Spending summary",
+        columns: ["Category", "Spending"],
+        rows: [["Food", "AED 120.00"]],
+        title: "July spending",
       }),
     ) as unknown as typeof fetch;
 
@@ -228,7 +226,7 @@ describe("AiChatPage", () => {
     fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "How much in July?" } });
     fireEvent.click(screen.getByTestId("ai-chat-send"));
 
-    expect(await screen.findByTestId("ai-chat-visual-summary")).toBeInTheDocument();
+    expect(await screen.findByTestId("ai-chat-visual-table")).toBeInTheDocument();
     expect(screen.getByText("AED 120.00")).toBeInTheDocument();
   });
 });

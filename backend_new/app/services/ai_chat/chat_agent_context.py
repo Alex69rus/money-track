@@ -1,6 +1,6 @@
 from openai import BaseModel
 
-from app.services.ai_chat.contracts import ChatResponseV1
+from app.services.ai_chat.contracts import ChatVisualV1
 
 
 class ChatAgentContext(BaseModel):
@@ -11,4 +11,4 @@ class ChatAgentContext(BaseModel):
     """
 
     user_id: int
-    presentation: ChatResponseV1 | None = None
+    visual: ChatVisualV1 | None = None

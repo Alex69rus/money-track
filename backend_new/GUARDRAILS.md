@@ -123,17 +123,27 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: aggregate output reached the model as `TransactionAggregationResult(... Decimal(...))`; `ToolOutputText` preserved model-generated JSON as text instead.
 - Prevention rule: return `ToolOutputText(text=<validated JSON>)` from every AI Chat tool and assert the model-facing text parses as JSON in its integration test.
 
-### 2026-07-26 - AI Chat Factual Response Boundary
-- Takeaway: keep every client-visible fact in a deterministic presentation response, not in model output.
-- Exploration: a strict directive rejected a model-authored fact field, while the scoped presentation integration suite covered summary, table, chart, share, and comparison output.
-- Prevention rule: add a presentation-tool regression for every new AI Chat analysis and reject any directive schema field that could carry prose, titles, values, or rows.
+### 2026-08-02 - AI Chat Data-First Widget Boundary
+- Takeaway: keep authenticated retrieval and widget preparation separate; the agent writes text after read tools return data.
+- Exploration: four schema-only widget tools captured one request-local visual while the scoped aggregate, transaction, and tag tools continued to pass their integration suite.
+- Prevention rule: every AI Chat widget tool must accept only typed display data, perform no query, identity, or filter work, return `ToolOutputText` JSON, and reject a second visual for the same response.
 
 ### 2026-07-26 - AI Chat Negative-Expense Ranking
 - Takeaway: sort negative expense aggregates by absolute value before applying a top-N visual cap.
 - Exploration: descending raw sums put `-10` before `-100`; absolute-value SQL ordering preserved the largest displayed expenses and the comparison candidates.
 - Prevention rule: any user-visible expense ranking must test unequal negative magnitudes and assert the largest displayed amount appears first.
 
-### 2026-07-27 - AI Chat Analysis Defaults
-- Takeaway: do not rely on a model prompt alone to apply an omitted analysis period; resolve the same default at the deterministic presentation boundary and preserve explicit all-time intent with a typed scope.
-- Exploration: presentation-tool integration tests proved an undated single-period request uses the inclusive current calendar year, an explicit all-time request retains prior-year records, same-flow amounts aggregate under the single-currency assumption, and results show their derived period.
-- Prevention rule: whenever an AI Chat analysis default changes, update the prompt and add a presentation-tool regression that asserts selected records, explicit period scope, and the server-rendered period label.
+### 2026-08-02 - AI Chat Analysis Defaults
+- Takeaway: default periods now belong in the data-retrieval instructions because widget tools consume already retrieved data.
+- Exploration: the updated prompt requires current-year date filters for undated single-period questions and leaves explicit all-time requests unfiltered.
+- Prevention rule: whenever an AI Chat analysis default changes, update the prompt and verify the resulting read-tool filters before a widget can be prepared.
+
+### 2026-08-02 - AI Chat Widget Input Models
+- Takeaway: make each model-facing widget payload a dedicated, minimally described Pydantic model; keep renderer discriminators out of its input.
+- Exploration: schema and tool tests proved generic matching-width table rows and backend-calculated pie shares without asking the model for `kind`, table variants, or percentages.
+- Prevention rule: add any derivable visual value in the widget tool with a regression test; expose only the source values needed to derive it in the tool's input schema.
+
+### 2026-08-02 - AI Chat Visual Selection
+- Takeaway: reserve widgets for data whose relationships benefit from a visual; communicate a single aggregate in the agent's text.
+- Exploration: removing the summary tool, response union, API parser, and renderer while rejecting its retired payload on both clients left table, bar, line, and pie contracts green.
+- Prevention rule: do not add a summary widget without a user-approved visual-only insight that cannot be conveyed clearly in the response text.

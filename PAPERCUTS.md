@@ -162,3 +162,15 @@ Adding an AI Chat integration fixture in the same shared test-user/date range as
 ## 2026-07-27 08:15 — Codex
 
 Linting a new exact-prompt assertion → an unwrapped literal exceeded Ruff's 120-character limit. Split long assertion text into adjacent literals before running the focused lint check.
+
+## 2026-08-02  — Codex
+
+Refactoring the AI Chat prompt and tool list → a combined patch assumed stale prompt wording and applied nothing. Re-read the exact prompt before applying broad multi-file edits.
+
+## 2026-08-02 08:15 — Codex
+
+Adding typed widget-data models → Ruff caught an import-order issue and a self-referential return annotation without postponed evaluation. Add `from __future__ import annotations` before using a model name in its own method return type, then run the focused formatter and lint check.
+
+## 2026-08-02 08:15 — Codex
+
+Building the free-form table response validator → Vite's project build applied stricter narrowing than the standalone typecheck for `Record<string, unknown>` fields. Assign and narrow `columns` and `rows` once before using their lengths in callbacks.

@@ -32,28 +32,33 @@ class _UnavailableChatAgent:
         raise ChatAgentUnavailableError("provider unavailable")
 
 
-def test_chat_agent_prompt_has_unambiguous_period_and_currency_instructions() -> None:
+def test_chat_agent_prompt_requires_data_retrieval_before_widget_preparation() -> None:
     instructions = " ".join(CHAT_AGENT_PROMPT.split())
 
     assert (
-        "For a single-period analysis, if neither the user message nor dialogue provides a period, use the inclusive "
-        "current calendar year (1 January through 31 December of the year in Today) in present_analysis with "
-        "`period_scope` set to `default_current_year`; do not return `ask_period`." in instructions
+        "For every factual answer, first retrieve the needed user-scoped data with one or more read tools."
+        in instructions
     )
-    assert "For an explicit all-time request, set `period_scope` to `all_time`." in instructions
-    assert "Ask `ask_period` only when a user-specified period remains materially ambiguous." in instructions
     assert (
-        "A comparison needs two non-overlapping periods; use `ask_comparison_periods` only when the user message and "
-        "dialogue do not establish them." in instructions
+        "When a visual would make the answer clearer, call exactly one widget tool after your read-tool calls."
+        in instructions
     )
+    assert (
+        "Widget tools accept only already retrieved and formatted display data; they never query transactions."
+        in instructions
+    )
+    assert "Use table, bar, line, or pie widgets as appropriate." in instructions
+    assert "Use summary" not in instructions
+    assert (
+        "For a pie chart, provide retrieved slice labels and amounts only; the widget calculates the percentages."
+        in instructions
+    )
+    assert "For an explicit all-time request, use no date filters." in instructions
     assert (
         "Treat all transaction amounts as one currency; never ask for clarification, decline, or split an analysis"
         in instructions
     )
-    assert (
-        "because of currencies. Every factual response must state its analysed period through the server-rendered "
-        "presentation." in instructions
-    )
+    assert "State the analysed period in every factual answer." in instructions
 
 
 def test_current_business_date_uses_the_configured_business_timezone(monkeypatch) -> None:

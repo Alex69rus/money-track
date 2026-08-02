@@ -26,7 +26,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 4. Ensure a user can access only their own data, regardless of what they ask or what the LLM attempts to do.
 5. Keep the first version read-only: chat must never change Money Track data.
 6. Keep the feature simple and focused on analytical questions; do not turn it into a general-purpose agent.
-7. Ensure answers and visuals are grounded in the user's real transaction data and never invent facts, values, or transactions.
+7. Guide answers and visuals from the user's real transaction data while preserving backend-enforced authorization and widget-payload validation.
 
 ## 4) Non-goals
 
@@ -55,16 +55,18 @@ The product needs to combine flexible, natural-language analysis with determinis
 - It can analyze requested periods, compare periods, identify notable changes, summarize categories or tags, and locate relevant transactions.
 - If a single analysis period is not stated, it uses the inclusive current calendar year.
 - Answers state the analysed period or interpretation used whenever that information matters to the result.
-- The assistant must base factual statements, values, and visual data on the user's real transaction data. When the available data cannot support an answer, it says so rather than inventing an answer.
+- Before a factual answer, the assistant retrieves the required data through one or more authenticated, user-scoped read tools. It uses those results to write its text and, when useful, prepare a widget payload.
+- When the available data cannot support an answer, the assistant says so rather than inventing an answer.
 - If no relevant data exists, the assistant says so clearly.
 - If a request is outside the feature scope, the assistant explains the limitation and, where useful, suggests a supported analytical question.
 
 ### FR-3: Visual answers
 
 - The assistant may return a visual representation when it makes an answer easier to understand.
-- Supported visual forms include summary values, tables, bar charts, line charts, and category-share charts.
+- Supported visual forms include tables, bar charts, line charts, and category-share pie charts. Single values and compact aggregates are stated in the assistant's text response.
 - The Mini App renders visual results in the product’s established visual style and remains usable in Telegram viewport constraints.
-- A visual must reflect the same user-scoped data used for the answer.
+- The agent may call one widget-preparation tool after its read-tool calls. The widget tool accepts validated display data only; it cannot filter or retrieve transaction data.
+- Widget tools validate payload shape, numeric values, and display limits. They do not reconcile agent-formatted values against prior read-tool results.
 
 ### FR-4: Safe and read-only behavior
 
@@ -95,7 +97,7 @@ This is a product safety requirement. The implementation must enforce it in code
 ### Authorization and security
 
 - Authorization is enforced by backend code, not by LLM instructions or model judgment.
-- All answers and visual results are based only on data belonging to the authenticated user.
+- Every data retrieval is based only on data belonging to the authenticated user. Widget tools receive no identity, filters, or database access.
 - The implementation must include automated tests with at least two users to prove that one user's chat cannot retrieve, infer, or affect another user's data.
 - The feature must preserve the product’s existing Telegram authentication model.
 
@@ -123,7 +125,7 @@ This is a product safety requirement. The implementation must enforce it in code
 8. SQL injection attempts through user messages, chat history, transaction text, or LLM-generated input cannot execute unintended SQL, reveal database details, or bypass user scoping.
 9. A dialogue is available only during the current AI Chat view and is cleared on a new-dialogue action, app reload, or screen change.
 10. Default OpenAI tracing and existing backend logging are available for diagnosing feature behavior.
-11. Answers and visuals contain only facts supported by the current user's real transaction data; when data is insufficient, the assistant does not invent an answer.
+11. Every retrieval call is authenticated and user-scoped; widget payloads accept only valid, bounded display data and cannot perform a database read.
 12. Chat accepts text input only and does not provide multi-modal input controls.
 
 ## 8) Resolved Decisions
@@ -133,8 +135,9 @@ This is a product safety requirement. The implementation must enforce it in code
 3. The feature uses the OpenAI Agents SDK.
 4. Dialogues are limited to the current AI Chat view and do not survive a new-dialogue action, reload, or screen change.
 5. The feature uses default OpenAI tracing and the product's existing backend logging.
-6. Detailed API contracts, dialogue-passing mechanics, tool design, query design, and database permissions belong to implementation planning, not this PRD.
+6. The assistant writes the final text response. It retrieves data first, may prepare one optional widget from that data, and the API returns both in one response.
 7. AI Chat assumes users have one currency. It aggregates matching transaction amounts without conversion or currency-specific analysis.
+8. The first release has four separate widget tools: table, bar chart, line chart, and pie chart. Each accepts only its widget data; read tools remain the sole path to transaction data.
 
 ## 9) References
 

@@ -67,6 +67,17 @@ TELEGRAM_WEBHOOK_URL=https://delicate-halibut-tolerant.ngrok-free.app/api/telegr
 ```
 
 3. Run backend and frontend locally (commands above).
+FE:
+```bash
+cd frontend_new
+VITE_API_BASE_URL= npm run dev -- --host 0.0.0.0 --port 4173
+```
+BE:
+```bash
+cd backend_new
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
 4. Run nginx proxy container (routes `/api/*` -> backend `:8000`, `/` -> frontend `:4173`):
 
 ```bash

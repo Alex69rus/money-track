@@ -2,16 +2,6 @@ import { ApiRequestError, apiRequest } from "@/services/api/client";
 
 const CHAT_ENDPOINT = "/api/chat";
 const DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
-const SUMMARY_METRIC_KEYS = [
-  "balance",
-  "change",
-  "change_percent",
-  "current_period",
-  "income",
-  "previous_period",
-  "spending",
-  "transaction_count",
-] as const;
 
 export interface ChatHistoryMessage {
   content: string;
@@ -40,60 +30,17 @@ export interface ChatPeriod {
   toDate: string | null;
 }
 
-export interface ChatSummaryVisual {
-  kind: "summary";
-  metrics: Array<{
-    count: number | null;
-    key: string;
-    label: string;
-    money: ChatMoney | null;
-    percentage: ChatPercentage | null;
-  }>;
-  period: ChatPeriod;
-  title: string;
-}
-
-export interface ChatTransactionsTableVisual {
+export interface ChatTableVisual {
   kind: "table";
   period: ChatPeriod;
-  rows: Array<{
-    amount: ChatMoney;
-    category: string | null;
-    dateTime: string;
-    id: number;
-    note: string | null;
-    tags: string[];
-  }>;
-  tableKind: "transactions";
-  title: string;
-}
-
-export interface ChatBreakdownTableVisual {
-  kind: "table";
-  period: ChatPeriod;
-  rows: Array<{ label: string; value: ChatMoney }>;
-  tableKind: "breakdown";
-  title: string;
-}
-
-export interface ChatComparisonTableVisual {
-  kind: "table";
-  period: ChatPeriod;
-  rows: Array<{
-    change: ChatMoney;
-    changePercent: ChatPercentage | null;
-    current: ChatMoney;
-    label: string;
-    previous: ChatMoney;
-  }>;
-  tableKind: "comparison";
+  columns: string[];
+  rows: string[][];
   title: string;
 }
 
 export interface ChatBarVisual {
   items: Array<{ label: string; value: ChatMoney }>;
   kind: "bar";
-  measure: "balance" | "change" | "income" | "spending";
   period: ChatPeriod;
   title: string;
 }
@@ -101,26 +48,22 @@ export interface ChatBarVisual {
 export interface ChatLineVisual {
   kind: "line";
   period: ChatPeriod;
-  points: Array<{ bucket: string; income: ChatMoney; label: string; spending: ChatMoney }>;
+  points: Array<{ income: ChatMoney; label: string; spending: ChatMoney }>;
   title: string;
 }
 
-export interface ChatCategoryShareVisual {
-  dimension: "category" | "tag";
+export interface ChatPieVisual {
   items: Array<{ label: string; share: ChatPercentage; value: ChatMoney }>;
-  kind: "category_share";
+  kind: "pie";
   period: ChatPeriod;
   title: string;
 }
 
 export type ChatVisual =
   | ChatBarVisual
-  | ChatBreakdownTableVisual
-  | ChatCategoryShareVisual
-  | ChatComparisonTableVisual
   | ChatLineVisual
-  | ChatSummaryVisual
-  | ChatTransactionsTableVisual;
+  | ChatPieVisual
+  | ChatTableVisual;
 
 export interface ChatResponse {
   kind: "answer" | "clarification" | "limitation";
@@ -174,28 +117,11 @@ function parseVisual(value: unknown): ChatVisual | null {
     return null;
   }
 
-  if (visual.kind === "summary" && Array.isArray(visual.metrics) && visual.metrics.length >= 2 && visual.metrics.length <= 4) {
-    const valid = visual.metrics.every((metric) => {
-      const item = asRecord(metric);
-      return (
-        item !== null &&
-        isString(item.key) &&
-        SUMMARY_METRIC_KEYS.includes(item.key as (typeof SUMMARY_METRIC_KEYS)[number]) &&
-        isString(item.label) &&
-        (item.money === null || isMoney(item.money)) &&
-        (item.percentage === null || isPercentage(item.percentage)) &&
-        (item.count === null || (typeof item.count === "number" && Number.isInteger(item.count) && item.count >= 0))
-      );
-    });
-    return valid ? (visual as unknown as ChatSummaryVisual) : null;
-  }
-
   if (
     visual.kind === "bar" &&
     Array.isArray(visual.items) &&
     visual.items.length >= 1 &&
-    visual.items.length <= 10 &&
-    ["balance", "change", "income", "spending"].includes(String(visual.measure))
+    visual.items.length <= 10
   ) {
     const valid = visual.items.every((item) => {
       const row = asRecord(item);
@@ -209,7 +135,6 @@ function parseVisual(value: unknown): ChatVisual | null {
       const row = asRecord(point);
       return (
         row !== null &&
-        isString(row.bucket) &&
         isString(row.label) &&
         isMoney(row.spending) &&
         hasFiniteChartAmount(row.spending) &&
@@ -221,70 +146,34 @@ function parseVisual(value: unknown): ChatVisual | null {
   }
 
   if (
-    visual.kind === "category_share" &&
+    visual.kind === "pie" &&
     Array.isArray(visual.items) &&
     visual.items.length >= 1 &&
-    visual.items.length <= 10 &&
-    ["category", "tag"].includes(String(visual.dimension))
+    visual.items.length <= 10
   ) {
     const valid = visual.items.every((item) => {
       const row = asRecord(item);
       return row !== null && isString(row.label) && isMoney(row.value) && hasFiniteChartAmount(row.value) && isPercentage(row.share);
     });
-    return valid ? (visual as unknown as ChatCategoryShareVisual) : null;
+    return valid ? (visual as unknown as ChatPieVisual) : null;
   }
 
+  const columns = visual.columns;
+  const rows = visual.rows;
   if (
     visual.kind === "table" &&
-    isString(visual.tableKind) &&
-    Array.isArray(visual.rows) &&
-    visual.rows.length >= 1 &&
-    visual.rows.length <= 20
+    Array.isArray(columns) &&
+    columns.length >= 1 &&
+    columns.length <= 8 &&
+    columns.every(isString) &&
+    Array.isArray(rows) &&
+    rows.length >= 1 &&
+    rows.length <= 20
   ) {
-    if (visual.tableKind === "transactions") {
-      const valid = visual.rows.every((item) => {
-        const row = asRecord(item);
-        return (
-          row !== null &&
-          typeof row.id === "number" &&
-          Number.isInteger(row.id) &&
-          isString(row.dateTime) &&
-          isNullableString(row.category) &&
-          isNullableString(row.note) &&
-          Array.isArray(row.tags) &&
-          row.tags.every(isString) &&
-          isMoney(row.amount)
-        );
-      });
-      return valid ? (visual as unknown as ChatTransactionsTableVisual) : null;
-    }
-    if (visual.tableKind === "breakdown") {
-      if (visual.rows.length > 10) {
-        return null;
-      }
-      const valid = visual.rows.every((item) => {
-        const row = asRecord(item);
-        return row !== null && isString(row.label) && isMoney(row.value);
-      });
-      return valid ? (visual as unknown as ChatBreakdownTableVisual) : null;
-    }
-    if (visual.tableKind === "comparison") {
-      if (visual.rows.length > 10) {
-        return null;
-      }
-      const valid = visual.rows.every((item) => {
-        const row = asRecord(item);
-        return (
-          row !== null &&
-          isString(row.label) &&
-          isMoney(row.current) &&
-          isMoney(row.previous) &&
-          isMoney(row.change) &&
-          (row.changePercent === null || isPercentage(row.changePercent))
-        );
-      });
-      return valid ? (visual as unknown as ChatComparisonTableVisual) : null;
-    }
+    const valid = rows.every(
+      (row) => Array.isArray(row) && row.length === columns.length && row.every(isString),
+    );
+    return valid ? (visual as unknown as ChatTableVisual) : null;
   }
 
   return null;

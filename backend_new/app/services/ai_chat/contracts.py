@@ -20,92 +20,32 @@ class ChatHistoryMessage(BaseModel):
 class MoneyV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    amount: str = Field(pattern=r"^-?\d+(?:\.\d+)?$")
-    currency: str = Field(min_length=1, max_length=100)
-    display: str = Field(min_length=1, max_length=160)
+    amount: str = Field(pattern=r"^-?\d+(?:\.\d+)?$", description="Exact retrieved decimal amount.")
+    currency: str = Field(min_length=1, max_length=100, description="Retrieved currency code.")
+    display: str = Field(min_length=1, max_length=160, description="Formatted amount shown to the user.")
 
 
 class PercentageV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    value: str = Field(pattern=r"^-?\d+(?:\.\d+)?$")
-    display: str = Field(min_length=1, max_length=80)
+    value: str = Field(pattern=r"^-?\d+(?:\.\d+)?$", description="Exact percentage value.")
+    display: str = Field(min_length=1, max_length=80, description="Formatted percentage shown to the user.")
 
 
 class PeriodV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    label: str = Field(min_length=1, max_length=120)
-    from_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
-    to_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    label: str = Field(min_length=1, max_length=120, description="Short label for the analysed period.")
+    from_date: str | None = Field(
+        default=None, pattern=r"^\d{4}-\d{2}-\d{2}$", description="Inclusive start date, if known."
+    )
+    to_date: str | None = Field(
+        default=None, pattern=r"^\d{4}-\d{2}-\d{2}$", description="Inclusive end date, if known."
+    )
 
 
-class SummaryMetricV1(BaseModel):
-    model_config = _CONTRACT_CONFIG
-
-    key: Literal[
-        "spending",
-        "income",
-        "balance",
-        "transaction_count",
-        "current_period",
-        "previous_period",
-        "change",
-        "change_percent",
-    ]
-    label: str = Field(min_length=1, max_length=80)
-    money: MoneyV1 | None = None
-    count: int | None = Field(default=None, ge=0)
-    percentage: PercentageV1 | None = None
-
-    @model_validator(mode="after")
-    def validate_value_shape(self) -> SummaryMetricV1:
-        value_count = sum(value is not None for value in (self.money, self.count, self.percentage))
-        if value_count == 0 and self.key == "change_percent":
-            return self
-        if value_count != 1:
-            raise ValueError("summary metric must have exactly one value")
-        return self
-
-
-class SummaryVisualV1(BaseModel):
-    model_config = _CONTRACT_CONFIG
-
-    kind: Literal["summary"]
-    title: str = Field(min_length=1, max_length=120)
-    period: PeriodV1
-    metrics: list[SummaryMetricV1] = Field(min_length=2, max_length=4)
-
-
-class TransactionTableRowV1(BaseModel):
-    model_config = _CONTRACT_CONFIG
-
-    id: int
-    date_time: str = Field(min_length=1, max_length=64)
-    category: str | None = Field(default=None, max_length=100)
-    tags: list[str] = Field(default_factory=list, max_length=20)
-    note: str | None = Field(default=None, max_length=500)
-    amount: MoneyV1
-
-
-class BreakdownTableRowV1(BaseModel):
-    model_config = _CONTRACT_CONFIG
-
-    label: str = Field(min_length=1, max_length=120)
-    value: MoneyV1
-
-
-class ComparisonTableRowV1(BaseModel):
-    model_config = _CONTRACT_CONFIG
-
-    label: str = Field(min_length=1, max_length=120)
-    current: MoneyV1
-    previous: MoneyV1
-    change: MoneyV1
-    change_percent: PercentageV1 | None = None
-
-
-TableRowV1 = TransactionTableRowV1 | BreakdownTableRowV1 | ComparisonTableRowV1
+TableColumnV1 = Annotated[str, Field(min_length=1, max_length=120)]
+TableCellV1 = Annotated[str, Field(min_length=1, max_length=500)]
 
 
 class TableVisualV1(BaseModel):
@@ -114,28 +54,21 @@ class TableVisualV1(BaseModel):
     kind: Literal["table"]
     title: str = Field(min_length=1, max_length=120)
     period: PeriodV1
-    table_kind: Literal["transactions", "breakdown", "comparison"]
-    rows: list[TableRowV1] = Field(min_length=1, max_length=20)
+    columns: list[TableColumnV1] = Field(min_length=1, max_length=8)
+    rows: list[list[TableCellV1]] = Field(min_length=1, max_length=20)
 
     @model_validator(mode="after")
     def validate_row_shape(self) -> TableVisualV1:
-        row_type = {
-            "transactions": TransactionTableRowV1,
-            "breakdown": BreakdownTableRowV1,
-            "comparison": ComparisonTableRowV1,
-        }[self.table_kind]
-        if not all(isinstance(row, row_type) for row in self.rows):
-            raise ValueError("table rows do not match table_kind")
-        if self.table_kind in {"breakdown", "comparison"} and len(self.rows) > 10:
-            raise ValueError("breakdown and comparison tables may contain at most 10 rows")
+        if not all(len(row) == len(self.columns) for row in self.rows):
+            raise ValueError("each table row must contain one cell for every column")
         return self
 
 
 class BarVisualItemV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    label: str = Field(min_length=1, max_length=120)
-    value: MoneyV1
+    label: str = Field(min_length=1, max_length=120, description="Short bar label.")
+    value: MoneyV1 = Field(description="Retrieved amount for this bar.")
 
 
 class BarVisualV1(BaseModel):
@@ -144,17 +77,15 @@ class BarVisualV1(BaseModel):
     kind: Literal["bar"]
     title: str = Field(min_length=1, max_length=120)
     period: PeriodV1
-    measure: Literal["spending", "income", "balance", "change"]
     items: list[BarVisualItemV1] = Field(min_length=1, max_length=10)
 
 
 class LinePointV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    bucket: str = Field(min_length=1, max_length=16)
-    label: str = Field(min_length=1, max_length=80)
-    spending: MoneyV1
-    income: MoneyV1
+    label: str = Field(min_length=1, max_length=80, description="Label for this point on the timeline.")
+    spending: MoneyV1 = Field(description="Retrieved spending amount for this point.")
+    income: MoneyV1 = Field(description="Retrieved income amount for this point.")
 
 
 class LineVisualV1(BaseModel):
@@ -166,26 +97,25 @@ class LineVisualV1(BaseModel):
     points: list[LinePointV1] = Field(min_length=2, max_length=12)
 
 
-class CategoryShareItemV1(BaseModel):
+class PieChartItemV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    label: str = Field(min_length=1, max_length=120)
-    value: MoneyV1
-    share: PercentageV1
+    label: str = Field(min_length=1, max_length=120, description="Short slice label.")
+    value: MoneyV1 = Field(description="Retrieved amount for this slice.")
+    share: PercentageV1 = Field(description="Percentage calculated by the widget.")
 
 
-class CategoryShareVisualV1(BaseModel):
+class PieChartVisualV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    kind: Literal["category_share"]
+    kind: Literal["pie"]
     title: str = Field(min_length=1, max_length=120)
     period: PeriodV1
-    dimension: Literal["category", "tag"]
-    items: list[CategoryShareItemV1] = Field(min_length=1, max_length=10)
+    items: list[PieChartItemV1] = Field(min_length=1, max_length=10)
 
 
 ChatVisualV1 = Annotated[
-    SummaryVisualV1 | TableVisualV1 | BarVisualV1 | LineVisualV1 | CategoryShareVisualV1,
+    TableVisualV1 | BarVisualV1 | LineVisualV1 | PieChartVisualV1,
     Field(discriminator="kind"),
 ]
 
@@ -199,16 +129,8 @@ class ChatResponseV1(BaseModel):
     visual: ChatVisualV1 | None = None
 
 
-class AgentDirective(BaseModel):
+class AgentResponse(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    directive: Literal[
-        "presented",
-        "ask_period",
-        "ask_comparison_periods",
-        "ask_dimension",
-        "decline_write",
-        "decline_external_data",
-        "decline_advice",
-        "decline_unsupported",
-    ]
+    kind: Literal["answer", "clarification", "limitation"]
+    message: str = Field(min_length=1, max_length=1000)

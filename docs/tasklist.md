@@ -82,7 +82,7 @@ Expose a strict `POST /api/chat` contract whose factual message and optional vis
 
 - Replace ignored client identity/session fields with bounded typed history and a strict response envelope.
 - Extract reusable read-query services from AI Chat tools; add category labels, period derivation, multi-currency aggregate refusal, deterministic two-period comparison, and a closed `present_analysis` tool.
-- Support the enumerated summary, transaction/breakdown/comparison table, bar, line, and category-share payloads without dynamic SQL or merchant analysis.
+- Support transaction/breakdown/comparison tables, bars, lines, and category-share payloads without dynamic SQL or merchant analysis.
 
 ### Acceptance criteria
 
@@ -186,7 +186,7 @@ Render each backend-grounded visual form in the message timeline without making 
 ### Scope
 
 - Add and review needed official shadcn chart/form/feedback primitives.
-- Render summary, table, bar, line, and category-share cards with server-derived title and period.
+- Render table, bar, line, and category-share cards with server-derived title and period.
 - Provide table/text equivalents, captions, labels, tooltips, mobile limits, and safe-area/keyboard-compatible composition.
 
 ### Acceptance criteria
@@ -203,7 +203,7 @@ Render each backend-grounded visual form in the message timeline without making 
 
 ### Delivery record
 
-- Added shadcn/Recharts visual rendering for server-grounded summary, table, bar, line, and category-share payloads, with semantic table/text facts. The client rejects malformed visual payloads rather than rendering them. Resolved BR-008 by preventing initial welcome-message auto-scroll from moving the iPhone SE AI Chat page into Telegram’s top control inset.
+- Added shadcn/Recharts visual rendering for server-grounded table, bar, line, and category-share payloads, with semantic table/text facts. The client rejects malformed visual payloads rather than rendering them. Resolved BR-008 by preventing initial welcome-message auto-scroll from moving the iPhone SE AI Chat page into Telegram’s top control inset.
 - Verification: visual/component and API contract Vitest coverage passed; `scripts/run_frontend_mobile_qa.sh` passed all dark/light iPhone 12 Pro, iPhone 15, iPhone 15 Pro Max, and iPhone SE profiles. Inspected `frontend_new/.codex-tmp/mobile-qa/2026-07-26T18-16-23-042Z/{dark,light}/iphone-se/ai-chat.png`.
 - Remaining exception: native-device smoke test is unavailable because `TELEGRAM_DEVICE_NGROK_DOMAIN` is not configured.
 
@@ -292,7 +292,7 @@ Ensure charts never surface a client-derived monetary string and complete the cr
 
 ### Delivery record
 
-- Resolved BR-011: bar, line, and category-share tooltips now map chart geometry to server-provided money displays. Frontend validation now mirrors summary enums and breakdown/comparison caps; trend selects chronological buckets and supports month/quarter/year grouping.
+- Resolved BR-011: bar, line, and category-share tooltips now map chart geometry to server-provided money displays. Frontend validation mirrors the supported visual contracts and breakdown/comparison caps; trend selects chronological buckets and supports month/quarter/year grouping.
 - Remaining decision: comparison growth is correct for the largest 100 groups from each period, but not provably for a lower-total group outside both caps. Do not silently choose unbounded retrieval or a user-visible cap without product/architecture direction.
 
 ## AI-CHAT-08 — Phone-first AI Chat composition

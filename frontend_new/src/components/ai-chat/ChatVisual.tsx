@@ -18,10 +18,9 @@ import {
 } from "@/components/ui/table";
 import type {
   ChatBarVisual,
-  ChatCategoryShareVisual,
   ChatLineVisual,
-  ChatMoney,
-  ChatSummaryVisual,
+  ChatPieVisual,
+  ChatTableVisual,
   ChatVisual,
 } from "@/services/api/chat";
 
@@ -63,84 +62,24 @@ function ChartFacts({ facts }: { facts: string[] }): JSX.Element {
   );
 }
 
-function SummaryVisual({ visual }: { visual: ChatSummaryVisual }): JSX.Element {
+function TableVisual({ visual }: { visual: ChatTableVisual }): JSX.Element {
   return (
     <VisualCard period={visual.period.label} title={visual.title}>
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="ai-chat-visual-summary">
-        {visual.metrics.map((metric) => {
-          const value = metric.money?.display ?? metric.percentage?.display ?? metric.count?.toString() ?? "Not available";
-          return (
-            <div className="rounded-lg bg-muted/60 p-3" key={metric.key}>
-              <dt className="text-xs font-medium text-muted-foreground">{metric.label}</dt>
-              <dd className="mt-1 text-base font-semibold">{value}</dd>
-            </div>
-          );
-        })}
-      </dl>
-    </VisualCard>
-  );
-}
-
-function MoneyCell({ money }: { money: ChatMoney }): JSX.Element {
-  return <>{money.display}</>;
-}
-
-function TableVisual({ visual }: { visual: Extract<ChatVisual, { kind: "table" }> }): JSX.Element {
-  const transactionRows = visual.tableKind === "transactions" ? visual.rows : [];
-  const breakdownRows = visual.tableKind === "breakdown" ? visual.rows : [];
-  const comparisonRows = visual.tableKind === "comparison" ? visual.rows : [];
-
-  return (
-    <VisualCard period={visual.period.label} title={visual.title}>
-      <Table data-testid={`ai-chat-visual-table-${visual.tableKind}`}>
+      <Table data-testid="ai-chat-visual-table">
         <TableCaption className="sr-only">{visual.title}</TableCaption>
         <TableHeader>
           <TableRow>
-            {visual.tableKind === "transactions" ? (
-              <>
-                <TableHead>Date</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Note</TableHead>
-                <TableHead>Amount</TableHead>
-              </>
-            ) : null}
-            {visual.tableKind === "breakdown" ? (
-              <>
-                <TableHead>Label</TableHead>
-                <TableHead>Amount</TableHead>
-              </>
-            ) : null}
-            {visual.tableKind === "comparison" ? (
-              <>
-                <TableHead>Label</TableHead>
-                <TableHead>Current</TableHead>
-                <TableHead>Previous</TableHead>
-                <TableHead>Change</TableHead>
-              </>
-            ) : null}
+            {visual.columns.map((column, index) => (
+              <TableHead key={`${column}-${index}`}>{column}</TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactionRows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>{row.dateTime}</TableCell>
-              <TableCell>{row.category ?? "Uncategorized"}</TableCell>
-              <TableCell>{row.note ?? (row.tags.join(", ") || "—")}</TableCell>
-              <TableCell><MoneyCell money={row.amount} /></TableCell>
-            </TableRow>
-          ))}
-          {breakdownRows.map((row) => (
-            <TableRow key={row.label}>
-              <TableCell>{row.label}</TableCell>
-              <TableCell><MoneyCell money={row.value} /></TableCell>
-            </TableRow>
-          ))}
-          {comparisonRows.map((row) => (
-            <TableRow key={row.label}>
-              <TableCell>{row.label}</TableCell>
-              <TableCell><MoneyCell money={row.current} /></TableCell>
-              <TableCell><MoneyCell money={row.previous} /></TableCell>
-              <TableCell><MoneyCell money={row.change} /></TableCell>
+          {visual.rows.map((row, rowIndex) => (
+            <TableRow key={rowIndex}>
+              {row.map((cell, columnIndex) => (
+                <TableCell key={columnIndex}>{cell}</TableCell>
+              ))}
             </TableRow>
           ))}
         </TableBody>
@@ -219,16 +158,16 @@ function LineVisual({ visual }: { visual: ChatLineVisual }): JSX.Element {
   );
 }
 
-function CategoryShareVisual({ visual }: { visual: ChatCategoryShareVisual }): JSX.Element {
+function PieVisual({ visual }: { visual: ChatPieVisual }): JSX.Element {
   const chartData = visual.items.map((item, index) => ({
     fill: SHARE_COLORS[index % SHARE_COLORS.length],
     label: item.label,
-    value: toChartValue(item.value.amount),
+    value: toChartValue(item.share.value),
   }));
   const displayByValue = new Map(chartData.map((item, index) => [item.value, visual.items[index]!.value.display]));
   return (
     <VisualCard period={visual.period.label} title={visual.title}>
-      <ChartContainer className="min-h-56 w-full" config={BAR_CHART_CONFIG} data-testid="ai-chat-visual-category-share">
+      <ChartContainer className="min-h-56 w-full" config={BAR_CHART_CONFIG} data-testid="ai-chat-visual-pie">
         <PieChart>
           <ChartTooltip
             content={
@@ -243,7 +182,7 @@ function CategoryShareVisual({ visual }: { visual: ChatCategoryShareVisual }): J
           <Pie data={chartData} dataKey="value" nameKey="label" />
         </PieChart>
       </ChartContainer>
-      <ul className="flex flex-col gap-1 text-sm" aria-label={`${visual.dimension} share values`}>
+      <ul className="flex flex-col gap-1 text-sm" aria-label="Pie chart values">
         {visual.items.map((item) => (
           <li className="flex justify-between gap-3" key={item.label}>
             <span>{item.label}</span>
@@ -256,9 +195,6 @@ function CategoryShareVisual({ visual }: { visual: ChatCategoryShareVisual }): J
 }
 
 export function ChatVisual({ visual }: { visual: ChatVisual }): JSX.Element {
-  if (visual.kind === "summary") {
-    return <SummaryVisual visual={visual} />;
-  }
   if (visual.kind === "table") {
     return <TableVisual visual={visual} />;
   }
@@ -268,5 +204,5 @@ export function ChatVisual({ visual }: { visual: ChatVisual }): JSX.Element {
   if (visual.kind === "line") {
     return <LineVisual visual={visual} />;
   }
-  return <CategoryShareVisual visual={visual} />;
+  return <PieVisual visual={visual} />;
 }
