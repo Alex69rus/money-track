@@ -17,19 +17,18 @@ class ChatHistoryMessage(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
 
 
-class MoneyV1(BaseModel):
+class ChartValueV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    amount: str = Field(pattern=r"^-?\d+(?:\.\d+)?$", description="Exact retrieved decimal amount.")
-    currency: str = Field(min_length=1, max_length=100, description="Retrieved currency code.")
-    display: str = Field(min_length=1, max_length=160, description="Formatted amount shown to the user.")
+    value: str = Field(pattern=r"^-?\d+(?:\.\d+)?$", description="Exact numeric value retrieved for the chart.")
+    display: str = Field(min_length=1, max_length=160, description="Formatted value shown to the user.")
 
 
-class PercentageV1(BaseModel):
+class ChartSeriesValueV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
-    value: str = Field(pattern=r"^-?\d+(?:\.\d+)?$", description="Exact percentage value.")
-    display: str = Field(min_length=1, max_length=80, description="Formatted percentage shown to the user.")
+    label: str = Field(min_length=1, max_length=80, description="Short name shown for this series.")
+    value: ChartValueV1 = Field(description="Retrieved value for this series.")
 
 
 class PeriodV1(BaseModel):
@@ -68,7 +67,10 @@ class BarVisualItemV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
     label: str = Field(min_length=1, max_length=120, description="Short bar label.")
-    value: MoneyV1 = Field(description="Retrieved amount for this bar.")
+    values: list[ChartSeriesValueV1] = Field(
+        min_length=1,
+        description="Retrieved, labelled series values; use the same series names for every bar.",
+    )
 
 
 class BarVisualV1(BaseModel):
@@ -79,13 +81,29 @@ class BarVisualV1(BaseModel):
     period: PeriodV1
     items: list[BarVisualItemV1] = Field(min_length=1)
 
+    @model_validator(mode="after")
+    def validate_series_shape(self) -> BarVisualV1:
+        validate_chart_series_groups([item.values for item in self.items])
+        return self
+
 
 class LinePointV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
     label: str = Field(min_length=1, max_length=80, description="Label for this point on the timeline.")
-    spending: MoneyV1 = Field(description="Retrieved spending amount for this point.")
-    income: MoneyV1 = Field(description="Retrieved income amount for this point.")
+    values: list[ChartSeriesValueV1] = Field(
+        min_length=1,
+        description="Retrieved, labelled series values; use the same series names for every point.",
+    )
+
+
+def validate_chart_series_groups(groups: list[list[ChartSeriesValueV1]]) -> None:
+    series_names = {value.label for value in groups[0]}
+    if len(series_names) != len(groups[0]) or any(
+        len({value.label for value in group}) != len(group) or {value.label for value in group} != series_names
+        for group in groups
+    ):
+        raise ValueError("every chart item must contain the same named series")
 
 
 class LineVisualV1(BaseModel):
@@ -96,13 +114,18 @@ class LineVisualV1(BaseModel):
     period: PeriodV1
     points: list[LinePointV1] = Field(min_length=2)
 
+    @model_validator(mode="after")
+    def validate_series_shape(self) -> LineVisualV1:
+        validate_chart_series_groups([point.values for point in self.points])
+        return self
+
 
 class PieChartItemV1(BaseModel):
     model_config = _CONTRACT_CONFIG
 
     label: str = Field(min_length=1, max_length=120, description="Short slice label.")
-    value: MoneyV1 = Field(description="Retrieved amount for this slice.")
-    share: PercentageV1 = Field(description="Percentage calculated by the widget.")
+    value: ChartValueV1 = Field(description="Retrieved numeric value for this slice.")
+    share: ChartValueV1 = Field(description="Percentage calculated by the widget.")
 
 
 class PieChartVisualV1(BaseModel):

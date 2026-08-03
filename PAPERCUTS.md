@@ -190,3 +190,11 @@ Correcting the AI Chat composer after a device screenshot → a near-zero geomet
 ## 2026-08-02 20:55 — Codex
 
 Searching scoped frontend files with `rg` → placing `-g` after positional paths made ripgrep treat it as a file and Zsh reported a glob error. Put all `rg` options before the pattern and paths, and quote globs.
+
+## 2026-08-02 23:02 — Codex
+
+Updating a nested malformed-widget test fixture → one closing object delimiter was omitted and Vite's transform failed before assertions ran. Run the focused test file immediately after reshaping deeply nested API fixtures.
+
+## 2026-08-03 — Codex
+
+Inspecting a Phase QA helper → assumed `scaffold-utils.mjs` was directly under `tests/qa/`, but it is scoped under `tests/qa/phases/`. Follow imports when locating test utilities rather than inferring their directory from the caller.

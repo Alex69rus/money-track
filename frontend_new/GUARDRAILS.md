@@ -148,3 +148,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: scroll a new chat response through the timeline element, never `scrollIntoView` on a descendant, so document scrolling cannot move the fixed chat shell.
 - Exploration: a broad 12–20px geometry range certified a visibly flush composer; the same long response must be exercised with both full-height and normal-host stable viewports.
 - Prevention rule: keep `--mt-page-gutter` at `1rem`; Phase 4 and the phone matrix must reject any composer-to-navigation gap outside that exact token’s 2px rendering tolerance, retain normal-host screenshots/measurements, and assert that `scrollIntoView` is never called.
+
+## AI Chat generic chart series — 2026-08-02
+
+- Takeaway: render every bar and line from generic labelled value series, reserving fixed renderer keys for internal chart plumbing only.
+- Exploration: a tooltip wrapper that did not forward Recharts-injected props rendered an empty tooltip even though the chart and legend were correct; keyboard-focus QA exposed it deterministically.
+- Prevention rule: forward all tooltip props through wrappers, test arbitrary series names and formatted values, and have Phase 4 focus a line chart and assert the visible tooltip includes every series label.

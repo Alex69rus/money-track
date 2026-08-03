@@ -94,11 +94,13 @@ type PeriodV1 = {
   toDate: string | null; // YYYY-MM-DD
 };
 
-type MoneyV1 = { amount: string; currency: string; display: string };
-type PercentageV1 = { value: string; display: string };
+type ChartValueV1 = { value: string; display: string };
+type ChartSeriesValueV1 = { label: string; value: ChartValueV1 };
 ```
 
-`amount` and percentage `value` are exact decimal strings. `display` is server-formatted and is the sole textual fact shown in the UI. Charts may convert an already-validated `amount` to a finite JavaScript number for positioning only; the frontend never sums, compares, rounds, labels, or otherwise derives a financial fact.
+`value` is an exact retrieved decimal string. `display` is server-formatted and is the sole textual fact shown in the UI. Charts may convert an already-validated `value` to a finite JavaScript number for positioning only; the frontend never sums, compares, rounds, labels, or otherwise derives a financial fact.
+
+Widget payloads are presentation-generic: widget input never contains an analysis dimension, measure, business-specific field, or renderer discriminator. A chart value is `{ value, display }`, so money, counts, and other retrieved numeric metrics use the same contract. Named value lists let the agent choose one or more truthful series for bar and line charts. `kind` remains a backend-added response discriminator only, so the frontend can select the renderer; it is never an LLM tool argument.
 
 `ChatVisualV1` is a closed response union. The selected widget tool adds its `kind`; the agent supplies validated data after its read-tool calls.
 
@@ -115,19 +117,19 @@ type ChatVisualV1 =
       kind: "bar";
       title: string;
       period: PeriodV1;
-      items: Array<{ label: string; value: MoneyV1 }>;
+      items: Array<{ label: string; values: ChartSeriesValueV1[] }>;
     }
   | {
       kind: "line";
       title: string;
       period: PeriodV1;
-      points: Array<{ label: string; spending: MoneyV1; income: MoneyV1 }>;
+      points: Array<{ label: string; values: ChartSeriesValueV1[] }>;
     }
   | {
       kind: "pie";
       title: string;
       period: PeriodV1;
-      items: Array<{ label: string; value: MoneyV1; share: PercentageV1 }>;
+      items: Array<{ label: string; value: ChartValueV1; share: ChartValueV1 }>;
     };
 ```
 
@@ -136,8 +138,8 @@ The backend response model uses equivalent Pydantic discriminated unions. Widget
 Cardinality and ordering are part of the contract:
 
 - tables contain one to eight columns and at most 20 matching-width rows;
-- pie charts contain at most 10 items; bar charts accept all retrieved items and scroll only within their card when needed;
-- line charts contain at least two chronological points and remain full-width without horizontal scrolling; their X axis may omit intermediate labels to stay readable;
+- pie charts contain at most 10 items; bar charts accept all retrieved items and use one or more consistently named series, scrolling only within their card when needed;
+- line charts contain at least two chronological points with one or more consistently named series and remain full-width without horizontal scrolling; their X axis may omit intermediate labels to stay readable;
 - a response contains zero or one visual. No visual is returned for no-data, clarification, or limitation responses.
 
 ### 3.3 Deterministic analyses and allowed presentations
@@ -160,7 +162,7 @@ Add category-name grouping to the existing fixed grouping allowlist so a categor
 
 For comparison, a typed request carries two non-overlapping, inclusive `PeriodV1` ranges plus the same validated non-date filters. The server independently queries both periods, computes `current - previous`, and computes percentage change only when the previous magnitude is non-zero. A zero baseline sets `changePercent` to `null` and uses a deterministic “percentage change is unavailable because the previous period was zero” template. No matching records produce a deterministic no-data response. The model never subtracts, divides, ranks, or formats comparison data.
 
-Before any aggregate, breakdown, trend, comparison, or visual computation, the service checks distinct currencies in the authenticated user’s matching scope. More than one currency produces a typed limitation response and no visual; transaction-list lookup keeps each original currency visible and performs no conversion.
+Aggregate, breakdown, trend, comparison, and visual computation treat matching transaction amounts as one currency. Do not convert, split, or reject results because of currencies; the product currently assumes a single-currency user.
 
 ### 3.4 Agent boundary and response assembly
 

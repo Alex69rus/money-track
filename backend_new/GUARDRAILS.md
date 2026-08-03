@@ -121,12 +121,12 @@ Keep entries short, actionable, and repository-specific.
 ### 2026-07-26 - AI Chat Structured Tool Output
 - Takeaway: ordinary Pydantic models and lists are stringified before the Agents SDK returns them to the model.
 - Exploration: aggregate output reached the model as `TransactionAggregationResult(... Decimal(...))`; `ToolOutputText` preserved model-generated JSON as text instead.
-- Prevention rule: return `ToolOutputText(text=<validated JSON>)` from every AI Chat tool and assert the model-facing text parses as JSON in its integration test.
+- Prevention rule: return validated JSON text from read tools; widget tools must store the response visual and return only a short acknowledgement, with their data excluded from model-facing tool output.
 
 ### 2026-08-02 - AI Chat Data-First Widget Boundary
 - Takeaway: keep authenticated retrieval and widget preparation separate; the agent writes text after read tools return data.
 - Exploration: four schema-only widget tools captured one request-local visual while the scoped aggregate, transaction, and tag tools continued to pass their integration suite.
-- Prevention rule: every AI Chat widget tool must accept only typed display data, perform no query, identity, or filter work, return `ToolOutputText` JSON, and reject a second visual for the same response.
+- Prevention rule: every AI Chat widget tool must accept only typed display data, perform no query, identity, or filter work, return a short non-data acknowledgement, and reject a second visual for the same response.
 
 ### 2026-07-26 - AI Chat Negative-Expense Ranking
 - Takeaway: sort negative expense aggregates by absolute value before applying a top-N visual cap.
@@ -147,3 +147,13 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: reserve widgets for data whose relationships benefit from a visual; communicate a single aggregate in the agent's text.
 - Exploration: removing the summary tool, response union, API parser, and renderer while rejecting its retired payload on both clients left table, bar, line, and pie contracts green.
 - Prevention rule: do not add a summary widget without a user-approved visual-only insight that cannot be conveyed clearly in the response text.
+
+### 2026-08-02 - AI Chat Flexible Widget Inputs
+- Takeaway: express chart metrics as generic `{ value, display }` data and named series, never as finance-specific fields such as `income`, `spending`, or `currency`.
+- Exploration: the Agents SDK strict schema rejects map-like `additionalProperties`; a list of labelled values safely supports arbitrary one- or multi-series bar and line charts.
+- Prevention rule: keep `kind` backend-owned, calculate pie shares in code, and cover arbitrary count/money series, mismatched labels, and a non-echoing widget acknowledgement in widget-tool tests.
+
+### 2026-08-03 - AI Chat Currency Context
+- Takeaway: retain the default-currency input context even when the product assumes a single currency.
+- Exploration: the single-currency instruction prevents splitting an analysis but does not give the model a currency label for generated display text.
+- Prevention rule: keep the explicit `Default currency` input line and assert it in the prompt/input regression test.

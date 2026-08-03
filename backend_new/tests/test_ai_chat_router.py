@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.api.di_containers.dependencies import get_chat_agent
 from app.api.routes.ai_chat_router import router as ai_chat_router
-from app.services.ai_chat.chat_agent import CHAT_AGENT_PROMPT, ChatAgentUnavailableError
+from app.services.ai_chat.chat_agent import CHAT_AGENT_PROMPT, ChatAgent, ChatAgentUnavailableError
 from app.services.ai_chat.common import current_business_date
 from app.services.ai_chat.contracts import ChatHistoryMessage, ChatResponseV1
 from app.services.auth import get_current_user_id
@@ -50,8 +50,8 @@ def test_chat_agent_prompt_requires_data_retrieval_before_widget_preparation() -
     assert "Use table, bar, line, or pie widgets as appropriate." in instructions
     assert "Use summary" not in instructions
     assert (
-        "For a pie chart, provide retrieved slice labels and amounts only; the widget calculates the percentages."
-        in instructions
+        "For a pie chart, provide retrieved slice labels and numeric values only; "
+        "the widget calculates the percentages." in instructions
     )
     assert "For an explicit all-time request, use no date filters." in instructions
     assert (
@@ -59,6 +59,14 @@ def test_chat_agent_prompt_requires_data_retrieval_before_widget_preparation() -
         in instructions
     )
     assert "State the analysed period in every factual answer." in instructions
+    assert "For a bar or line chart, name each series after exactly what its retrieved values represent" in instructions
+
+
+def test_agent_input_includes_the_default_currency_for_monetary_display() -> None:
+    agent_input = ChatAgent._build_agent_input(message="Show a chart", history=(), categories=[])
+
+    assert "Default currency: AED. All calculations are made in this currency." in agent_input
+    assert "Today:" in agent_input
 
 
 def test_current_business_date_uses_the_configured_business_timezone(monkeypatch) -> None:

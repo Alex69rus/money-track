@@ -4,13 +4,13 @@ import { ChatVisual } from "@/components/ai-chat/ChatVisual";
 import type { ChatVisual as ChatVisualData } from "@/services/api/chat";
 
 const period = { fromDate: "2099-01-01", label: "January 2099", toDate: "2099-01-31" };
-const aed = (amount: string) => ({ amount, currency: "AED", display: `AED ${amount}` });
+const chartValue = (value: string, display = value) => ({ display, value });
 
 describe("ChatVisual", () => {
   it("renders every backend-supported visual with text or table facts", () => {
     const visuals: ChatVisualData[] = [
       {
-        items: [{ label: "Food", value: aed("50.00") }],
+        items: [{ label: "Food", values: [{ label: "Transaction count", value: chartValue("5", "5 transactions") }]}],
         kind: "bar",
         period,
         title: "Spending by category",
@@ -19,13 +19,13 @@ describe("ChatVisual", () => {
         kind: "line",
         period,
         points: [
-          { income: aed("100.00"), label: "January", spending: aed("50.00") },
-          { income: aed("120.00"), label: "February", spending: aed("75.00") },
+          { label: "January", values: [{ label: "Spending", value: chartValue("50.00", "AED 50.00") }, { label: "Income", value: chartValue("100.00", "AED 100.00") }] },
+          { label: "February", values: [{ label: "Spending", value: chartValue("75.00", "AED 75.00") }, { label: "Income", value: chartValue("120.00", "AED 120.00") }] },
         ],
         title: "Income and spending trend",
       },
       {
-        items: [{ label: "Food", share: { display: "100.0%", value: "100.0" }, value: aed("50.00") }],
+        items: [{ label: "Food", share: { display: "100.0%", value: "100.0" }, value: chartValue("50.00", "AED 50.00") }],
         kind: "pie",
         period,
         title: "Spending share",
@@ -52,16 +52,23 @@ describe("ChatVisual", () => {
     expect(screen.getByTestId("ai-chat-visual-pie")).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-visual-table")).toBeInTheDocument();
     expect(screen.getAllByText("Food")).toHaveLength(3);
-    expect(screen.getByText("January: AED 50.00 spending, AED 100.00 income")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-chat-visual-line-legend")).toHaveTextContent("Spending");
+    expect(screen.getByTestId("ai-chat-visual-line-legend")).toHaveTextContent("Income");
+    expect(screen.getByText("January: Spending AED 50.00, Income AED 100.00")).toBeInTheDocument();
     expect(screen.getByText("100.0% · AED 50.00")).toBeInTheDocument();
   });
 
   it("keeps long trends full-width and gives long bar charts a card-scoped scroll region", () => {
-    const barItems = Array.from({ length: 20 }, (_, index) => ({ label: `Category ${index + 1}`, value: aed(`${index + 1}.00`) }));
+    const barItems = Array.from({ length: 20 }, (_, index) => ({
+      label: `Category ${index + 1}`,
+      values: [{ label: "Transaction count", value: chartValue(`${index + 1}.00`, `${index + 1} transactions`) }],
+    }));
     const linePoints = Array.from({ length: 24 }, (_, index) => ({
-      income: aed(`${index + 1}.00`),
       label: `Month ${index + 1}`,
-      spending: aed(`-${index + 1}.00`),
+      values: [
+        { label: "Spending", value: chartValue(`-${index + 1}.00`, `AED -${index + 1}.00`) },
+        { label: "Income", value: chartValue(`${index + 1}.00`, `AED ${index + 1}.00`) },
+      ],
     }));
 
     render(
@@ -75,7 +82,26 @@ describe("ChatVisual", () => {
     expect(screen.getByTestId("ai-chat-visual-bar")).toHaveStyle({ minWidth: "1440px" });
     expect(screen.getByTestId("ai-chat-visual-bar")).toHaveClass("h-72");
     expect(screen.queryByTestId("ai-chat-visual-line-scroll")).not.toBeInTheDocument();
-    expect(screen.getByText("Category 20: AED 20.00")).toBeInTheDocument();
-    expect(screen.getByText("Month 24: AED -24.00 spending, AED 24.00 income")).toBeInTheDocument();
+    expect(screen.getByText("Category 20: Transaction count 20 transactions")).toBeInTheDocument();
+    expect(screen.getByText("Month 24: Spending AED -24.00, Income AED 24.00")).toBeInTheDocument();
+  });
+
+  it("renders an arbitrary, truthfully named line series", () => {
+    render(
+      <ChatVisual
+        visual={{
+          kind: "line",
+          period,
+          points: [
+            { label: "January", values: [{ label: "Cumulative balance", value: chartValue("100.00", "AED 100.00") }] },
+            { label: "February", values: [{ label: "Cumulative balance", value: chartValue("150.00", "AED 150.00") }] },
+          ],
+          title: "Balance growth",
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("ai-chat-visual-line-legend")).toHaveTextContent("Cumulative balance");
+    expect(screen.getByText("February: Cumulative balance AED 150.00")).toBeInTheDocument();
   });
 });

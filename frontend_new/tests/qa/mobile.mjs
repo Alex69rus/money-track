@@ -245,7 +245,7 @@ async function installApiFixtures(page) {
           period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
           items: Array.from({ length: 20 }, (_, index) => ({
             label: `Category ${index + 1}`,
-            value: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+            values: [{ label: "Transaction count", value: { value: `${index + 1}.00`, display: `${index + 1} transactions` } }],
           })),
         },
       }),

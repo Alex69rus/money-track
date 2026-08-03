@@ -37,7 +37,7 @@ describe("AI Chat API contract", () => {
   it("rejects a malformed visual instead of rendering invented chart data", async () => {
     global.fetch = vi.fn().mockResolvedValue(
       answer({
-        items: [{ label: "Food", value: { amount: "not-a-number", currency: "AED", display: "AED 50" } }],
+        items: [{ label: "Food", values: [{ label: "Amount", value: { display: "AED 50", value: "not-a-number" } }] }],
         kind: "bar",
         period: { fromDate: "2099-01-01", label: "January", toDate: "2099-01-31" },
         title: "Spending by category",
@@ -71,13 +71,18 @@ describe("AI Chat API contract", () => {
 
   it("accepts extended bar and line datasets", async () => {
     const period = { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" };
-    const money = (amount: string) => ({ amount, currency: "AED", display: `AED ${amount}` });
+    const chartValue = (value: string, display = value) => ({ display, value });
     const linePoints = Array.from({ length: 24 }, (_, index) => ({
-      income: money(`${index + 1}.00`),
       label: `Month ${index + 1}`,
-      spending: money(`-${index + 1}.00`),
+      values: [
+        { label: "Spending", value: chartValue(`-${index + 1}.00`, `AED -${index + 1}.00`) },
+        { label: "Income", value: chartValue(`${index + 1}.00`, `AED ${index + 1}.00`) },
+      ],
     }));
-    const barItems = Array.from({ length: 20 }, (_, index) => ({ label: `Category ${index + 1}`, value: money(`${index + 1}.00`) }));
+    const barItems = Array.from({ length: 20 }, (_, index) => ({
+      label: `Category ${index + 1}`,
+      values: [{ label: "Transaction count", value: chartValue(`${index + 1}.00`, `${index + 1} transactions`) }],
+    }));
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce(answer({ kind: "line", period, points: linePoints, title: "Balance growth" }))
@@ -89,6 +94,45 @@ describe("AI Chat API contract", () => {
     await expect(sendChatMessage({ history: [], message: "Show 20 categories" })).resolves.toMatchObject({
       visual: { items: barItems, kind: "bar" },
     });
+  });
+
+  it("accepts arbitrary line-series names but rejects inconsistent series", async () => {
+    const period = { fromDate: "2025-01-01", label: "January to February 2025", toDate: "2025-02-28" };
+    const chartValue = (value: string, display = value) => ({ display, value });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        answer({
+          kind: "line",
+          period,
+          points: [
+            { label: "January", values: [{ label: "Cumulative balance", value: chartValue("100.00", "AED 100.00") }] },
+            { label: "February", values: [{ label: "Cumulative balance", value: chartValue("150.00", "AED 150.00") }] },
+          ],
+          title: "Balance growth",
+        }),
+      )
+      .mockResolvedValueOnce(
+        answer({
+          kind: "line",
+          period,
+          points: [
+            { label: "January", values: [{ label: "Income", value: chartValue("100.00") }] },
+            { label: "February", values: [{ label: "Balance", value: chartValue("150.00") }] },
+          ],
+          title: "Mismatched trend",
+        }),
+      ) as unknown as typeof fetch;
+
+    const balanceResponse = await sendChatMessage({ history: [], message: "Show my balance growth" });
+    expect(balanceResponse.visual?.kind).toBe("line");
+    if (balanceResponse.visual?.kind !== "line") {
+      throw new Error("Expected a line visual.");
+    }
+    expect(balanceResponse.visual.points[0]?.values).toEqual([
+      { label: "Cumulative balance", value: chartValue("100.00", "AED 100.00") },
+    ]);
+    await expect(sendChatMessage({ history: [], message: "Show my trend" })).rejects.toMatchObject({ status: 502 });
   });
 
   it("rejects the retired summary widget", async () => {

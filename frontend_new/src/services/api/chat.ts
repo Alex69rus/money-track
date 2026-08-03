@@ -13,15 +13,14 @@ export interface ChatRequestPayload {
   message: string;
 }
 
-export interface ChatMoney {
-  amount: string;
-  currency: string;
-  display: string;
-}
-
-export interface ChatPercentage {
+export interface ChatChartValue {
   display: string;
   value: string;
+}
+
+export interface ChatChartSeriesValue {
+  label: string;
+  value: ChatChartValue;
 }
 
 export interface ChatPeriod {
@@ -39,7 +38,7 @@ export interface ChatTableVisual {
 }
 
 export interface ChatBarVisual {
-  items: Array<{ label: string; value: ChatMoney }>;
+  items: Array<{ label: string; values: ChatChartSeriesValue[] }>;
   kind: "bar";
   period: ChatPeriod;
   title: string;
@@ -48,12 +47,12 @@ export interface ChatBarVisual {
 export interface ChatLineVisual {
   kind: "line";
   period: ChatPeriod;
-  points: Array<{ income: ChatMoney; label: string; spending: ChatMoney }>;
+  points: Array<{ label: string; values: ChatChartSeriesValue[] }>;
   title: string;
 }
 
 export interface ChatPieVisual {
-  items: Array<{ label: string; share: ChatPercentage; value: ChatMoney }>;
+  items: Array<{ label: string; share: ChatChartValue; value: ChatChartValue }>;
   kind: "pie";
   period: ChatPeriod;
   title: string;
@@ -86,29 +85,42 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
-function isMoney(value: unknown): value is ChatMoney {
+function isChartValue(value: unknown): value is ChatChartValue {
   const item = asRecord(value);
   return (
     item !== null &&
-    isString(item.amount) &&
-    DECIMAL_PATTERN.test(item.amount) &&
-    isString(item.currency) &&
+    isString(item.value) &&
+    DECIMAL_PATTERN.test(item.value) &&
     isString(item.display)
   );
 }
 
-function isPercentage(value: unknown): value is ChatPercentage {
-  const item = asRecord(value);
-  return item !== null && isString(item.value) && DECIMAL_PATTERN.test(item.value) && isString(item.display);
-}
-
-function hasFiniteChartAmount(value: ChatMoney): boolean {
-  return Number.isFinite(Number(value.amount));
+function hasFiniteChartValue(value: ChatChartValue): boolean {
+  return Number.isFinite(Number(value.value));
 }
 
 function isPeriod(value: unknown): value is ChatPeriod {
   const item = asRecord(value);
   return item !== null && isString(item.label) && isNullableString(item.fromDate) && isNullableString(item.toDate);
+}
+
+function chartSeriesNames(value: unknown): string[] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const seriesNames = value.map((item) => {
+    const series = asRecord(item);
+    return series !== null && isString(series.label) && isChartValue(series.value) && hasFiniteChartValue(series.value)
+      ? series.label
+      : null;
+  });
+  if (seriesNames.some((name) => name === null)) {
+    return null;
+  }
+
+  const names = seriesNames as string[];
+  return new Set(names).size === names.length ? names.sort() : null;
 }
 
 function parseVisual(value: unknown): ChatVisual | null {
@@ -117,30 +129,29 @@ function parseVisual(value: unknown): ChatVisual | null {
     return null;
   }
 
-  if (
-    visual.kind === "bar" &&
-    Array.isArray(visual.items) &&
-    visual.items.length >= 1
-  ) {
-    const valid = visual.items.every((item) => {
-      const row = asRecord(item);
-      return row !== null && isString(row.label) && isMoney(row.value) && hasFiniteChartAmount(row.value);
-    });
+  if (visual.kind === "bar" && Array.isArray(visual.items) && visual.items.length >= 1) {
+    const firstItem = asRecord(visual.items[0]);
+    const expectedSeriesNames = firstItem === null ? null : chartSeriesNames(firstItem.values);
+    const valid =
+      expectedSeriesNames !== null &&
+      visual.items.every((item) => {
+        const row = asRecord(item);
+        const seriesNames = row === null ? null : chartSeriesNames(row.values);
+        return row !== null && isString(row.label) && seriesNames !== null && seriesNames.join("\u0000") === expectedSeriesNames.join("\u0000");
+      });
     return valid ? (visual as unknown as ChatBarVisual) : null;
   }
 
   if (visual.kind === "line" && Array.isArray(visual.points) && visual.points.length >= 2) {
-    const valid = visual.points.length >= 2 && visual.points.every((point) => {
-      const row = asRecord(point);
-      return (
-        row !== null &&
-        isString(row.label) &&
-        isMoney(row.spending) &&
-        hasFiniteChartAmount(row.spending) &&
-        isMoney(row.income) &&
-        hasFiniteChartAmount(row.income)
-      );
-    });
+    const firstPoint = asRecord(visual.points[0]);
+    const expectedSeriesNames = firstPoint === null ? null : chartSeriesNames(firstPoint.values);
+    const valid =
+      expectedSeriesNames !== null &&
+      visual.points.every((point) => {
+        const row = asRecord(point);
+        const seriesNames = row === null ? null : chartSeriesNames(row.values);
+        return row !== null && isString(row.label) && seriesNames !== null && seriesNames.join("\u0000") === expectedSeriesNames.join("\u0000");
+      });
     return valid ? (visual as unknown as ChatLineVisual) : null;
   }
 
@@ -152,7 +163,7 @@ function parseVisual(value: unknown): ChatVisual | null {
   ) {
     const valid = visual.items.every((item) => {
       const row = asRecord(item);
-      return row !== null && isString(row.label) && isMoney(row.value) && hasFiniteChartAmount(row.value) && isPercentage(row.share);
+      return row !== null && isString(row.label) && isChartValue(row.value) && hasFiniteChartValue(row.value) && isChartValue(row.share) && hasFiniteChartValue(row.share);
     });
     return valid ? (visual as unknown as ChatPieVisual) : null;
   }

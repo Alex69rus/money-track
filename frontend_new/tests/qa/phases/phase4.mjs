@@ -23,7 +23,7 @@ function twentyBarChart() {
     period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
     items: Array.from({ length: 20 }, (_, index) => ({
       label: `Category ${index + 1}`,
-      value: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+      values: [{ label: "Transaction count", value: { value: `${index + 1}.00`, display: `${index + 1} transactions` } }],
     })),
   };
 }
@@ -35,8 +35,10 @@ function twentyFourPointLineChart() {
     period: { fromDate: "2025-01-01", label: "2025 to 2026", toDate: "2026-12-31" },
     points: Array.from({ length: 24 }, (_, index) => ({
       label: `Month ${index + 1}`,
-      spending: { amount: `-${index + 1}.00`, currency: "AED", display: `AED -${index + 1}.00` },
-      income: { amount: `${index + 1}.00`, currency: "AED", display: `AED ${index + 1}.00` },
+      values: [
+        { label: "Spending", value: { value: `-${index + 1}.00`, display: `AED -${index + 1}.00` } },
+        { label: "Income", value: { value: `${index + 1}.00`, display: `AED ${index + 1}.00` } },
+      ],
     })),
   };
 }
@@ -223,20 +225,37 @@ export const phase4Definition = {
     const buttonPayload = capturedRequests.find((payload) => payload.message === buttonPrompt);
     const lineChartExperience = await page.evaluate(() => {
       const lineChart = document.querySelector('[data-testid="ai-chat-visual-line"]');
+      const legend = document.querySelector('[data-testid="ai-chat-visual-line-legend"]');
       return {
         hasNoScrollRegion: document.querySelector('[data-testid="ai-chat-visual-line-scroll"]') === null,
+        hasSeriesLabels:
+          legend?.textContent?.includes("Spending") === true && legend.textContent.includes("Income"),
         pageHasNoHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
         present: lineChart instanceof HTMLElement,
         fitsCard: lineChart instanceof HTMLElement && lineChart.scrollWidth <= lineChart.clientWidth + 1,
       };
     });
+    const lineSurface = page.locator('[data-testid="ai-chat-visual-line"] .recharts-surface').first();
+    await lineSurface.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(50);
+    const lineTooltipText = await page
+      .locator('[data-testid="ai-chat-visual-line"] .recharts-tooltip-wrapper')
+      .textContent()
+      .catch(() => "");
+    const lineTooltipHasSeriesLabels =
+      lineTooltipText?.includes("Spending") === true && lineTooltipText.includes("Income");
     if (
       !lineChartExperience.present ||
       !lineChartExperience.fitsCard ||
       !lineChartExperience.hasNoScrollRegion ||
+      !lineChartExperience.hasSeriesLabels ||
+      !lineTooltipHasSeriesLabels ||
       !lineChartExperience.pageHasNoHorizontalOverflow
     ) {
-      throw new Error(`AI Chat long-line composition failed: ${JSON.stringify(lineChartExperience)}.`);
+      throw new Error(
+        `AI Chat long-line composition failed: ${JSON.stringify({ lineChartExperience, lineTooltipHasSeriesLabels, lineTooltipText })}.`,
+      );
     }
     fr["FR-024"] =
       shiftEnterPreserved &&

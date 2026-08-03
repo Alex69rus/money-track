@@ -278,9 +278,11 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
+  testId,
 }: React.ComponentProps<"div"> & {
   hideIcon?: boolean
   nameKey?: string
+  testId?: string
 } & RechartsPrimitive.DefaultLegendContentProps) {
   const { config } = useChart()
 
@@ -290,6 +292,7 @@ function ChartLegendContent({
 
   return (
     <div
+      data-testid={testId}
       className={cn(
         "flex items-center justify-center gap-4",
         verticalAlign === "top" ? "pb-3" : "pt-3",
