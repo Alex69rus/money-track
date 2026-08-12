@@ -89,6 +89,12 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Exploration: iPhone decimal keypads emit a comma and omit minus; a text input with `inputMode="decimal"` can normalize the comma, while an explicit income/expense control supplies the sign.
 - Prevention rule: For mutually exclusive visual states, make the inactive background explicit and inspect the phone screenshot; do not rely on conflicting Tailwind background utilities to resolve at runtime.
 
+## Transaction amount editor sizing — 2026-08-12
+
+- Takeaway: Give the iOS amount input an explicit height equal to an explicit line-height; avoid `h-auto` for oversized native text inputs.
+- Exploration: A fixed 14rem input clipped `-1500.00` beside the AED glyph, while a flexible row with a clamped font size kept the value visible at 390px.
+- Prevention rule: Keep the mobile QA geometry check for an explicit input line box and a fully measured `-1500.00` value, then inspect its dedicated phone capture after amount-editor changes.
+
 ## Monthly Trends range completeness — 2026-07-16
 
 - Takeaway: Retain every populated month in the active Analytics range; the chart's horizontal scrolling handles longer ranges.

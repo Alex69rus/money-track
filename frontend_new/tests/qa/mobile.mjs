@@ -468,6 +468,52 @@ async function assertScrollable(page, selector, label, required = true) {
   return canScroll;
 }
 
+async function assertTransactionAmountEditorFits(page, label) {
+  const input = page.locator("#transaction-edit-amount");
+  const amountToMeasure = "-150000.00";
+  await input.fill(amountToMeasure);
+
+  const result = await input.evaluate((element) => {
+    if (!(element instanceof HTMLInputElement)) {
+      return { isInput: false };
+    }
+
+    const styles = window.getComputedStyle(element);
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) {
+      return { isInput: true, canMeasureText: false };
+    }
+
+    context.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+    const textWidth = context.measureText(element.value).width;
+    const lineHeight = Number.parseFloat(styles.lineHeight);
+    const rect = element.getBoundingClientRect();
+
+    return {
+      canMeasureText: true,
+      inputHeight: rect.height,
+      inputWidth: rect.width,
+      isInput: true,
+      lineHeight,
+      lineHeightIsExplicit: styles.lineHeight !== "normal",
+      textWidth,
+    };
+  });
+
+  if (
+    !result.isInput ||
+    !result.canMeasureText ||
+    !result.lineHeightIsExplicit ||
+    !Number.isFinite(result.lineHeight) ||
+    Math.abs(result.inputHeight - result.lineHeight) > 1 ||
+    result.textWidth > result.inputWidth
+  ) {
+    throw new Error(
+      `${label}: the amount cursor needs a bounded text line and ${amountToMeasure} must fit without clipping: ${JSON.stringify(result)}.`,
+    );
+  }
+}
+
 async function assertAiChatFixedComposition(page, label) {
   const result = await page.evaluate(() => {
     const main = document.querySelector('[data-testid="app-shell-main"]');
@@ -675,7 +721,9 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     if (subcategoryGap === null || subcategoryGap < 8) {
       throw new Error(`Sub-category icons and labels must have a clear visual gap; received ${subcategoryGap}px.`);
     }
-    await page.locator('[data-testid="tx-category-option-421"]').scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      document.querySelector('[data-testid="tx-category-option-421"]')?.scrollIntoView({ block: "nearest" });
+    });
     await screenshot(page, profileDirectory, "category-selector");
     await page.evaluate(() => window.__qaTelegram.pressBack());
     await page.waitForSelector('[data-testid="tx-category-page"]', { state: "hidden", timeout: 15000 });
@@ -701,6 +749,8 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     await assertNoHorizontalOverflow(page, "transaction editor");
     await assertScrollable(page, '[data-testid="tx-edit-scroll"]', "transaction editor", false);
     await assertWithinViewport(page, '[data-testid="tx-edit-save"]', "transaction editor action");
+    await assertTransactionAmountEditorFits(page, "transaction editor amount");
+    await screenshot(page, profileDirectory, "transaction-editor-amount");
     await page.locator('#transaction-edit-note').focus();
     const editorKeyboardViewportHeight = Math.max(420, profile.height - 320);
     await page.setViewportSize({ width: profile.width, height: editorKeyboardViewportHeight });
@@ -806,7 +856,9 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
     ) {
       throw new Error(`Analytics overview containment regressed: ${JSON.stringify({ ...analyticsOverview, trendSummaryNet })}.`);
     }
-    await page.locator('[data-testid="analytics-trends-card"]').scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      document.querySelector('[data-testid="analytics-trends-card"]')?.scrollIntoView({ block: "nearest" });
+    });
     await screenshot(page, profileDirectory, "analytics-trends");
     await screenshot(page, profileDirectory, "analytics");
 

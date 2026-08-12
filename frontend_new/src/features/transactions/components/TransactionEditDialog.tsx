@@ -364,19 +364,19 @@ export function TransactionEditDialog({
               <label className="sr-only" htmlFor="transaction-edit-amount">
                 Amount
               </label>
-              <div className="inline-flex items-center justify-center gap-3">
+              <div className="flex w-full max-w-md items-center justify-center gap-2">
                 {normalizedCurrency === "AED" ? (
-                  <span className="inline-flex h-20 w-20 items-center justify-center">
-                    <img alt="AED symbol" className="h-14 w-14 object-contain invert" src={aedSymbol} />
+                  <span className="inline-flex size-14 shrink-0 items-center justify-center">
+                    <img alt="AED symbol" className="size-10 object-contain invert" src={aedSymbol} />
                   </span>
                 ) : (
-                  <span aria-hidden className="text-5xl font-semibold text-[#2d8cff]">
+                  <span aria-hidden className="shrink-0 text-4xl font-semibold text-[#2d8cff]">
                     {currencySymbol}
                   </span>
                 )}
                 <input
                   aria-label="Transaction amount"
-                  className="h-auto w-56 border-none bg-transparent p-0 text-center text-6xl font-bold text-slate-100 outline-none [appearance:textfield] [background:transparent] [-webkit-appearance:none] focus:ring-0 focus:outline-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="h-[1.12em] min-w-0 flex-1 border-none bg-transparent p-0 text-center text-[clamp(2.25rem,11.5vw,3.5rem)] leading-[1.12] font-bold tracking-tight text-slate-100 tabular-nums outline-none [appearance:textfield] [background:transparent] [-webkit-appearance:none] focus:ring-0 focus:outline-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   id="transaction-edit-amount"
                   inputMode="decimal"
                   onBlur={(event) => {

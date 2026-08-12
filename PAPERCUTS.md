@@ -198,3 +198,19 @@ Updating a nested malformed-widget test fixture → one closing object delimiter
 ## 2026-08-03 — Codex
 
 Inspecting a Phase QA helper → assumed `scaffold-utils.mjs` was directly under `tests/qa/`, but it is scoped under `tests/qa/phases/`. Follow imports when locating test utilities rather than inferring their directory from the caller.
+
+## 2026-08-12 20:22 — Codex
+
+Inspecting a supplied mobile screenshot → a local variable shadowed the conversation image-output helper, so the first visual-inspection call failed. Avoid helper-name collisions when forwarding image-tool output.
+
+## 2026-08-12 20:23 — Codex
+
+Tracing global frontend styles → looked for a conventional `src/index.css`, but this project uses `frontend_new/src/styles.css`. Follow the actual Vite entry imports when locating global CSS.
+
+## 2026-08-12 20:24 — Codex
+
+Checking whether local QA services were already running → macOS sandbox policy denied `ps -ef`. Use the approved elevated process inspection when service discovery is needed.
+
+## 2026-08-12 20:29 — Codex
+
+Starting the root Phase 2 frontend QA → an unrelated persistent frontend on the default QA port left a partial stack, which the runner correctly refused to reuse. Choose isolated QA ports instead of stopping user-owned services.
