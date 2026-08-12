@@ -105,8 +105,8 @@ This is a product safety requirement. The implementation must enforce it in code
 ### Technology and data handling
 
 - Use the OpenAI Agents SDK for LLM orchestration.
-- A dialogue lives only while the current AI Chat view is open. It is cleared when the user starts a new dialogue, reloads the app, or navigates away from the view.
-- Dialogues are not persisted and cannot be resumed, viewed, or switched to after the current view has ended. Dialogue-passing mechanics are implementation details.
+- Completed dialogue pairs are retained in a bounded device-local frontend cache and remain available after reloading the app or navigating away from the AI Chat view. The cache is cleared when the user starts a new dialogue.
+- Dialogues are not persisted on the backend, cannot be synchronized or switched across devices, and may be removed when the user clears local web data. Dialogue-passing mechanics are implementation details.
 
 ### Observability
 
@@ -124,7 +124,7 @@ This is a product safety requirement. The implementation must enforce it in code
 6. Automated tests prove that user A cannot access, infer, or change user B's data through normal questions, malformed inputs, guessed identifiers, or prompt-injection attempts.
 7. The prohibited SQL operations in FR-5 are rejected by code whenever SQL is used for agent data access.
 8. SQL injection attempts through user messages, chat history, transaction text, or LLM-generated input cannot execute unintended SQL, reveal database details, or bypass user scoping.
-9. A dialogue is available only during the current AI Chat view and is cleared on a new-dialogue action, app reload, or screen change.
+9. Completed dialogue pairs remain available on the same device after an app reload or screen change, and are cleared by a confirmed new-dialogue action.
 10. Default OpenAI tracing and existing backend logging are available for diagnosing feature behavior.
 11. Every retrieval call is authenticated and user-scoped; widget payloads accept only valid, bounded display data and cannot perform a database read.
 12. Chat accepts text input only and does not provide multi-modal input controls.
@@ -134,7 +134,7 @@ This is a product safety requirement. The implementation must enforce it in code
 1. AI Transaction Chat is a read-only analytical feature in its first version.
 2. User authorization is always enforced by backend code and must never rely on LLM behavior.
 3. The feature uses the OpenAI Agents SDK.
-4. Dialogues are limited to the current AI Chat view and do not survive a new-dialogue action, reload, or screen change.
+4. Dialogue persistence is device-local and bounded: completed pairs survive reload and screen change, while a new-dialogue action clears them and no cross-device history is provided.
 5. The feature uses default OpenAI tracing and the product's existing backend logging.
 6. The assistant writes the final text response. It retrieves data first, may prepare one optional widget from that data, and the API returns both in one response.
 7. AI Chat assumes users have one currency. It aggregates matching transaction amounts without conversion or currency-specific analysis.

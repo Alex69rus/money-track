@@ -17,22 +17,19 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatVisual } from "@/components/ai-chat/ChatVisual";
 import { cn } from "@/lib/utils";
+import {
+  clearAiChatCache,
+  loadAiChatMessages,
+  persistAiChatMessages,
+  type AiChatMessage,
+} from "@/services/ai-chat-cache";
 import { ApiRequestError } from "@/services/api/client";
 import {
   type ChatHistoryMessage,
-  type ChatVisual as ChatVisualData,
   sendChatMessage,
 } from "@/services/api/chat";
 
-interface ChatMessage {
-  createdAt: Date;
-  id: string;
-  includeInHistory: boolean;
-  pending?: boolean;
-  role: "assistant" | "user";
-  text: string;
-  visual?: ChatVisualData | null;
-}
+type ChatMessage = AiChatMessage;
 
 interface FailedRequest {
   history: ChatHistoryMessage[];
@@ -61,7 +58,7 @@ function isAbortError(error: unknown): boolean {
 }
 
 function buildInitialMessages(): ChatMessage[] {
-  return [];
+  return loadAiChatMessages();
 }
 
 function historyFromMessages(messages: ChatMessage[]): ChatHistoryMessage[] {
@@ -110,6 +107,7 @@ export function AiChatPage(): JSX.Element {
 
   useEffect(() => {
     messagesRef.current = messages;
+    persistAiChatMessages(messages);
     if (shouldScrollTimelineRef.current) {
       const timeline = timelineRef.current;
       timeline?.scrollTo({ behavior: "smooth", top: timeline.scrollHeight });
@@ -124,6 +122,7 @@ export function AiChatPage(): JSX.Element {
   const resetChat = useCallback(() => {
     pendingRequestRef.current?.abort();
     pendingRequestRef.current = null;
+    clearAiChatCache();
     setPending(false);
     setError(null);
     setLastFailedRequest(null);

@@ -204,10 +204,26 @@ export const phase4Definition = {
         `AI Chat compact fixed-shell composition failed: ${JSON.stringify({ barChartExperience, chatComposition, fullHeightGutter, normalHostGutter })}.`,
       );
     }
+
+    await page.reload({ waitUntil: "domcontentloaded", timeout: 120000 });
+    await page.waitForSelector('[data-testid="ai-chat-input"]', { timeout: 30000 });
+    const restoredAfterReload = {
+      assistantVisible: await page
+        .getByText(`Grounded answer: ${enterPrompt}`, { exact: false })
+        .isVisible()
+        .catch(() => false),
+      barChartPresent: await page.locator('[data-testid="ai-chat-visual-bar"]').count(),
+      userVisible: await page.getByText(enterPrompt, { exact: true }).isVisible().catch(() => false),
+    };
     fr["FR-023"] =
-      userMessagesAfterEnter === 1 && assistantMessagesAfterEnter === 1 && assistantVisible
-        ? pass("Timeline renders distinct user and assistant messages after a grounded response.")
-        : fail("Timeline roles or assistant response did not render as expected.");
+      userMessagesAfterEnter === 1 &&
+      assistantMessagesAfterEnter === 1 &&
+      assistantVisible &&
+      restoredAfterReload.userVisible &&
+      restoredAfterReload.assistantVisible &&
+      restoredAfterReload.barChartPresent === 1
+        ? pass("Timeline renders distinct messages and restores completed chat content after a reload.")
+        : fail("Timeline roles, response rendering, or completed-chat reload restoration failed.");
     fr["FR-025"] =
       pendingVisible && sendDisabledWhilePending
         ? pass("Pending assistant state is visible and sending is disabled while awaiting a response.")

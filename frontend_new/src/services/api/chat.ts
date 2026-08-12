@@ -123,7 +123,7 @@ function chartSeriesNames(value: unknown): string[] | null {
   return new Set(names).size === names.length ? names.sort() : null;
 }
 
-function parseVisual(value: unknown): ChatVisual | null {
+export function parseChatVisual(value: unknown): ChatVisual | null {
   const visual = asRecord(value);
   if (!visual || !isString(visual.kind) || !isString(visual.title) || !isPeriod(visual.period)) {
     return null;
@@ -196,7 +196,7 @@ function parseChatResponse(payload: unknown): ChatResponse | null {
     response.version !== "v1" ||
     !isString(response.message) ||
     !["answer", "clarification", "limitation"].includes(String(response.kind)) ||
-    !(response.visual === null || parseVisual(response.visual))
+    !(response.visual === null || parseChatVisual(response.visual))
   ) {
     return null;
   }

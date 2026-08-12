@@ -3,8 +3,8 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatPage } from "@/pages/AiChatPage";
 
-function renderChatPage(): void {
-  render(
+function renderChatPage() {
+  return render(
     <MemoryRouter initialEntries={["/chat"]}>
       <Routes>
         <Route element={<AiChatPage />} path="/chat" />
@@ -36,6 +36,7 @@ describe("AiChatPage", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    window.localStorage.clear();
   });
 
   it("uses a minimal accessible chat composition without suggestions or desktop-only chrome", () => {
@@ -211,6 +212,97 @@ describe("AiChatPage", () => {
     expect(payload.history).toHaveLength(12);
     expect(payload.history[0]).toEqual({ content: "question:2", role: "user" });
     expect(payload.history[11]).toEqual({ content: "answer:question:7", role: "assistant" });
+  });
+
+  it("restores completed messages and visuals after a chat route remount", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      response("Your July total was AED 120.", {
+        columns: ["Category", "Spending"],
+        kind: "table",
+        period: { fromDate: "2099-07-01", label: "July 2099", toDate: "2099-07-31" },
+        rows: [["Food", "AED 120.00"]],
+        title: "July spending",
+      }),
+    ) as unknown as typeof fetch;
+
+    const firstMount = renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "How much in July?" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("Your July total was AED 120.")).toBeInTheDocument();
+    firstMount.unmount();
+
+    renderChatPage();
+
+    expect(screen.getByText("How much in July?")).toBeInTheDocument();
+    expect(screen.getByText("Your July total was AED 120.")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-chat-visual-table")).toBeInTheDocument();
+    expect(screen.getByText("AED 120.00")).toBeInTheDocument();
+  });
+
+  it("uses restored dialogue history and creates unique message bubbles for a new prompt", async () => {
+    const fetchMock = vi
+      .fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(response("First answer."))
+      .mockResolvedValueOnce(response("Second answer."));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const firstMount = renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "First question" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("First answer.")).toBeInTheDocument();
+    firstMount.unmount();
+
+    renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Second question" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("Second answer.")).toBeInTheDocument();
+
+    expect(payloadFromRequest(fetchMock.mock.calls[1]?.[1])).toEqual({
+      history: [
+        { content: "First question", role: "user" },
+        { content: "First answer.", role: "assistant" },
+      ],
+      message: "Second question",
+    });
+    expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(2);
+    expect(screen.getAllByTestId("ai-chat-message-assistant")).toHaveLength(2);
+  });
+
+  it("clears the persisted dialogue when a new chat is confirmed", async () => {
+    global.fetch = vi.fn().mockResolvedValue(response("Answer.")) as unknown as typeof fetch;
+
+    const firstMount = renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Question" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByText("Answer.")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ai-chat-reset-trigger"));
+    fireEvent.click(await screen.findByTestId("ai-chat-reset-confirm"));
+    firstMount.unmount();
+
+    renderChatPage();
+    expect(screen.queryByText("Question")).not.toBeInTheDocument();
+    expect(screen.queryByText("Answer.")).not.toBeInTheDocument();
+  });
+
+  it("does not restore an in-flight request or a failed retry state", async () => {
+    let resolveFetch!: (value: Response) => void;
+    global.fetch = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    ) as unknown as typeof fetch;
+
+    const pendingMount = renderChatPage();
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Pending question" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+    expect(await screen.findByTestId("ai-chat-pending")).toBeInTheDocument();
+    pendingMount.unmount();
+
+    renderChatPage();
+    expect(screen.queryByText("Pending question")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ai-chat-pending")).not.toBeInTheDocument();
+    resolveFetch(response("Late answer."));
   });
 
   it("renders a server-grounded table visual", async () => {

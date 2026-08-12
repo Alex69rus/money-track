@@ -20,7 +20,7 @@ This plan delivers the AI Transaction Chat PRD in `docs/prds/prd-ai-chat.md` acr
 The following architecture decisions were explicitly approved during planning:
 
 1. `POST /api/chat` will evolve from a text-only response to a typed response containing assistant text and, when useful, one optional backend-grounded visual.
-2. The browser will keep the conversation only in the mounted AI Chat view and submit a validated, bounded history snapshot with each new question. The backend will not persist a dialogue, session, or chat history.
+2. The browser will retain completed dialogue pairs in a bounded, versioned, user-namespaced local cache and submit a validated, bounded history snapshot with each new question. The backend will not persist a dialogue, session, or chat history.
 3. Merchant analysis is out of scope and was removed from the PRD. No merchant field, heuristic, or note-based merchant aggregation will be introduced.
 4. The backend, rather than the model, will render every factual assistant sentence, visual title, total, row, point, percentage, and period label from deterministic query results. The model may select from a typed analysis intent, but its free-form output is never sent to the Mini App.
 5. The backend will provide deterministic period-comparison and category/tag growth calculations, including explicit zero-denominator and no-data handling.
@@ -210,7 +210,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
    - Model messages as completed user/assistant entries plus an internal pending request. Build history from completed entries only.
    - On send, append one user message and a pending assistant bubble; disable duplicate sends and suggestions while the request is outstanding.
    - On failure, remove/replace the pending marker without fabricating a response, retain the original user message, show an inline `Alert` with retry, and retry the same history without duplicating that user message.
-   - On Start new (the existing confirmation dialog), abort in-flight work, clear messages/history/error/composer, and restore only the generic welcome. Unmounting `/chat` performs the same cleanup. No session ID appears in UI or request.
+   - On Start new (the existing confirmation dialog), abort in-flight work and clear messages/history/error/composer plus the local conversation cache. Unmounting `/chat` aborts in-flight work but retains completed local pairs; pending/error/retry state is never persisted. No session ID appears in UI or request.
 
 3. **Message and visual presentation**
    - Refactor `AiChatPage` into small testable chat message, composer, and visual-renderer components while retaining the existing primary route and app shell.
@@ -222,7 +222,7 @@ This fails closed: a fake or real model response that contains a fabricated numb
    - Preserve text-only operation when `visual` is omitted, no data exists, a visual cannot be safely rendered, or the host is a normal browser.
 
 4. **Frontend tests and QA harnesses**
-   - Replace the existing session-ID and local-fallback assertions with behavior-visible tests for request payload, history order, one user-message per retry, pending/abort behavior, reset/unmount/reload lifecycle, keyboard send, Shift+Enter, error/retry, and inaccessible multimodal controls.
+   - Replace the existing session-ID and local-fallback assertions with behavior-visible tests for request payload, history order, one user-message per retry, pending/abort behavior, reset and local cache lifecycle, route/reload restoration, keyboard send, Shift+Enter, error/retry, and inaccessible multimodal controls.
    - Add renderer tests for each visual kind, period/title/value rendering, table semantics, chart’s equivalent textual facts, responsive/capped data, malformed visual response failure, and no rendering of data after an aborted/reset request.
    - Update Phase 4 browser QA to intercept the new request/response contract and prove each critical chat interaction. Add visual response assertions rather than mocking only text.
    - Extend mobile QA with a 390×844 DPR 3 screenshot and keyboard-focus/reachability assertions for a long timeline, a chart/table card, pending state, error/retry, and Start new.
