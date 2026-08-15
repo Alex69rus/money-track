@@ -166,3 +166,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Calculate refund additions and removals in integer cents; do not use floating-point money arithmetic in the editor draft.
 - Exploration: Component tests covered partial and full refunds, a rejected over-limit entry, manual amount reset, and exact restoration after removal; the phone capture kept the empty section compact at 390px.
 - Prevention rule: Treat a zero transaction with refunds as Expense, hide table headings until the first row, and include refund JSON in every general transaction update payload.
+
+## Refund entry affordance — 2026-08-15
+
+- Takeaway: Use one compact icon-only `+` to open a refund row; reserve the row's Add action for confirmation.
+- Exploration: The 390px phone capture kept the empty Refunds section to its title and a centered `+`, without table headers or empty-state filler.
+- Prevention rule: Keep the `+` button accessible by name, optically center its glyph, and keep refund inputs borderless inside the shared section surface.

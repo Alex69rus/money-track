@@ -596,7 +596,7 @@ export function TransactionEditDialog({
                   <p className="text-sm font-semibold text-slate-100">Refunds</p>
                   <Button
                     aria-label="Add refund"
-                    className="h-8 px-2.5 text-xs text-[#57a7ff] hover:bg-[#2d8cff]/10 hover:text-[#7bbbff]"
+                    className="size-7 rounded-lg bg-[#2d8cff]/10 p-0 text-lg leading-none text-[#57a7ff] hover:bg-[#2d8cff]/20 hover:text-[#7bbbff]"
                     data-testid="tx-edit-add-refund"
                     disabled={!canAddRefund || addingRefund}
                     onClick={() => {
@@ -607,7 +607,9 @@ export function TransactionEditDialog({
                     type="button"
                     variant="ghost"
                   >
-                    + Add
+                    <span aria-hidden className="-translate-y-px">
+                      +
+                    </span>
                   </Button>
                 </div>
 
@@ -655,7 +657,7 @@ export function TransactionEditDialog({
                       <Input
                         aria-invalid={displayedRefundError !== null}
                         aria-label="Refund amount"
-                        className="border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500"
+                        className="h-9 rounded-none border-0 bg-transparent px-0 text-slate-100 shadow-none placeholder:text-slate-500 focus-visible:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0 aria-invalid:border-0 aria-invalid:bg-destructive/10"
                         id="transaction-refund-amount"
                         inputMode="decimal"
                         onChange={(event) => {
@@ -675,7 +677,7 @@ export function TransactionEditDialog({
                       </label>
                       <Input
                         aria-label="Refund note"
-                        className="border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500"
+                        className="h-9 rounded-none border-0 bg-transparent px-0 text-slate-100 shadow-none placeholder:text-slate-500 focus-visible:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0"
                         id="transaction-refund-note"
                         maxLength={500}
                         onChange={(event) => setRefundNote(event.target.value)}

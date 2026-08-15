@@ -254,3 +254,7 @@ Appending a guardrail → an exact heading-level patch did not match an older se
 ## 2026-08-15 00:00 — Codex
 
 Disabling the real-LLM integration test → its helper loads `backend_new/.env` into the process after startup, overriding `RUN_LLM_E2E=0`. Treat that check as opt-in configuration from the file, not the shell command.
+
+## 2026-08-15 12:25 — Codex
+
+Running mobile QA in the sandbox → the runner stopped after backend startup without a fresh artifact directory. Rerun the same command with local-process permission before diagnosing product code.
