@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.schemas.transactions import RefundEntry
 
 
 class CategoryResponse(BaseModel):
@@ -31,6 +33,7 @@ class TransactionResponse(BaseModel):
     currency: str
     smsText: str | None
     messageId: str | None
+    refunds: list[RefundEntry] = Field(default_factory=list)
     createdAt: datetime
     category: CategoryResponse | None
 

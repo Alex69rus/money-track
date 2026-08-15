@@ -157,3 +157,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: retain the default-currency input context even when the product assumes a single currency.
 - Exploration: the single-currency instruction prevents splitting an analysis but does not give the model a currency label for generated display text.
 - Prevention rule: keep the explicit `Default currency` input line and assert it in the prompt/input regression test.
+
+### 2026-08-14 - Embedded refund logs
+- Takeaway: Persist refund logs as typed JSON and retain the transaction amount as the sole analytics input; do not create separate refund transactions.
+- Exploration: API parity coverage confirmed full refunds reach zero, list reads return persisted logs, and an edited expense SMS updates parent fields while retaining the refund log.
+- Prevention rule: Require the final `refunds` array on every transaction update; validate unique positive two-decimal entries before mutation, and let SMS reprocessing update refunded expenses without allowing them to become income.

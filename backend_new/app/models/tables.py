@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from piccolo.columns import (
+    JSON,
     Array,
     BigInt,
     BigSerial,
@@ -36,6 +37,7 @@ class Transaction(Table, tablename="transaction"):
     currency = Varchar(length=100, default="AED", required=True)
     sms_text = Varchar(length=1000, null=True)
     message_id = Varchar(length=100, null=True)
+    refunds = JSON(default=list, required=True)
     created_at = Timestamp(required=True)
 
 

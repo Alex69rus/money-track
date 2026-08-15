@@ -214,3 +214,43 @@ Checking whether local QA services were already running → macOS sandbox policy
 ## 2026-08-12 20:29 — Codex
 
 Starting the root Phase 2 frontend QA → an unrelated persistent frontend on the default QA port left a partial stack, which the runner correctly refused to reuse. Choose isolated QA ports instead of stopping user-owned services.
+
+## 2026-08-14 — Codex
+
+Tracing the transaction API schema → assumed a conventional `app/schemas/requests.py`, but transaction request models live in `app/schemas/transactions.py`. Use `rg --files app/schemas` before opening schema modules by convention.
+
+## 2026-08-14 — Codex
+
+Previewing an inline visualization → the renderer wraps the fragment in a sandboxed `srcdoc` iframe, and the in-app-browser screenshot was blank although frame-DOM interaction worked. Verify mockups through frame locators or the inline visualization surface rather than relying on that screenshot.
+
+## 2026-08-14 21:49 — Codex
+
+Reloading the visualization instructions → first used the old system-skills path, but the active visualization skill is plugin-cached. Read the exact path listed in the available-skills catalog.
+
+## 2026-08-14 21:56 — Codex
+
+Reading frontend source-of-truth documents → `frontend_new/AGENTS.MD` names three docs under `docs/`, but they live under `frontend_new/docs/`. Resolve project-local documentation paths before batching reads.
+
+## 2026-08-14 21:56 — Codex
+
+Fetching shadcn component docs → the web connector returns a plain string rather than a content-block object in this runtime. Send its value directly to output instead of reading `.content`.
+
+## 2026-08-14 21:59 — Codex
+
+Inspecting backend test helpers → guessed singular fixture filenames, but the repository uses `backend_new/tests/fixtures/db_helpers.py`. List fixture files before opening helpers.
+
+## 2026-08-14 22:02 — Codex
+
+Checking Piccolo migrations → used a conventional `migrations status` subcommand, but this CLI exposes `migrations check`. Run `piccolo migrations --help` before relying on generic migration commands.
+
+## 2026-08-14 22:19 — Codex
+
+Running mobile QA → the runner generated fresh screenshots for every phone profile, but `.codex-tmp/qa-mobile-report.json` retained a stale run. Locate the newest screenshot directory and inspect it when the report path is not refreshed.
+
+## 2026-08-14 22:21 — Codex
+
+Appending a guardrail → an exact heading-level patch did not match an older section. Inspect the local tail and anchor additions to the actual document structure.
+
+## 2026-08-15 00:00 — Codex
+
+Disabling the real-LLM integration test → its helper loads `backend_new/.env` into the process after startup, overriding `RUN_LLM_E2E=0`. Treat that check as opt-in configuration from the file, not the shell command.

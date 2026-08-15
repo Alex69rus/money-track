@@ -52,6 +52,11 @@ export function mapTransaction(dto: TransactionDto): Transaction {
     currency: dto.currency,
     smsText: dto.smsText,
     messageId: dto.messageId,
+    refunds: (dto.refunds ?? []).map((refund) => ({
+      id: refund.id,
+      amount: refund.amount,
+      note: refund.note,
+    })),
     createdAt: new Date(dto.createdAt),
     category: dto.category ? mapCategory(dto.category) : null,
   };

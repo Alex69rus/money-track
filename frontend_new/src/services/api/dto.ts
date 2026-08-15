@@ -9,6 +9,12 @@ export interface CategoryDto {
   createdAt: string;
 }
 
+export interface TransactionRefundDto {
+  id: number;
+  amount: string;
+  note: string;
+}
+
 export interface TransactionDto {
   id: number;
   userId: number;
@@ -20,6 +26,7 @@ export interface TransactionDto {
   currency: string;
   smsText: string | null;
   messageId: string | null;
+  refunds?: TransactionRefundDto[];
   createdAt: string;
   category: CategoryDto | null;
 }

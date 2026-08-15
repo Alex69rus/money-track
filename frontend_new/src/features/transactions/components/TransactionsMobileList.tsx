@@ -3,7 +3,12 @@ import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatSignedAmount, formatTransactionTime, groupTransactionsByDay } from "@/features/transactions/utils";
+import {
+  formatSignedAmount,
+  formatTransactionTime,
+  groupTransactionsByDay,
+  isExpenseTransaction,
+} from "@/features/transactions/utils";
 import type { Transaction } from "@/types/transactions";
 
 interface TransactionsMobileListProps {
@@ -13,8 +18,8 @@ interface TransactionsMobileListProps {
   onEditTransaction: (transaction: Transaction) => void;
 }
 
-function amountClassName(amount: number): string {
-  if (amount >= 0) {
+function amountClassName(transaction: Transaction): string {
+  if (!isExpenseTransaction(transaction)) {
     return "text-sm font-bold text-primary";
   }
 
@@ -93,7 +98,7 @@ export function TransactionsMobileList({
                               {transaction.note?.trim() || transaction.category?.name || "Untitled transaction"}
                             </p>
                             <p
-                              className={`${amountClassName(transaction.amount)} shrink-0 whitespace-nowrap tabular-nums`}
+                              className={`${amountClassName(transaction)} shrink-0 whitespace-nowrap tabular-nums`}
                               data-testid={`tx-mobile-amount-${transaction.id}`}
                             >
                               {formatSignedAmount(transaction.amount, transaction.currency)}

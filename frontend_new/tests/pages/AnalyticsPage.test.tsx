@@ -40,6 +40,7 @@ const drilldownTransaction: Transaction = {
   currency: "AED",
   smsText: null,
   messageId: null,
+  refunds: [],
   createdAt: new Date("2026-07-12T10:00:00"),
   category: null,
 };

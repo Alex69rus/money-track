@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -26,7 +27,7 @@ from app.schemas.responses import (
     PaginatedTransactionsResponse,
     TransactionResponse,
 )
-from app.schemas.transactions import CreateTransactionRequest, UpdateTransactionRequest
+from app.schemas.transactions import CreateTransactionRequest, RefundEntry, UpdateTransactionRequest
 from app.services.transaction_normalization import normalize_currency, normalize_tag
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,13 @@ def _map_category(category: Category) -> CategoryResponse:
     )
 
 
+def _parse_refunds(value: object) -> list[RefundEntry]:
+    parsed_value: object = json.loads(value) if isinstance(value, str) else value
+    if not isinstance(parsed_value, list):
+        return []
+    return [RefundEntry.model_validate(refund) for refund in parsed_value]
+
+
 def _map_transaction(transaction: Transaction, category: Category | None) -> TransactionResponse:
     return TransactionResponse(
         id=int(transaction.id),
@@ -90,6 +98,7 @@ def _map_transaction(transaction: Transaction, category: Category | None) -> Tra
         currency=transaction.currency,
         smsText=transaction.sms_text,
         messageId=transaction.message_id,
+        refunds=_parse_refunds(transaction.refunds),
         createdAt=transaction.created_at,
         category=_map_category(category) if category is not None else None,
     )
@@ -107,6 +116,7 @@ def _map_transaction_row(row: dict[str, object]) -> TransactionResponse:
         currency=cast(str, row["currency"]),
         smsText=cast(str | None, row["sms_text"]),
         messageId=cast(str | None, row["message_id"]),
+        refunds=_parse_refunds(row.get("refunds")),
         createdAt=cast(datetime, row["created_at"]),
         category=None,
     )
@@ -428,6 +438,7 @@ async def create_transaction(*, user_id: int, payload: CreateTransactionRequest)
         currency=payload.currency,
         sms_text=payload.sms_text,
         message_id=payload.message_id,
+        refunds=[],
         created_at=datetime.now(UTC),
     )
     await transaction.save()
@@ -454,6 +465,7 @@ async def update_transaction(
     transaction.category_id = payload.category_id
     transaction.tags = payload.tags or []
     transaction.currency = payload.currency
+    transaction.refunds = json.dumps([refund.model_dump(mode="json") for refund in payload.refunds])
     await transaction.save()
 
     category = None
@@ -489,6 +501,25 @@ async def upsert_transaction_by_message_id(
     note_to_save = note.strip() if note and note.strip() else None
     normalized_currency = normalize_currency(currency)
     created_at = datetime.now(UTC)
+
+    existing_transaction = (
+        await Transaction.objects()
+        .where((Transaction.user_id == user_id) & (Transaction.message_id == message_id))
+        .first()
+        .run()
+    )
+    if existing_transaction is not None and _parse_refunds(existing_transaction.refunds) and amount > 0:
+        # Refunds are expense-only. Keep the stored expense amount when an
+        # edited SMS changes its direction to income, but still refresh the
+        # remaining parser-owned fields below.
+        existing_transaction.transaction_date = _to_utc(transaction_date)
+        existing_transaction.currency = normalized_currency
+        existing_transaction.sms_text = sms_text
+        if note_to_save is not None:
+            existing_transaction.note = note_to_save
+        await existing_transaction.save()
+        return _map_transaction(existing_transaction, None)
+
     conflict_values: list[Column] = [
         Transaction.transaction_date,
         Transaction.amount,
@@ -531,6 +562,7 @@ async def upsert_transaction_by_message_id(
                 Transaction.currency,
                 Transaction.sms_text,
                 Transaction.message_id,
+                Transaction.refunds,
                 Transaction.created_at,
             )
             .run()

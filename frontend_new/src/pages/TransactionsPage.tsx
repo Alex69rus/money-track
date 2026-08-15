@@ -21,6 +21,7 @@ import { TransactionsListSkeleton } from "@/features/transactions/components/Tra
 import { TransactionsMobileList } from "@/features/transactions/components/TransactionsMobileList";
 import { TransactionTagSelectorDialog } from "@/features/transactions/components/TransactionTagSelectorDialog";
 import { useTransactionsList } from "@/features/transactions/hooks/useTransactionsList";
+import { isExpenseTransaction } from "@/features/transactions/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ApiRequestError } from "@/services/api/client";
 import { fetchCategories } from "@/services/api/categories";
@@ -169,6 +170,7 @@ function buildUpdatePayload(
     categoryId: transaction.categoryId,
     tags: transaction.tags,
     currency: transaction.currency,
+    refunds: transaction.refunds,
     ...overrides,
   };
 }
@@ -666,7 +668,7 @@ export function TransactionsPage(): JSX.Element {
         transactionType={
           quickCategoryTransaction === null
             ? undefined
-            : quickCategoryTransaction.amount < 0
+            : isExpenseTransaction(quickCategoryTransaction)
               ? "expense"
               : "income"
         }

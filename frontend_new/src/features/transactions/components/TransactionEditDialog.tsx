@@ -6,6 +6,7 @@ import {
   LoaderCircleIcon,
   TagsIcon,
   Trash2Icon,
+  XIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -19,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
 import {
@@ -29,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TransactionCategorySelectorDialog } from "@/features/transactions/components/TransactionCategorySelectorDialog";
 import { TransactionTagSelectorDialog } from "@/features/transactions/components/TransactionTagSelectorDialog";
@@ -36,7 +39,7 @@ import { cn } from "@/lib/utils";
 import aedSymbol from "@/assets/aed-symbol.png";
 import { ApiRequestError } from "@/services/api/client";
 import { deleteTransaction, updateTransaction } from "@/services/api/transactions";
-import type { Category, Transaction, UpdateTransactionPayload } from "@/types/transactions";
+import type { Category, Transaction, TransactionRefund, UpdateTransactionPayload } from "@/types/transactions";
 
 interface TransactionEditDialogProps {
   open: boolean;
@@ -75,6 +78,19 @@ function isTagsEqual(first: string[], second: string[]): boolean {
   }
 
   return first.every((tag, index) => tag === second[index]);
+}
+
+function areRefundsEqual(first: TransactionRefund[], second: TransactionRefund[]): boolean {
+  if (first.length !== second.length) {
+    return false;
+  }
+
+  return first.every(
+    (refund, index) =>
+      refund.id === second[index]?.id &&
+      refund.amount === second[index]?.amount &&
+      refund.note === second[index]?.note,
+  );
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -128,12 +144,66 @@ function normalizeEditableAmount(value: string): string | null {
   return /^-?\d*(?:\.\d*)?$/.test(normalized) ? normalized : null;
 }
 
+function toMoneyCents(value: string): number | null {
+  const normalized = normalizeEditableAmount(value);
+  if (!normalized?.trim()) {
+    return null;
+  }
+
+  const match = /^(-?)(\d+)(?:\.(\d{0,2}))?$/.exec(normalized);
+  if (!match) {
+    return null;
+  }
+
+  const whole = Number(match[2]);
+  if (!Number.isSafeInteger(whole) || whole > Math.floor(Number.MAX_SAFE_INTEGER / 100)) {
+    return null;
+  }
+
+  const cents = whole * 100 + Number((match[3] ?? "").padEnd(2, "0"));
+  return match[1] === "-" ? -cents : cents;
+}
+
+function formatMoneyCents(cents: number): string {
+  const sign = cents < 0 ? "-" : "";
+  const absoluteCents = Math.abs(cents);
+  const whole = Math.floor(absoluteCents / 100);
+  const fraction = String(absoluteCents % 100).padStart(2, "0");
+  return `${sign}${whole}.${fraction}`;
+}
+
+function refundValidationMessage(refundAmount: string, transactionAmount: string): string | null {
+  if (!refundAmount.trim()) {
+    return null;
+  }
+
+  const refundCents = toMoneyCents(refundAmount);
+  if (refundCents === null || refundCents <= 0) {
+    return "Refund amount must be greater than zero.";
+  }
+
+  const transactionCents = toMoneyCents(transactionAmount);
+  if (transactionCents === null || transactionCents >= 0) {
+    return "Refunds can only be added to expense transactions.";
+  }
+
+  if (refundCents > Math.abs(transactionCents)) {
+    return "Refunds cannot exceed the transaction amount";
+  }
+
+  return null;
+}
+
 function withAmountSign(value: string, sign: "income" | "expense"): string {
   const normalized = normalizeEditableAmount(value) ?? "";
   const magnitude = normalized.replace(/^-/, "");
 
   if (!magnitude) {
     return sign === "expense" ? "-" : "";
+  }
+
+  if (Number(magnitude) === 0) {
+    return magnitude;
   }
 
   return sign === "expense" ? `-${magnitude}` : magnitude;
@@ -158,6 +228,11 @@ export function TransactionEditDialog({
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [note, setNote] = useState("");
+  const [refunds, setRefunds] = useState<TransactionRefund[]>([]);
+  const [addingRefund, setAddingRefund] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundNote, setRefundNote] = useState("");
+  const [refundAddError, setRefundAddError] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -185,6 +260,11 @@ export function TransactionEditDialog({
     setCategoryId(transaction.categoryId);
     setTags(transaction.tags);
     setNote(transaction.note ?? "");
+    setRefunds(transaction.refunds);
+    setAddingRefund(false);
+    setRefundAmount("");
+    setRefundNote("");
+    setRefundAddError(null);
     setError(null);
     setDeleteConfirmOpen(false);
     setCategorySelectorOpen(false);
@@ -201,7 +281,13 @@ export function TransactionEditDialog({
   const normalizedCurrency = normalizeCurrency(currency);
   const currencySymbol = resolveCurrencySymbol(currency);
   const transactionDateLabel = formatDateTimePreview(transactionDate);
-  const isExpense = amount.trim().startsWith("-");
+  const amountCents = toMoneyCents(amount);
+  const hasRefunds = refunds.length > 0;
+  const isExpense = amount.trim().startsWith("-") || (hasRefunds && amountCents === 0);
+  const refundInputError = addingRefund ? refundValidationMessage(refundAmount, amount) : null;
+  const displayedRefundError = refundInputError ?? refundAddError;
+  const hasInvalidRefundDraft = addingRefund && displayedRefundError !== null;
+  const canAddRefund = isExpense && amountCents !== null && amountCents < 0;
 
   const hasChanges = useMemo(() => {
     if (!transaction) {
@@ -214,9 +300,10 @@ export function TransactionEditDialog({
       currency.trim() !== transaction.currency ||
       categoryId !== transaction.categoryId ||
       note !== (transaction.note ?? "") ||
-      !isTagsEqual(tags, transaction.tags)
+      !isTagsEqual(tags, transaction.tags) ||
+      !areRefundsEqual(refunds, transaction.refunds)
     );
-  }, [amount, categoryId, currency, note, tags, transaction, transactionDate]);
+  }, [amount, categoryId, currency, note, refunds, tags, transaction, transactionDate]);
 
   const validatePayload = (): { payload: UpdateTransactionPayload | null; message: string | null } => {
     if (!transactionDate.trim()) {
@@ -233,8 +320,16 @@ export function TransactionEditDialog({
       return { payload: null, message: "Amount must be a valid number." };
     }
 
-    if (parsedAmount === 0) {
+    if (parsedAmount === 0 && refunds.length === 0) {
       return { payload: null, message: "Amount cannot be zero." };
+    }
+
+    if (refunds.length > 0 && parsedAmount > 0) {
+      return { payload: null, message: "Refunds can only be added to expense transactions." };
+    }
+
+    if (hasInvalidRefundDraft) {
+      return { payload: null, message: displayedRefundError };
     }
 
     const nextCurrency = currency.trim().toUpperCase();
@@ -250,6 +345,7 @@ export function TransactionEditDialog({
         categoryId,
         tags,
         currency: nextCurrency,
+        refunds,
       },
       message: null,
     };
@@ -308,6 +404,52 @@ export function TransactionEditDialog({
 
     element.focus();
     element.click();
+  };
+
+  const handleAddRefund = (): void => {
+    if (!refundAmount.trim()) {
+      setRefundAddError("Enter a refund amount.");
+      return;
+    }
+
+    const validationMessage = refundValidationMessage(refundAmount, amount);
+    if (validationMessage) {
+      setRefundAddError(validationMessage);
+      return;
+    }
+
+    const transactionCents = toMoneyCents(amount);
+    const refundCents = toMoneyCents(refundAmount);
+    if (transactionCents === null || refundCents === null) {
+      setRefundAddError("Refund amount must be greater than zero.");
+      return;
+    }
+
+    const nextRefundId = Math.max(0, ...refunds.map((refund) => refund.id)) + 1;
+    setRefunds((current) => [
+      ...current,
+      {
+        id: nextRefundId,
+        amount: formatMoneyCents(refundCents),
+        note: refundNote.trim(),
+      },
+    ]);
+    setAmount(formatMoneyCents(transactionCents + refundCents));
+    setAddingRefund(false);
+    setRefundAmount("");
+    setRefundNote("");
+    setRefundAddError(null);
+  };
+
+  const handleRemoveRefund = (refund: TransactionRefund): void => {
+    const transactionCents = toMoneyCents(amount);
+    const refundCents = toMoneyCents(refund.amount);
+    if (transactionCents === null || refundCents === null) {
+      return;
+    }
+
+    setRefunds((current) => current.filter((currentRefund) => currentRefund.id !== refund.id));
+    setAmount(formatMoneyCents(transactionCents - refundCents));
   };
 
   if (presentation === "page" && !open) {
@@ -387,13 +529,14 @@ export function TransactionEditDialog({
 
                     const parsedAmount = Number(normalizedAmount);
                     if (Number.isFinite(parsedAmount)) {
-                      setAmount(formatEditableAmount(parsedAmount));
+                      const formattedAmount = formatEditableAmount(parsedAmount);
+                      setAmount(hasRefunds ? withAmountSign(formattedAmount, "expense") : formattedAmount);
                     }
                   }}
                   onChange={(event) => {
                     const normalizedAmount = normalizeEditableAmount(event.target.value);
                     if (normalizedAmount !== null) {
-                      setAmount(normalizedAmount);
+                      setAmount(hasRefunds ? withAmountSign(normalizedAmount, "expense") : normalizedAmount);
                     }
                   }}
                   pattern="-?[0-9]*[.,]?[0-9]*"
@@ -409,6 +552,7 @@ export function TransactionEditDialog({
                     !isExpense ? "text-white shadow-sm" : "text-slate-400 hover:text-slate-100",
                   )}
                   data-testid="tx-edit-sign-income"
+                  disabled={hasRefunds}
                   onClick={() => setAmount((current) => withAmountSign(current, "income"))}
                   style={{ backgroundColor: !isExpense ? "#2d8cff" : "transparent" }}
                   type="button"
@@ -441,6 +585,138 @@ export function TransactionEditDialog({
                 <span>• Tap to edit</span>
               </div>
             </div>
+
+            {isExpense ? (
+              <section
+                aria-label="Refunds"
+                className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3.5"
+                data-testid="tx-edit-refunds"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-100">Refunds</p>
+                  <Button
+                    aria-label="Add refund"
+                    className="h-8 px-2.5 text-xs text-[#57a7ff] hover:bg-[#2d8cff]/10 hover:text-[#7bbbff]"
+                    data-testid="tx-edit-add-refund"
+                    disabled={!canAddRefund || addingRefund}
+                    onClick={() => {
+                      setAddingRefund(true);
+                      setRefundAddError(null);
+                    }}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    + Add
+                  </Button>
+                </div>
+
+                {refunds.length > 0 ? (
+                  <Table className="mt-2 table-fixed">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="h-8 w-24 px-0 text-xs text-slate-400">Amount</TableHead>
+                        <TableHead className="h-8 px-0 text-xs text-slate-400">Note</TableHead>
+                        <TableHead className="h-8 w-8 px-0 text-right">
+                          <span className="sr-only">Remove</span>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {refunds.map((refund) => (
+                        <TableRow key={refund.id}>
+                          <TableCell className="px-0 font-semibold tabular-nums text-slate-100">{refund.amount}</TableCell>
+                          <TableCell className="truncate px-0 text-slate-300">{refund.note || "—"}</TableCell>
+                          <TableCell className="px-0 text-right">
+                            <Button
+                              aria-label={`Remove refund ${refund.amount}`}
+                              className="text-slate-400 hover:bg-[#ff5465]/10 hover:text-[#ff7180]"
+                              data-testid={`tx-edit-remove-refund-${refund.id}`}
+                              onClick={() => handleRemoveRefund(refund)}
+                              size="icon-xs"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <XIcon aria-hidden data-icon="inline-start" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : null}
+
+                {addingRefund ? (
+                  <FieldGroup className="mt-3 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto] items-start gap-2 border-t border-white/10 pt-3">
+                    <Field data-invalid={displayedRefundError !== null}>
+                      <label className="sr-only" htmlFor="transaction-refund-amount">
+                        Refund amount
+                      </label>
+                      <Input
+                        aria-invalid={displayedRefundError !== null}
+                        aria-label="Refund amount"
+                        className="border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500"
+                        id="transaction-refund-amount"
+                        inputMode="decimal"
+                        onChange={(event) => {
+                          const normalizedRefundAmount = normalizeEditableAmount(event.target.value);
+                          if (normalizedRefundAmount !== null) {
+                            setRefundAmount(normalizedRefundAmount);
+                            setRefundAddError(null);
+                          }
+                        }}
+                        placeholder="Amount"
+                        value={refundAmount}
+                      />
+                    </Field>
+                    <Field>
+                      <label className="sr-only" htmlFor="transaction-refund-note">
+                        Refund note
+                      </label>
+                      <Input
+                        aria-label="Refund note"
+                        className="border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500"
+                        id="transaction-refund-note"
+                        maxLength={500}
+                        onChange={(event) => setRefundNote(event.target.value)}
+                        placeholder="Note"
+                        value={refundNote}
+                      />
+                    </Field>
+                    <Field className="w-auto">
+                      <div className="flex gap-1">
+                        <Button
+                          aria-label="Cancel adding refund"
+                          onClick={() => {
+                            setAddingRefund(false);
+                            setRefundAmount("");
+                            setRefundNote("");
+                            setRefundAddError(null);
+                          }}
+                          size="icon-sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <XIcon aria-hidden data-icon="inline-start" />
+                        </Button>
+                        <Button
+                          aria-label="Confirm refund"
+                          className="bg-[#2d8cff] text-white hover:bg-[#257de6]"
+                          onClick={handleAddRefund}
+                          size="sm"
+                          type="button"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </Field>
+                    {displayedRefundError ? (
+                      <FieldError className="col-span-3">{displayedRefundError}</FieldError>
+                    ) : null}
+                  </FieldGroup>
+                ) : null}
+              </section>
+            ) : null}
 
             <button
               aria-label="Open category selector"
@@ -568,7 +844,7 @@ export function TransactionEditDialog({
               <Button
                 className="h-14 rounded-2xl bg-[#2d8cff] text-lg font-semibold text-white hover:bg-[#257de6]"
                 data-testid="tx-edit-save"
-                disabled={!hasChanges || saving || deleting}
+                disabled={!hasChanges || hasInvalidRefundDraft || saving || deleting}
                 onClick={() => void handleSave()}
                 type="button"
               >

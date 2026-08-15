@@ -9,6 +9,12 @@ export interface Category {
   createdAt: Date;
 }
 
+export interface TransactionRefund {
+  id: number;
+  amount: string;
+  note: string;
+}
+
 export interface Transaction {
   id: number;
   userId: number;
@@ -20,6 +26,7 @@ export interface Transaction {
   currency: string;
   smsText: string | null;
   messageId: string | null;
+  refunds: TransactionRefund[];
   createdAt: Date;
   category: Category | null;
 }
@@ -53,4 +60,5 @@ export interface UpdateTransactionPayload {
   categoryId: number | null;
   tags: string[];
   currency: string;
+  refunds: TransactionRefund[];
 }

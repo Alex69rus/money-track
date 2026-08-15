@@ -15,6 +15,7 @@ const transaction: Transaction = {
   currency: "AED",
   smsText: null,
   messageId: null,
+  refunds: [],
   createdAt: new Date("2026-07-12T08:45:00"),
   category: {
     id: 7,

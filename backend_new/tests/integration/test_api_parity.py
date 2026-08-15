@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import httpx
 import pytest
 
+from app.db.queries import upsert_transaction_by_message_id
 from tests.fixtures import DbHelper, SeedTransaction
 
 
@@ -673,6 +674,7 @@ def test_create_transaction_persists_expected_defaults_and_fields(
     assert body["messageId"] == message_id
     assert body["note"] == note
     assert body["currency"] == "AED"
+    assert body["refunds"] == []
     assert body["userId"] > 0
     assert "category" not in body
     assert body["tags"] == payload["tags"]
@@ -792,6 +794,7 @@ def test_update_transaction_owned_success(
         "categoryId": None,
         "tags": [_unique_value(db_helper.namespace, "after")],
         "currency": "AED",
+        "refunds": [],
     }
 
     response, body = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
@@ -832,10 +835,289 @@ def test_update_transaction_not_owned_returns_not_found(
         "categoryId": None,
         "tags": [_unique_value(db_helper.namespace, "should-not-update")],
         "currency": "AED",
+        "refunds": [],
     }
 
     response, _ = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
     assert response.status_code == 404
+
+
+def test_update_transaction_persists_refunds_and_allows_full_refund(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    tx_id = asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
+                amount=Decimal("-100.00"),
+                note=_unique_value(db_helper.namespace, "refund-full-before"),
+                category_id=None,
+                tags=[],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "refund-full-before"),
+                message_id=_unique_value(db_helper.namespace, "refund-full-message"),
+            )
+        )
+    )
+
+    payload = {
+        "transactionDate": "2025-09-21T09:00:00",
+        "amount": 0,
+        "note": _unique_value(db_helper.namespace, "refund-full-after"),
+        "categoryId": None,
+        "tags": [],
+        "currency": "AED",
+        "refunds": [{"id": 1, "amount": "100.00", "note": "Returned item"}],
+    }
+
+    response, body = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
+
+    assert response.status_code == 200
+    assert body["amount"] == 0
+    assert body["refunds"] == [{"id": 1, "amount": "100.00", "note": "Returned item"}]
+
+    stored = asyncio.run(db_helper.get_transaction_by_id(tx_id))
+    assert stored is not None
+    assert stored["amount"] == Decimal("0.00")
+    assert stored["refunds"] == [{"id": 1, "amount": "100.00", "note": "Returned item"}]
+
+    listed_response, listed_body = perform_request(
+        http_client,
+        "GET",
+        base_url,
+        f"/api/transactions/?text={payload['note']}&take=100",
+    )
+    assert listed_response.status_code == 200
+    listed_transaction = next(item for item in listed_body["data"] if item["id"] == tx_id)
+    assert listed_transaction["refunds"] == [{"id": 1, "amount": "100.00", "note": "Returned item"}]
+
+
+def test_update_transaction_rejects_invalid_refunds_without_changing_the_stored_transaction(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    original_note = _unique_value(db_helper.namespace, "refund-invalid-before")
+    tx_id = asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
+                amount=Decimal("-100.00"),
+                note=original_note,
+                category_id=None,
+                tags=[],
+                currency="AED",
+                sms_text=original_note,
+                message_id=_unique_value(db_helper.namespace, "refund-invalid-message"),
+            )
+        )
+    )
+
+    payload = {
+        "transactionDate": "2025-09-22T12:30:00",
+        "amount": -80,
+        "note": _unique_value(db_helper.namespace, "refund-invalid-after"),
+        "categoryId": None,
+        "tags": [],
+        "currency": "AED",
+        "refunds": [
+            {"id": 1, "amount": "20.00", "note": "First"},
+            {"id": 1, "amount": "20.001", "note": "Duplicate and over-precision"},
+        ],
+    }
+
+    response, _ = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=payload)
+
+    assert response.status_code == 422
+    stored = asyncio.run(db_helper.get_transaction_by_id(tx_id))
+    assert stored is not None
+    assert stored["amount"] == Decimal("-100.00")
+    assert stored["note"] == original_note
+    assert stored["refunds"] == []
+
+
+def test_update_transaction_requires_the_final_refund_state(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    original_note = _unique_value(db_helper.namespace, "refund-state-before")
+    tx_id = asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
+                amount=Decimal("-100.00"),
+                note=original_note,
+                category_id=None,
+                tags=[],
+                currency="AED",
+                sms_text=original_note,
+                message_id=_unique_value(db_helper.namespace, "refund-state-message"),
+            )
+        )
+    )
+
+    response, _ = perform_request(
+        http_client,
+        "PUT",
+        base_url,
+        f"/api/transactions/{tx_id}",
+        json={
+            "transactionDate": "2025-09-22T12:30:00",
+            "amount": 100,
+            "note": _unique_value(db_helper.namespace, "refund-state-after"),
+            "categoryId": None,
+            "tags": [],
+            "currency": "AED",
+        },
+    )
+
+    assert response.status_code == 422
+    stored = asyncio.run(db_helper.get_transaction_by_id(tx_id))
+    assert stored is not None
+    assert stored["amount"] == Decimal("-100.00")
+    assert stored["note"] == original_note
+    assert stored["refunds"] == []
+
+
+def test_sms_upsert_updates_a_refunded_expense_and_preserves_its_refunds(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    original_note = _unique_value(db_helper.namespace, "refund-sms-before")
+    original_sms = _unique_value(db_helper.namespace, "refund-sms-original")
+    message_id = _unique_value(db_helper.namespace, "refund-sms-message")
+    tx_id = asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
+                amount=Decimal("-100.00"),
+                note=original_note,
+                category_id=None,
+                tags=[],
+                currency="AED",
+                sms_text=original_sms,
+                message_id=message_id,
+            )
+        )
+    )
+    refund_payload = {
+        "transactionDate": "2025-09-21T09:00:00",
+        "amount": 0,
+        "note": original_note,
+        "categoryId": None,
+        "tags": [],
+        "currency": "AED",
+        "refunds": [{"id": 1, "amount": "100.00", "note": "Returned item"}],
+    }
+    response, _ = perform_request(http_client, "PUT", base_url, f"/api/transactions/{tx_id}", json=refund_payload)
+    assert response.status_code == 200
+
+    updated_note = _unique_value(db_helper.namespace, "refund-sms-updated")
+    updated_sms = _unique_value(db_helper.namespace, "refund-sms-updated")
+    upserted = asyncio.run(
+        upsert_transaction_by_message_id(
+            user_id=test_user_id,
+            message_id=message_id,
+            transaction_date=datetime(2025, 9, 22, 12, 30, tzinfo=UTC),
+            amount=Decimal("-120.00"),
+            currency="USD",
+            note=updated_note,
+            sms_text=updated_sms,
+        )
+    )
+
+    assert upserted.id == tx_id
+    assert upserted.amount == -120
+    assert upserted.currency == "USD"
+    assert upserted.note == updated_note
+    assert upserted.smsText == updated_sms
+    assert [refund.model_dump(mode="json") for refund in upserted.refunds] == [
+        {"id": 1, "amount": "100.00", "note": "Returned item"}
+    ]
+
+    stored = asyncio.run(db_helper.get_transaction_by_id(tx_id))
+    assert stored is not None
+    assert stored["amount"] == Decimal("-120.00")
+    assert stored["refunds"] == [{"id": 1, "amount": "100.00", "note": "Returned item"}]
+
+
+def test_sms_upsert_with_refunds_does_not_change_an_expense_to_income(
+    http_client: httpx.Client,
+    base_url: str,
+    db_helper: DbHelper,
+    test_user_id: int,
+    perform_request,
+) -> None:
+    message_id = _unique_value(db_helper.namespace, "refund-income-message")
+    tx_id = asyncio.run(
+        db_helper.insert_transaction(
+            SeedTransaction(
+                user_id=test_user_id,
+                transaction_date=datetime(2025, 9, 21, 9, 0, tzinfo=UTC),
+                amount=Decimal("-100.00"),
+                note=_unique_value(db_helper.namespace, "refund-income-before"),
+                category_id=None,
+                tags=[],
+                currency="AED",
+                sms_text=_unique_value(db_helper.namespace, "refund-income-before"),
+                message_id=message_id,
+            )
+        )
+    )
+    response, _ = perform_request(
+        http_client,
+        "PUT",
+        base_url,
+        f"/api/transactions/{tx_id}",
+        json={
+            "transactionDate": "2025-09-21T09:00:00",
+            "amount": 0,
+            "note": _unique_value(db_helper.namespace, "refund-income-refunded"),
+            "categoryId": None,
+            "tags": [],
+            "currency": "AED",
+            "refunds": [{"id": 1, "amount": "100.00", "note": "Returned item"}],
+        },
+    )
+    assert response.status_code == 200
+
+    updated_note = _unique_value(db_helper.namespace, "refund-income-updated")
+    updated_sms = _unique_value(db_helper.namespace, "refund-income-updated")
+    upserted = asyncio.run(
+        upsert_transaction_by_message_id(
+            user_id=test_user_id,
+            message_id=message_id,
+            transaction_date=datetime(2025, 9, 22, 12, 30, tzinfo=UTC),
+            amount=Decimal("100.00"),
+            currency="USD",
+            note=updated_note,
+            sms_text=updated_sms,
+        )
+    )
+
+    assert upserted.amount == 0
+    assert upserted.currency == "USD"
+    assert upserted.note == updated_note
+    assert upserted.smsText == updated_sms
+    assert [refund.model_dump(mode="json") for refund in upserted.refunds] == [
+        {"id": 1, "amount": "100.00", "note": "Returned item"}
+    ]
 
 
 def test_update_transaction_missing_returns_not_found(
@@ -851,6 +1133,7 @@ def test_update_transaction_missing_returns_not_found(
         "categoryId": None,
         "tags": [_unique_value(db_helper.namespace, "update-missing")],
         "currency": "AED",
+        "refunds": [],
     }
 
     response, _ = perform_request(http_client, "PUT", base_url, "/api/transactions/99999999", json=payload)

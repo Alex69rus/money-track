@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatSignedAmount, formatTransactionTime } from "@/features/transactions/utils";
+import { formatSignedAmount, formatTransactionTime, isExpenseTransaction } from "@/features/transactions/utils";
 import type { Transaction } from "@/types/transactions";
 
 interface TransactionsDesktopTableProps {
@@ -51,7 +51,7 @@ export function TransactionsDesktopTable({
 
         <TableBody>
           {transactions.map((transaction) => {
-            const isPositive = transaction.amount >= 0;
+            const isPositive = !isExpenseTransaction(transaction);
             const categoryPalette = getCategoryIconPalette(transaction.category?.color, 0.16);
 
             return (

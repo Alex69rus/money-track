@@ -21,8 +21,12 @@ function formatCurrency(value: number, currency: string): string {
 }
 
 export function formatSignedAmount(amount: number, currency: string): string {
-  const sign = amount >= 0 ? "+" : "-";
+  const sign = amount > 0 ? "+" : amount < 0 ? "-" : "";
   return `${sign}${formatCurrency(Math.abs(amount), currency)}`;
+}
+
+export function isExpenseTransaction(transaction: Transaction): boolean {
+  return transaction.amount < 0 || (transaction.amount === 0 && transaction.refunds.length > 0);
 }
 
 export function formatTransactionTime(date: Date): string {

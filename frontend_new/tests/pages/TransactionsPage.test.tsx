@@ -21,6 +21,7 @@ const listedTransaction: Transaction = {
   currency: "AED",
   smsText: null,
   messageId: null,
+  refunds: [],
   createdAt: new Date("2026-06-30T20:00:00"),
   category: null,
 };

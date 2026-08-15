@@ -160,3 +160,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: render every bar and line from generic labelled value series, reserving fixed renderer keys for internal chart plumbing only.
 - Exploration: a tooltip wrapper that did not forward Recharts-injected props rendered an empty tooltip even though the chart and legend were correct; keyboard-focus QA exposed it deterministically.
 - Prevention rule: forward all tooltip props through wrappers, test arbitrary series names and formatted values, and have Phase 4 focus a line chart and assert the visible tooltip includes every series label.
+
+## Transaction refund drafts — 2026-08-14
+
+- Takeaway: Calculate refund additions and removals in integer cents; do not use floating-point money arithmetic in the editor draft.
+- Exploration: Component tests covered partial and full refunds, a rejected over-limit entry, manual amount reset, and exact restoration after removal; the phone capture kept the empty section compact at 390px.
+- Prevention rule: Treat a zero transaction with refunds as Expense, hide table headings until the first row, and include refund JSON in every general transaction update payload.

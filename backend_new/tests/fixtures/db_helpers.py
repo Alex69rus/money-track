@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -105,7 +106,7 @@ class DbHelper:
                 """
                 SELECT
                     id, user_id, transaction_date, amount, note, category_id, tags, currency,
-                    sms_text, message_id
+                    sms_text, message_id, refunds
                 FROM "transaction"
                 WHERE id = $1
                 """,
@@ -113,7 +114,14 @@ class DbHelper:
             )
         finally:
             await conn.close()
-        return dict(row) if row else None
+        if row is None:
+            return None
+
+        transaction = dict(row)
+        refunds = transaction.get("refunds")
+        if isinstance(refunds, str):
+            transaction["refunds"] = json.loads(refunds)
+        return transaction
 
     async def get_transaction_by_user_and_message_id(
         self,

@@ -14,6 +14,7 @@ const transaction: Transaction = {
   currency: "AED",
   smsText: null,
   messageId: null,
+  refunds: [],
   createdAt: new Date("2026-07-12T09:15:00Z"),
   category: null,
 };
@@ -42,6 +43,125 @@ const categories: Category[] = [
 ];
 
 describe("TransactionEditDialog", () => {
+  it("keeps the refunds section compact until the first refund is added", () => {
+    render(
+      <TransactionEditDialog
+        activeSubpage="none"
+        availableTags={[]}
+        categories={[]}
+        onDeleted={vi.fn()}
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        open
+        presentation="page"
+        transaction={{ ...transaction, amount: -100 }}
+      />,
+    );
+
+    expect(screen.getByTestId("tx-edit-refunds")).toBeInTheDocument();
+    expect(screen.getByTestId("tx-edit-add-refund")).toBeEnabled();
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Note" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "20" } });
+    fireEvent.change(screen.getByLabelText("Refund note"), { target: { value: "Returned item" } });
+    fireEvent.click(screen.getByLabelText("Confirm refund"));
+
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("-80.00");
+    expect(screen.getByRole("columnheader", { name: "Amount" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Note" })).toBeInTheDocument();
+    expect(screen.getByText("20.00")).toBeInTheDocument();
+    expect(screen.getByText("Returned item")).toBeInTheDocument();
+  });
+
+  it("blocks an over-limit refund without changing the current amount or recorded refunds", () => {
+    render(
+      <TransactionEditDialog
+        activeSubpage="none"
+        availableTags={[]}
+        categories={[]}
+        onDeleted={vi.fn()}
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        open
+        presentation="page"
+        transaction={{ ...transaction, amount: -100 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "20" } });
+    fireEvent.click(screen.getByLabelText("Confirm refund"));
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "81" } });
+
+    expect(screen.getByText("Refunds cannot exceed the transaction amount")).toBeInTheDocument();
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("-80.00");
+    expect(screen.getAllByText("20.00")).toHaveLength(1);
+    expect(screen.getByTestId("tx-edit-save")).toBeDisabled();
+  });
+
+  it("uses the edited current amount as the next refund allowance and restores a removed refund exactly", () => {
+    render(
+      <TransactionEditDialog
+        activeSubpage="none"
+        availableTags={[]}
+        categories={[]}
+        onDeleted={vi.fn()}
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        open
+        presentation="page"
+        transaction={{ ...transaction, amount: -100 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "20" } });
+    fireEvent.click(screen.getByLabelText("Confirm refund"));
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("-80.00");
+
+    fireEvent.change(screen.getByLabelText("Transaction amount"), { target: { value: "130" } });
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("-130");
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "130" } });
+    fireEvent.click(screen.getByLabelText("Confirm refund"));
+
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("0.00");
+    expect(screen.getByTestId("tx-edit-sign-expense")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("tx-edit-add-refund")).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId("tx-edit-remove-refund-2"));
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("-130.00");
+  });
+
+  it("allows a full refund to save at zero while keeping it an expense", () => {
+    render(
+      <TransactionEditDialog
+        activeSubpage="none"
+        availableTags={[]}
+        categories={[]}
+        onDeleted={vi.fn()}
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        open
+        presentation="page"
+        transaction={{ ...transaction, amount: -100 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("tx-edit-add-refund"));
+    fireEvent.change(screen.getByLabelText("Refund amount"), { target: { value: "100" } });
+    fireEvent.click(screen.getByLabelText("Confirm refund"));
+
+    expect(screen.getByLabelText("Transaction amount")).toHaveValue("0.00");
+    expect(screen.getByTestId("tx-edit-sign-expense")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("tx-edit-save")).toBeEnabled();
+  });
+
   it("keeps an in-progress edit when the same transaction is refreshed from the list", () => {
     const props = {
       activeSubpage: "none" as const,

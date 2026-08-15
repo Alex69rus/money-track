@@ -14,6 +14,7 @@ const uncategorizedTransaction: Transaction = {
   currency: "AED",
   smsText: null,
   messageId: null,
+  refunds: [],
   createdAt: new Date("2026-07-12T09:15:00"),
   category: null,
 };
