@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
@@ -9,9 +11,11 @@ from fastapi.testclient import TestClient
 
 from app.api.di_containers.dependencies import get_chat_agent
 from app.api.routes.ai_chat_router import router as ai_chat_router
-from app.services.ai_chat.chat_agent import CHAT_AGENT_PROMPT, ChatAgent, ChatAgentUnavailableError
-from app.services.ai_chat.common import current_business_date
+from app.services.ai_chat.aggregate_tool import aggregate_transactions
+from app.services.ai_chat.chat_agent import CHAT_AGENT_MODEL, CHAT_AGENT_PROMPT, ChatAgent, ChatAgentUnavailableError
+from app.services.ai_chat.common import TransactionFilter, current_business_date
 from app.services.ai_chat.contracts import ChatHistoryMessage, ChatResponseV1
+from app.services.ai_chat.select_tool import list_transactions
 from app.services.auth import get_current_user_id
 
 
@@ -67,6 +71,30 @@ def test_agent_input_includes_the_default_currency_for_monetary_display() -> Non
 
     assert "Default currency: AED. All calculations are made in this currency." in agent_input
     assert "Today:" in agent_input
+
+
+def test_chat_agent_uses_luna_with_medium_reasoning(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.services.ai_chat.chat_agent.get_settings",
+        lambda: SimpleNamespace(openai_api_key="test-openai-key"),
+    )
+
+    agent = ChatAgent(user_id=123)._get_chat_agent()
+
+    assert CHAT_AGENT_MODEL == "gpt-5.6-luna"
+    assert agent.model == CHAT_AGENT_MODEL
+    assert agent.model_settings.reasoning is not None
+    assert agent.model_settings.reasoning.effort == "medium"
+    assert agent.model_settings.reasoning.summary == "auto"
+
+
+def test_chat_transaction_tool_schemas_are_luna_compatible() -> None:
+    schemas = json.dumps([list_transactions.params_json_schema, aggregate_transactions.params_json_schema])
+    filters = TransactionFilter.model_validate({"min_amount": -12.34, "max_amount": 0})
+
+    assert not any(lookaround in schemas for lookaround in ("(?=", "(?<=", "(?!", "(?<!"))
+    assert filters.min_amount == Decimal("-12.34")
+    assert filters.max_amount == Decimal("0")
 
 
 def test_current_business_date_uses_the_configured_business_timezone(monkeypatch) -> None:

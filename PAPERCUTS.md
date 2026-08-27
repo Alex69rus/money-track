@@ -258,3 +258,23 @@ Disabling the real-LLM integration test → its helper loads `backend_new/.env` 
 ## 2026-08-15 12:25 — Codex
 
 Running mobile QA in the sandbox → the runner stopped after backend startup without a fresh artifact directory. Rerun the same command with local-process permission before diagnosing product code.
+
+## 2026-08-27 09:43 — GPT-5.6
+
+Running the local real-LLM SMS parser probe → `uv` could not read its shared cache under `~/.cache/uv` in the sandbox. Retry the same diagnostic with approved local-process access before attributing the result to parser code.
+
+## 2026-08-27 09:44 — GPT-5.6
+
+Writing an ad-hoc async parser fake as a one-line Python command → Python cannot define an `async def` class method in that compact form. Use a multiline `exec` block for isolated local probes.
+
+## 2026-08-27 10:19 — GPT-5.6
+
+Starting the sandboxed backend integration orchestration → the process emitted `nice(5) failed: operation not permitted` without test results. Treat this as a sandbox/permission failure and rerun the same readiness-checked command with local-process access.
+
+## 2026-08-27 20:00 — GPT-5.6
+
+Capturing a live evaluator result → an accidental bare `text` call dropped the completed command output. Always emit `text(JSON.stringify(result))` and rerun only when no session output can be recovered.
+
+## 2026-08-27 20:37 — GPT-5.6
+
+Inspecting the in-app Platform Logs table → rows can show a reasoning summary instead of the structured JSON output. Open the individual response detail and wait for its output block before recording an expected eval label.

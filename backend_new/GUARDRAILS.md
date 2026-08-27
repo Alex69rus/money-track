@@ -167,3 +167,23 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: Do not send Pydantic's default `Decimal | None` schema to GPT-5.6 strict structured outputs; its nullable string branch contains a rejected regex lookaround.
 - Exploration: `Annotated[Decimal, WithJsonSchema({"type": "number"})] | None` emits `number | null`, is accepted by Luna, and returns a runtime `Decimal` without a wire-model conversion.
 - Prevention rule: Keep the established parser prompt unchanged during model migration; inspect `model_json_schema()`, pass a typed `Reasoning` object with `summary: "auto"`, and omit unsupported `temperature` for GPT-5.6 requests. Expect no summary item when a trivial request uses zero reasoning tokens.
+
+### 2026-08-27 - GPT-5.6 Luna AI Chat Tool Schemas
+- Takeaway: Do not expose Pydantic's default nullable `Decimal` schema in an Agents tool; Luna rejects its string branch's regex lookaround before it can call a tool.
+- Exploration: A numeric `WithJsonSchema` override preserved runtime `Decimal` parsing and let both Mini and Luna complete the synthetic balance and table workflows with the unchanged prompt and tool set.
+- Prevention rule: Serialize every affected tool's `params_json_schema` and assert it contains no regex lookaround before enabling a GPT-5.6 model; run the synthetic live chat comparison after a model migration.
+
+### 2026-08-27 - Category Suggestion Reasoning Default
+- Takeaway: Use Luna low reasoning for bounded category classification when it matches medium on the production corpus.
+- Exploration: Low and medium each passed eight verified production cases; low took 19.57 seconds versus medium's 32.43 seconds.
+- Prevention rule: Keep low as the default and raise the effort only after this corpus shows a quality gain.
+
+### 2026-08-27 - SMS Parser Reasoning Default
+- Takeaway: Use Luna low reasoning for bounded SMS extraction when it matches medium on a representative non-identifying corpus.
+- Exploration: Low and medium each passed 10/10 fabricated cases; low took 16.37 seconds versus medium's 25.16 seconds. Do not send real or repository SMS text to an external evaluator without explicit approval.
+- Prevention rule: Keep the generic prompt and numeric Decimal schema unchanged; raise effort only after a quality gain on approved or redacted representative inputs.
+
+### 2026-08-27 - Production Category Eval Corpus
+- Takeaway: Build category-selection regressions from verified production payloads, not shared local or CI traces.
+- Exploration: Eight calls using the real IDs 50–99 passed at both medium (32.43s) and low (19.57s); calls containing `it_` category names were ruled out as test data.
+- Prevention rule: Preserve each source response ID, categories, examples, and expected `top_category_id`; rerun this corpus before changing the category model, prompt, or reasoning default.

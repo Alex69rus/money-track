@@ -2,13 +2,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema, model_validator
 
 from app.core.config import get_settings
 
 TransactionFlow = Literal["expense", "income"]
 PaginationSkip = Annotated[int, Field(ge=0, description="Number of matching rows to skip for pagination")]
 PaginationTake = Annotated[int, Field(ge=1, le=100, description="Number of matching rows to return (1-100)")]
+ToolSchemaDecimal = Annotated[Decimal, WithJsonSchema({"type": "number"})]
 
 
 def current_business_date(*, now: datetime | None = None) -> date:
@@ -21,10 +22,12 @@ class TransactionFilter(BaseModel):
 
     from_date: date | None = Field(default=None, description="Filter from this date (inclusive)")
     to_date: date | None = Field(default=None, description="Filter up to this date (inclusive)")
-    min_amount: Decimal | None = Field(
+    min_amount: ToolSchemaDecimal | None = Field(
         default=None, description="Filter with amount greater than or equal to this value"
     )
-    max_amount: Decimal | None = Field(default=None, description="Filter with amount less than or equal to this value")
+    max_amount: ToolSchemaDecimal | None = Field(
+        default=None, description="Filter with amount less than or equal to this value"
+    )
     category_id: int | None = Field(default=None, description="Filter by category ID")
     tags: str | None = Field(default=None, description="Filter by tags (comma-separated)")
     text: str | None = Field(

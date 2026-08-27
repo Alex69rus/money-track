@@ -56,6 +56,7 @@ same series names for every bar or timeline point.
 """
 
 DEFAULT_CURRENCY = "AED"
+CHAT_AGENT_MODEL = "gpt-5.6-luna"
 
 
 class ChatAgent:
@@ -68,7 +69,7 @@ class ChatAgent:
         return Agent[ChatAgentContext](
             name="ai_chat_agent",
             instructions=CHAT_AGENT_PROMPT,
-            model="gpt-5-mini",
+            model=CHAT_AGENT_MODEL,
             model_settings=ModelSettings(reasoning=Reasoning(effort="medium", summary="auto")),
             output_type=AgentResponse,
             tools=[

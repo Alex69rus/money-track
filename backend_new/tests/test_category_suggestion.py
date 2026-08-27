@@ -247,7 +247,7 @@ def test_suggestion_sends_sms_text_to_llm(monkeypatch) -> None:
     assert captured_sms_text["value"] == sms_text
 
 
-def test_category_suggestion_uses_hardcoded_luna_with_high_reasoning(monkeypatch) -> None:
+def test_category_suggestion_uses_hardcoded_luna_with_low_reasoning(monkeypatch) -> None:
     responses = _FakeCategoryResponses(
         output_parsed=CategorySuggestionLlmOutput(
             top_category_id=2,
@@ -285,7 +285,7 @@ def test_category_suggestion_uses_hardcoded_luna_with_high_reasoning(monkeypatch
             "effort": CATEGORY_SUGGESTION_REASONING_EFFORT,
             "summary": "auto",
         }
-        == {"effort": "high", "summary": "auto"}
+        == {"effort": "low", "summary": "auto"}
     )
     assert "temperature" not in request
     assert request["instructions"] == CATEGORY_SUGGESTION_SYSTEM_PROMPT

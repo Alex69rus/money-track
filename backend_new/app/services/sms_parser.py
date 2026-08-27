@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.sms-parser")
 
 SMS_PARSER_MODEL = "gpt-5.6-luna"
-SMS_PARSER_REASONING_EFFORT: Literal["medium"] = "medium"
+SMS_PARSER_REASONING_EFFORT: Literal["low"] = "low"
 SMS_PARSER_REASONING: OpenAIReasoning = {
     "effort": SMS_PARSER_REASONING_EFFORT,
     "summary": "auto",

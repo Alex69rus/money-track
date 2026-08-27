@@ -46,7 +46,7 @@ def _install_parser_dependencies(
     return responses
 
 
-def test_luna_request_uses_hardcoded_medium_reasoning_with_auto_summary(monkeypatch) -> None:
+def test_luna_request_uses_hardcoded_low_reasoning_with_auto_summary(monkeypatch) -> None:
     responses = _install_parser_dependencies(
         monkeypatch,
         output_parsed=ParsedSmsTransaction(
@@ -75,7 +75,7 @@ def test_luna_request_uses_hardcoded_medium_reasoning_with_auto_summary(monkeypa
             "effort": SMS_PARSER_REASONING_EFFORT,
             "summary": "auto",
         }
-        == {"effort": "medium", "summary": "auto"}
+        == {"effort": "low", "summary": "auto"}
     )
     assert "temperature" not in request
     assert request["text_format"] is ParsedSmsTransaction

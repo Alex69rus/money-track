@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.category-suggestion")
 
 CATEGORY_SUGGESTION_MODEL = "gpt-5.6-luna"
-CATEGORY_SUGGESTION_REASONING_EFFORT: Literal["high"] = "high"
+CATEGORY_SUGGESTION_REASONING_EFFORT: Literal["low"] = "low"
 CATEGORY_SUGGESTION_REASONING: OpenAIReasoning = {
     "effort": CATEGORY_SUGGESTION_REASONING_EFFORT,
     "summary": "auto",
