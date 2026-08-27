@@ -1,16 +1,37 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
+from types import SimpleNamespace
 
 from app.db.queries import SimilarCategoryExample
 from app.schemas.responses import CategoryResponse, TransactionResponse
 from app.services.category_suggestion import (
+    CATEGORY_SUGGESTION_MODEL,
+    CATEGORY_SUGGESTION_REASONING_EFFORT,
+    CATEGORY_SUGGESTION_SYSTEM_PROMPT,
     CategorySuggestionLlmOutput,
+    _call_category_suggestion_llm,
     build_default_category_actions,
     suggest_and_apply_transaction_category,
 )
+
+
+@dataclass
+class _FakeCategoryResponses:
+    output_parsed: object | None = None
+    calls: list[dict[str, object]] = field(default_factory=list)
+
+    async def parse(self, **kwargs: object) -> object:
+        self.calls.append(kwargs)
+        return SimpleNamespace(output_parsed=self.output_parsed)
+
+
+@dataclass
+class _FakeCategoryClient:
+    responses: _FakeCategoryResponses
 
 
 def _category(
@@ -224,3 +245,47 @@ def test_suggestion_sends_sms_text_to_llm(monkeypatch) -> None:
     )
 
     assert captured_sms_text["value"] == sms_text
+
+
+def test_category_suggestion_uses_hardcoded_luna_with_high_reasoning(monkeypatch) -> None:
+    responses = _FakeCategoryResponses(
+        output_parsed=CategorySuggestionLlmOutput(
+            top_category_id=2,
+            alternatives=[1, 3],
+            confidence=0.9,
+            reason="test",
+        )
+    )
+    settings = SimpleNamespace(openai_api_key="test-key")
+    monkeypatch.setattr("app.services.category_suggestion.get_settings", lambda: settings)
+    monkeypatch.setattr(
+        "app.services.category_suggestion._get_openai_client",
+        lambda: _FakeCategoryClient(responses),
+    )
+
+    result = asyncio.run(
+        _call_category_suggestion_llm(
+            note="Coffee",
+            sms_text="Payment of AED 10 at Coffee",
+            amount=-10.0,
+            currency="AED",
+            examples=[],
+            categories=[{"id": 2, "name": "Eating Out", "type": "Expense"}],
+        )
+    )
+
+    assert result is not None
+    assert result.top_category_id == 2
+    assert len(responses.calls) == 1
+    request = responses.calls[0]
+    assert request["model"] == CATEGORY_SUGGESTION_MODEL == "gpt-5.6-luna"
+    assert (
+        request["reasoning"]
+        == {
+            "effort": CATEGORY_SUGGESTION_REASONING_EFFORT,
+            "summary": "auto",
+        }
+        == {"effort": "high", "summary": "auto"}
+    )
+    assert "temperature" not in request
+    assert request["instructions"] == CATEGORY_SUGGESTION_SYSTEM_PROMPT

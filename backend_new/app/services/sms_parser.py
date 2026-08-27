@@ -3,15 +3,24 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 from functools import lru_cache
+from typing import Annotated, Literal
 
 from openai import APIError, APIStatusError, AsyncOpenAI
+from openai.types.shared_params import Reasoning as OpenAIReasoning
 from opentelemetry import trace
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, WithJsonSchema
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.sms-parser")
+
+SMS_PARSER_MODEL = "gpt-5.6-luna"
+SMS_PARSER_REASONING_EFFORT: Literal["medium"] = "medium"
+SMS_PARSER_REASONING: OpenAIReasoning = {
+    "effort": SMS_PARSER_REASONING_EFFORT,
+    "summary": "auto",
+}
 
 SMS_PARSER_SYSTEM_PROMPT = "\n".join(
     [
@@ -54,8 +63,11 @@ SMS_PARSER_SYSTEM_PROMPT = "\n".join(
 )
 
 
+StructuredOutputDecimal = Annotated[Decimal, WithJsonSchema({"type": "number"})]
+
+
 class ParsedSmsTransaction(BaseModel):
-    amount: Decimal | None = Field(description="Amount of the transaction", default=None)
+    amount: StructuredOutputDecimal | None = Field(description="Amount of the transaction", default=None)
     currency: str | None = Field(description="Currency code (ISO 4217) of the transaction", default=None)
     note: str | None = Field(description="Note or description of the transaction", default=None)
 
@@ -106,8 +118,8 @@ async def parse_sms_transaction(message_text: str) -> ParsedSmsTransaction | Non
         client = _get_openai_client()
         try:
             parsed_response = await client.responses.parse(
-                model=settings.openai_model,
-                temperature=0,
+                model=SMS_PARSER_MODEL,
+                reasoning=SMS_PARSER_REASONING,
                 instructions=SMS_PARSER_SYSTEM_PROMPT,
                 input=message_text,
                 text_format=ParsedSmsTransaction,
@@ -117,6 +129,13 @@ async def parse_sms_transaction(message_text: str) -> ParsedSmsTransaction | Non
                 "OpenAI request failed with status %s: %s (%s)",
                 exc.status_code,
                 exc.response.text if exc.response is not None else "<no-body>",
+                exc,
+                exc_info=True,
+            )
+            return None
+        except ValidationError as exc:
+            logger.error(
+                "OpenAI returned an invalid structured SMS response: %s",
                 exc,
                 exc_info=True,
             )

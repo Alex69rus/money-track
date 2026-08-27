@@ -4,8 +4,10 @@ import json
 import logging
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Literal
 
 from openai import APIError, APIStatusError, AsyncOpenAI
+from openai.types.shared_params import Reasoning as OpenAIReasoning
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 
@@ -19,6 +21,13 @@ from app.schemas.responses import CategoryResponse, TransactionResponse
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.category-suggestion")
+
+CATEGORY_SUGGESTION_MODEL = "gpt-5.6-luna"
+CATEGORY_SUGGESTION_REASONING_EFFORT: Literal["high"] = "high"
+CATEGORY_SUGGESTION_REASONING: OpenAIReasoning = {
+    "effort": CATEGORY_SUGGESTION_REASONING_EFFORT,
+    "summary": "auto",
+}
 
 CATEGORY_SUGGESTION_SYSTEM_PROMPT = "\n".join(
     [
@@ -125,8 +134,8 @@ async def _call_category_suggestion_llm(
         client = _get_openai_client()
         try:
             parsed_response = await client.responses.parse(
-                model=settings.openai_model,
-                temperature=0,
+                model=CATEGORY_SUGGESTION_MODEL,
+                reasoning=CATEGORY_SUGGESTION_REASONING,
                 instructions=CATEGORY_SUGGESTION_SYSTEM_PROMPT,
                 input=json.dumps(payload, ensure_ascii=True),
                 text_format=CategorySuggestionLlmOutput,

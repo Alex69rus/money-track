@@ -162,3 +162,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: Persist refund logs as typed JSON and retain the transaction amount as the sole analytics input; do not create separate refund transactions.
 - Exploration: API parity coverage confirmed full refunds reach zero, list reads return persisted logs, and an edited expense SMS updates parent fields while retaining the refund log.
 - Prevention rule: Require the final `refunds` array on every transaction update; validate unique positive two-decimal entries before mutation, and let SMS reprocessing update refunded expenses without allowing them to become income.
+
+### 2026-08-27 - GPT-5.6 Luna SMS Parser Contract
+- Takeaway: Do not send Pydantic's default `Decimal | None` schema to GPT-5.6 strict structured outputs; its nullable string branch contains a rejected regex lookaround.
+- Exploration: `Annotated[Decimal, WithJsonSchema({"type": "number"})] | None` emits `number | null`, is accepted by Luna, and returns a runtime `Decimal` without a wire-model conversion.
+- Prevention rule: Keep the established parser prompt unchanged during model migration; inspect `model_json_schema()`, pass a typed `Reasoning` object with `summary: "auto"`, and omit unsupported `temperature` for GPT-5.6 requests. Expect no summary item when a trivial request uses zero reasoning tokens.
