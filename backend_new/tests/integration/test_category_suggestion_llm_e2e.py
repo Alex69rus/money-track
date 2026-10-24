@@ -8,19 +8,24 @@ from pathlib import Path
 import pytest
 
 from app.core.config import get_settings
-from app.services.category_suggestion import _call_category_suggestion_llm
+from app.services.category_suggestion import (
+    CategorySuggestionLlmOutput,
+    _call_category_suggestion_llm,
+    _get_openai_client,
+)
 
 
 @dataclass(frozen=True)
 class CategorySuggestionE2ECase:
     name: str
-    source_response_id: str
+    source_response_id: str | None
     note: str
     sms_text: str
     amount: float
     currency: str
-    expected_top_category_id: int
+    expected_top_category_id: int | None
     examples: tuple[dict[str, object], ...] = ()
+    categories: tuple[dict[str, object], ...] | None = None
 
 
 # Real production category-suggestion requests recovered from the OpenAI Platform
@@ -191,6 +196,71 @@ CATEGORY_SUGGESTION_E2E_CASES: list[CategorySuggestionE2ECase] = [
 ]
 
 
+# Synthetic cases cover new merchants and abstention when the catalog is incomplete.
+_RESTRICTED_CATEGORIES = tuple(c for c in PRODUCTION_CATEGORIES if c["id"] in {50, 69})
+CATEGORY_SUGGESTION_E2E_CASES += [
+    CategorySuggestionE2ECase(
+        name="fuel_without_history",
+        source_response_id=None,
+        note="ENOC petrol station",
+        sms_text="Payment of AED 150 for petrol at ENOC.",
+        amount=-150,
+        currency="AED",
+        expected_top_category_id=80,
+    ),
+    CategorySuggestionE2ECase(
+        name="pharmacy_without_history",
+        source_response_id=None,
+        note="City Pharmacy",
+        sms_text="Purchase of prescription medicines at City Pharmacy for AED 75.",
+        amount=-75,
+        currency="AED",
+        expected_top_category_id=87,
+    ),
+    CategorySuggestionE2ECase(
+        name="internet_without_history",
+        source_response_id=None,
+        note="FiberNet",
+        sms_text="Payment of AED 300 to FiberNet for the monthly home internet subscription.",
+        amount=-300,
+        currency="AED",
+        expected_top_category_id=89,
+    ),
+    CategorySuggestionE2ECase(
+        name="salary_with_history",
+        source_response_id=None,
+        note="Example Employer",
+        sms_text="Salary of AED 12000 credited by Example Employer.",
+        amount=12000,
+        currency="AED",
+        expected_top_category_id=69,
+        examples=(
+            {"note": "Example Employer", "amount": 12000.0, "category_id": 69, "category_name": "Apique salary"},
+        ),
+    ),
+    CategorySuggestionE2ECase(
+        name="medicine_outside_catalog",
+        source_response_id=None,
+        note="City Pharmacy",
+        sms_text="Purchase of prescription medicines at City Pharmacy for AED 75.",
+        amount=-75,
+        currency="AED",
+        expected_top_category_id=None,
+        categories=_RESTRICTED_CATEGORIES,
+    ),
+    CategorySuggestionE2ECase(
+        name="rent_outside_catalog",
+        source_response_id=None,
+        note="Apartment rent",
+        sms_text="Payment of AED 6000 to the landlord for monthly apartment rent.",
+        amount=-6000,
+        currency="AED",
+        expected_top_category_id=None,
+        categories=_RESTRICTED_CATEGORIES,
+    ),
+]
+
+
 def _read_env_file_values() -> dict[str, str]:
     env_path = Path(__file__).resolve().parents[2] / ".env"
     if not env_path.exists():
@@ -229,23 +299,30 @@ def _require_llm_e2e_enabled() -> None:
         pytest.skip("No production category-suggestion e2e cases configured yet.")
 
 
+async def _suggest_with_test_client(case: CategorySuggestionE2ECase) -> CategorySuggestionLlmOutput | None:
+    # The test's loop must also own the lifetime of the pooled SDK client.
+    _get_openai_client.cache_clear()
+    try:
+        async with _get_openai_client():
+            return await _call_category_suggestion_llm(
+                note=case.note,
+                sms_text=case.sms_text,
+                amount=case.amount,
+                currency=case.currency,
+                examples=list(case.examples),
+                categories=list(case.categories) if case.categories is not None else PRODUCTION_CATEGORIES,
+            )
+    finally:
+        _get_openai_client.cache_clear()
+
+
 @pytest.mark.parametrize("case", CATEGORY_SUGGESTION_E2E_CASES, ids=lambda case: case.name)
 def test_category_suggestion_real_llm(case: CategorySuggestionE2ECase) -> None:
     _require_llm_e2e_enabled()
+    result = asyncio.run(_suggest_with_test_client(case))
 
-    result = asyncio.run(
-        _call_category_suggestion_llm(
-            note=case.note,
-            sms_text=case.sms_text,
-            amount=case.amount,
-            currency=case.currency,
-            examples=list(case.examples),
-            categories=PRODUCTION_CATEGORIES,
-        )
-    )
-
-    assert result is not None, f"No parsed category output for production response {case.source_response_id}"
+    assert result is not None, f"No parsed category output for {case.name} (source={case.source_response_id})"
     assert result.top_category_id == case.expected_top_category_id, (
-        f"Unexpected top category for production response {case.source_response_id}: "
+        f"Unexpected top category for {case.name} (source={case.source_response_id}): "
         f"actual={result.top_category_id} expected={case.expected_top_category_id}"
     )

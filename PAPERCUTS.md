@@ -290,3 +290,11 @@ Running only the SMS/category LLM evals → the shared integration `db_cleanup_s
 ## 2026-10-24 12:45 — GPT-6
 
 Benchmarking Cloudflare Clairic → an unmatched quote in `CF_MODELS_API_TOKEN` survived dotenv parsing, causing authentication errors even though the token itself was active. Strip copied quote delimiters only in the test settings and verify account tokens with `/accounts/{id}/tokens/verify`; do not infer token validity from a fixed token length. Dumping OpenAI's generic parsed response also produced noisy Pydantic serializer warnings; use `model_dump(mode="json", warnings=False)` for the raw eval artifact.
+
+## 2026-10-24 13:37 — GPT-6
+
+Inspecting new Decisions API types after the SDK upgrade → guessed `openai.types.decisions` and `AnswerChoice` imports do not exist; SDK 3.37.0 generates root `openai.types.decision` and names such as `AnswerAnswerResourceChoice`. The docs connector also returned 404 for the linked create-reference markdown. Inspect the installed resource signature and model fields before importing concrete generated types; the official Decisions guide remains available.
+
+## 2026-10-24 00:00 — GPT-6
+
+Running the migrated category live corpus → automatic approval review rejected sending its 14 SMS/category fixtures to OpenAI despite earlier experiment authorization. Obtain explicit approval naming the corpus and destination before retrying; local mocks and checks remain available.

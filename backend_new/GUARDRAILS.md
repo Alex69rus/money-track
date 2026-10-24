@@ -173,11 +173,6 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: A numeric `WithJsonSchema` override preserved runtime `Decimal` parsing and let both Mini and Luna complete the synthetic balance and table workflows with the unchanged prompt and tool set.
 - Prevention rule: Serialize every affected tool's `params_json_schema` and assert it contains no regex lookaround before enabling a GPT-5.6 model; run the synthetic live chat comparison after a model migration.
 
-### 2026-08-27 - Category Suggestion Reasoning Default
-- Takeaway: Use Luna low reasoning for bounded category classification when it matches medium on the production corpus.
-- Exploration: Low and medium each passed eight verified production cases; low took 19.57 seconds versus medium's 32.43 seconds.
-- Prevention rule: Keep low as the default and raise the effort only after this corpus shows a quality gain.
-
 ### 2026-08-27 - SMS Parser Reasoning Default
 - Takeaway: Use Luna low reasoning for bounded SMS extraction when it matches medium on a representative non-identifying corpus.
 - Exploration: Low and medium each passed 10/10 fabricated cases; low took 16.37 seconds versus medium's 25.16 seconds. Do not send real or repository SMS text to an external evaluator without explicit approval.
@@ -192,3 +187,18 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: Use `gpt-6-luna` with explicit low reasoning and automatic summaries for SMS extraction; retain generative note descriptions.
 - Exploration: The 16-case corpus repeated three times passed 33/33 signed amount/currency checks and 15/15 abstentions; six note-similarity failures concerned Apple/CORK and CBD descriptions.
 - Prevention rule: Maintain one extraction implementation and its shared test suite. Keep balance-only and AED-priority cases in migration validation, report note differences separately, and do not disable reasoning without demonstrating equivalent financial behavior.
+
+### 2026-10-24 - OpenAI SDK 3 and Decisions Categories
+- Takeaway: Use native HTTPX2 mocks when upgrading OpenAI SDK 3 or Agents >=0.21; keep unrelated Telegram/API HTTPX clients on their explicit dependency.
+- Exploration: SDK 3.37.0 and Agents 0.24.0 passed existing unit/type checks, structured-output and SDK-error transport tests, an Agents provider round trip, and the live category comparison. After aligning optional-abstention instructions, both endpoints passed 42/42 on 14 cases repeated three times. A preliminary identical Responses prompt had four mismatches, and warm-cache pricing materially changed between runs.
+- Prevention rule: Include an explicit abstention choice, retain complete usage/cache counts, separate production labels from synthetic safety cases, and do not treat repeated small-corpus results as a production guarantee. Audit required Starlette/FastAPI upgrades and OS certificate trust before deployment.
+
+### 2026-10-24 - Live LLM Test Client Ownership (BR-026)
+- Takeaway: Close each real-test SDK client before its owning `asyncio.run` loop exits; never reuse its pooled connections on a later loop.
+- Exploration: Native HTTPX2 exposed a cached client crossing test loops as `RuntimeError: Event loop is closed`; loop-scoped SMS/category helpers passed the four-case real-API regression afterward.
+- Prevention rule: Keep product clients pooled on the application event loop, but isolate and close live-test clients inside their test loop. Use one loop/client for a sequential benchmark and report model errors separately from transport/lifecycle failures.
+
+### 2026-10-24 - Production Category Decisions
+- Takeaway: Category selection uses Decisions `choice` on `gpt-6-luna`; the endpoint does not accept a reasoning setting.
+- Exploration: Explicit `abstain` preserves non-assignment, and category probabilities supply ordered Telegram alternatives. The canonical live corpus includes production history, new merchants, and missing-category abstention cases; the temporary comparison harness and results were removed after selection.
+- Prevention rule: Validate the complete answer distribution before applying a category. Refusals, unknown IDs, and invalid distributions use the existing fallback. Include abstention in the 255-choice limit (at most 254 categories); never truncate the catalog silently.

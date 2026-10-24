@@ -4,10 +4,11 @@ import json
 import logging
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Literal
+from typing import TypedDict
 
 from openai import APIError, APIStatusError, AsyncOpenAI
-from openai.types.shared_params import Reasoning as OpenAIReasoning
+from openai.types.decision import Decision
+from openai.types.decision_create_params import QuestionQuestionParamChoiceChoice
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 
@@ -22,22 +23,20 @@ from app.schemas.responses import CategoryResponse, TransactionResponse
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.category-suggestion")
 
-CATEGORY_SUGGESTION_MODEL = "gpt-5.6-luna"
-CATEGORY_SUGGESTION_REASONING_EFFORT: Literal["low"] = "low"
-CATEGORY_SUGGESTION_REASONING: OpenAIReasoning = {
-    "effort": CATEGORY_SUGGESTION_REASONING_EFFORT,
-    "summary": "auto",
-}
-
-CATEGORY_SUGGESTION_SYSTEM_PROMPT = "\n".join(
-    [
-        "You classify one financial transaction into existing categories.",
-        "Choose only category IDs from the provided list.",
-        "Use historical examples as a strong signal, especially note-prefix matches.",
-        "If evidence is weak, you may abstain by leaving top_category_id null.",
-        "Return valid JSON matching the schema only.",
-    ]
+CATEGORY_SUGGESTION_MODEL = "gpt-6-luna"
+CATEGORY_ABSTAIN = "abstain"
+CATEGORY_DECISION_INSTRUCTIONS = (
+    "You classify one financial transaction into existing categories. "
+    "Choose only from the supplied category choices. "
+    "Use historical examples as a strong signal, especially note-prefix matches. "
+    "If evidence is weak, you may abstain by choosing abstain."
 )
+
+
+class CategoryCandidate(TypedDict):
+    id: int
+    name: str
+    type: str
 
 
 @dataclass(frozen=True)
@@ -113,7 +112,7 @@ async def _call_category_suggestion_llm(
     amount: float,
     currency: str,
     examples: list[dict[str, object]],
-    categories: list[dict[str, object]],
+    categories: list[CategoryCandidate],
 ) -> CategorySuggestionLlmOutput | None:
     with tracer.start_as_current_span("category_suggestion.llm_call"):
         settings = get_settings()
@@ -129,16 +128,31 @@ async def _call_category_suggestion_llm(
                 "currency": currency,
             },
             "examples": examples,
-            "categories": categories,
         }
+        # One explicit abstention consumes one of Decisions' 255 choices.
+        if not 1 <= len(categories) <= 254:
+            logger.error("Category decision requires 1–254 categories, received %s", len(categories))
+            return None
+        choices: list[QuestionQuestionParamChoiceChoice] = [
+            {"value": str(category["id"]), "description": f"{category['name']} ({category['type']})"}
+            for category in categories
+        ]
+        choices.append(
+            {"value": CATEGORY_ABSTAIN, "description": "No supplied category is supported by sufficient evidence."}
+        )
         client = _get_openai_client()
         try:
-            parsed_response = await client.responses.parse(
+            decision = await client.decisions.create(
                 model=CATEGORY_SUGGESTION_MODEL,
-                reasoning=CATEGORY_SUGGESTION_REASONING,
-                instructions=CATEGORY_SUGGESTION_SYSTEM_PROMPT,
                 input=json.dumps(payload, ensure_ascii=True),
-                text_format=CategorySuggestionLlmOutput,
+                questions=[
+                    {
+                        "type": "choice",
+                        "name": "category",
+                        "instructions": CATEGORY_DECISION_INSTRUCTIONS,
+                        "choices": choices,
+                    }
+                ],
             )
         except APIStatusError as exc:
             logger.error(
@@ -157,14 +171,38 @@ async def _call_category_suggestion_llm(
             )
             return None
 
-        parsed = parsed_response.output_parsed
-        if not isinstance(parsed, CategorySuggestionLlmOutput):
-            logger.error(
-                "Category suggestion parser returned unexpected output type: %s",
-                type(parsed).__name__,
-            )
+        try:
+            return _decode_category_decision(decision, categories)
+        except ValueError as exc:
+            logger.error("Invalid category decision: %s", exc, exc_info=True)
             return None
-        return parsed
+
+
+def _decode_category_decision(result: Decision, categories: list[CategoryCandidate]) -> CategorySuggestionLlmOutput:
+    if len(result.answers) != 1:
+        raise ValueError("Expected exactly one decision answer")
+    answer = result.answers[0]
+    if answer.type != "choice" or answer.name != "category":
+        raise ValueError("Decision refused or returned an unexpected answer type/name")
+    valid = {str(category["id"]): category["id"] for category in categories}
+    expected = {*valid, CATEGORY_ABSTAIN}
+    if not isinstance(answer.choice, str) or answer.choice not in expected:
+        raise ValueError("Decision choice is outside the catalog")
+    probabilities: dict[str, float] = {}
+    for item in answer.probabilities:
+        if not isinstance(item.value, str) or item.value not in expected:
+            raise ValueError("Decision probabilities contain an unknown category")
+        if item.value in probabilities or not 0 <= item.probability <= 1:
+            raise ValueError("Invalid or duplicate decision probability")
+        probabilities[item.value] = item.probability
+    if set(probabilities) != expected:
+        raise ValueError("Decision distribution is incomplete")
+    selected = valid.get(answer.choice)
+    ranked = sorted(valid, key=lambda value: probabilities[value], reverse=True)
+    alternatives = [valid[value] for value in ranked if valid[value] != selected][: 2 if selected is not None else 3]
+    return CategorySuggestionLlmOutput(
+        top_category_id=selected, alternatives=alternatives, confidence=answer.confidence
+    )
 
 
 async def build_default_category_actions(

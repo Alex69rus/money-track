@@ -11,7 +11,7 @@ import pytest
 from rapidfuzz import fuzz
 
 from app.core.config import get_settings
-from app.services.sms_parser import parse_sms_transaction
+from app.services.sms_parser import ParsedSmsTransaction, _get_openai_client, parse_sms_transaction
 
 
 @dataclass(frozen=True)
@@ -194,11 +194,21 @@ def _normalize_note(value: str) -> str:
     return " ".join(alnum_only.split())
 
 
+async def _parse_with_test_client(message_text: str) -> ParsedSmsTransaction | None:
+    # Each asyncio.run owns a different loop; a pooled SDK client must not cross loops.
+    _get_openai_client.cache_clear()
+    try:
+        async with _get_openai_client():
+            return await parse_sms_transaction(message_text)
+    finally:
+        _get_openai_client.cache_clear()
+
+
 @pytest.mark.parametrize("case", SMS_PARSER_E2E_CASES, ids=lambda case: case.name)
 def test_sms_parser_real_llm(case: SmsParserE2ECase) -> None:
     _require_llm_e2e_enabled()
 
-    parsed = asyncio.run(parse_sms_transaction(case.input_text))
+    parsed = asyncio.run(_parse_with_test_client(case.input_text))
 
     if case.expected_amount is None and case.expected_currency is None and case.expected_note is None:
         assert parsed is None
@@ -221,5 +231,5 @@ def test_sms_parser_real_llm(case: SmsParserE2ECase) -> None:
 @pytest.mark.parametrize("input_text", NEGATIVE_SMS_PARSER_CASES)
 def test_sms_parser_real_llm_negative(input_text: str) -> None:
     _require_llm_e2e_enabled()
-    parsed = asyncio.run(parse_sms_transaction(input_text))
+    parsed = asyncio.run(_parse_with_test_client(input_text))
     assert parsed is None
