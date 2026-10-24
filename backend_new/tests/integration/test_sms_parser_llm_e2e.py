@@ -93,9 +93,43 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
         expected_currency="AED",
         expected_note="ORCHID DEVELOPMENT LIMITEDSalary",
     ),
+    SmsParserE2ECase(
+        name="refund_credit",
+        input_text="Refund of AED 49.99 from Amazon has been credited to your account.",
+        expected_amount=Decimal("49.99"),
+        expected_currency="AED",
+        expected_note="Amazon",
+    ),
+    SmsParserE2ECase(
+        name="usd_only",
+        input_text="Purchase of USD 20.00 at Example Shop using your debit card.",
+        expected_amount=Decimal("-20.00"),
+        expected_currency="USD",
+        expected_note="Example Shop",
+    ),
+    SmsParserE2ECase(
+        name="explicit_positive",
+        input_text="+125 AED reimbursement",
+        expected_amount=Decimal("125"),
+        expected_currency="AED",
+        expected_note="reimbursement",
+    ),
+    SmsParserE2ECase(
+        name="large_grouped_amount",
+        input_text="Payment of AED 1,234,567.89 was done at Example Shop using your debit card.",
+        expected_amount=Decimal("-1234567.89"),
+        expected_currency="AED",
+        expected_note="Example Shop",
+    ),
 ]
 
-NEGATIVE_SMS_PARSER_CASES = ["Hello!", "/"]
+NEGATIVE_SMS_PARSER_CASES = [
+    "Hello!",
+    "/",
+    "Your available balance is AED 650.00.",
+    "Payment of 25.00 at Example Shop.",
+    "Payment at Example Shop using your debit card.",
+]
 NOTE_FUZZY_THRESHOLD = 85.0
 
 

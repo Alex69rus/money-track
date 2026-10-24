@@ -98,164 +98,164 @@ Running the full mobile QA matrix → the terminal capture ended after six profi
 
 Following the frontend guide's QA reference → it names `docs/qa-acceptance-checklist.md`, but the checklist lives at `frontend_new/docs/qa-acceptance-checklist.md`. Update the scoped guide to its actual path.
 
-## 2026-07-26 22:57 — GPT-5.6
+## 2026-07-26 22:57 — GPT-5.6-Terra
 
 Applying the AI Chat composition patch → a broad patch context assumed adjacent alert-dialog imports and did not match the component's full import block. Use smaller exact contexts for independently formatted import groups.
 
-## 2026-07-25 00:00 — GPT-5
+## 2026-07-25 00:00 — GPT-5.6-Terra
 
 Looking up current Zed debugger documentation → assumed the web result used a structured `content` array, but this connector returns a text value. Serialize connector responses first when their result shape is unknown.
 
-## 2026-07-25 00:00 — GPT-5
+## 2026-07-25 00:00 — GPT-5.6-Terra
 
 Starting the backend with `uv run uvicorn` → the inherited `.venv/bin/uvicorn` script has a stale interpreter path from a moved checkout, although `python -m uvicorn` imports and runs correctly. Use module invocation while the virtual environment is recreated.
 
-## 2026-07-25 00:00 — GPT-5
+## 2026-07-25 00:00 — GPT-5.6-Terra
 
 Checking the local Docker stack → sandboxed `docker compose ps` could not access the Docker daemon socket. Run the check with approved elevated local-process permission when container status is required.
 
-## 2026-07-25 00:00 — GPT-5
+## 2026-07-25 00:00 — GPT-5.6-Terra
 
 Running the repository-wide formatter gate → `ruff format --check .` stopped on the unrelated pre-existing `app/services/ai_chat/aggregate_tool.py`. Keep the task scope narrow and run changed-file formatting while separately reporting the repository baseline mismatch.
 
-## 2026-07-26 15:15 — GPT-5
+## 2026-07-26 15:15 — GPT-5.6-Terra
 
 Capturing an AI Chat bug batch → a combined `apply_patch` rejected a task-register context because the Markdown separator had the wrong column count. Re-read table delimiters before patching task registers.
 
-## 2026-07-26 15:25 — GPT-5
+## 2026-07-26 15:25 — GPT-5.6-Terra
 
 Running the full backend suite in the sandbox → `uv` panicked while accessing macOS dynamic configuration before startup. Classify this as `sandbox/permission` and rerun the same health-checked orchestration with approved local-process access.
 
-## 2026-07-26 15:30 — GPT-5
+## 2026-07-26 15:30 — GPT-5.6-Terra
 
 Diagnosing stale PostgreSQL fixtures with an inline shell snippet → the shell expanded `$1` query placeholders and asyncpg rejected string timestamp values. Use a literal heredoc and typed `datetime` query parameters for read-only database diagnostics.
 
-## 2026-07-26 16:00 — GPT-5
+## 2026-07-26 16:00 — GPT-5.6-Terra
 
 Reloading the E2E-validation skill from `backend_new` → used the root-relative `.agents` path and the read failed. Resolve repository-owned skills with `../.agents/...` when the working directory is `backend_new`.
-## 2026-07-26  — GPT-5
+## 2026-07-26  — GPT-5.6-Terra
 
 Reviewing the AI Chat frontend guide references → `frontend_new/AGENTS.MD` points to `frontend_new/docs/api-evolution-plan.md`, but that file is absent. Update the guide or restore the contract reference so API work has an authoritative local source.
 
-## 2026-07-26  — GPT-5
+## 2026-07-26  — GPT-5.6-Terra
 
 Adding shadcn Chart/Field primitives → the CLI treated both `@/` and `src/` aliases as literal import/write paths, creating an `@/` directory and `src/...` imports. Keep `components.json` source-relative for generation, delete only generated misplaced files, and patch generated imports to the project’s `@/` alias before use.
 
-## 2026-08-02 13:17 — GPT-5
+## 2026-08-02 13:17 — GPT-5.6-Terra
 
 Capturing a long AI Chat bar chart → Playwright's `scrollIntoViewIfNeeded` retried after the visual detached during mobile keyboard reset. Use one synchronous DOM `scrollIntoView` call after confirming the chart exists when the action is only for screenshot framing.
 
-## 2026-07-26  — GPT-5
+## 2026-07-26  — GPT-5.6-Terra
 
 Linting the generated shadcn Chart component → the upstream Recharts wrapper uses callback `any` values that violate this repository’s strict ESLint rules. Keep a narrowly scoped rule disable at the generated component boundary rather than relaxing project lint or leaking unsafe values into app code.
 
-## 2026-07-26  — GPT-5
+## 2026-07-26  — GPT-5.6-Terra
 
 Building the frontend after adding Recharts → Vite reports a minified chunk above 500 kB. Evaluate route-level lazy loading for chart code if bundle size becomes a measured mobile performance problem; do not change chunking speculatively in this feature slice.
 
-## 2026-07-26  — GPT-5
+## 2026-07-26  — GPT-5.6-Terra
 
 Starting root Phase 4 browser QA in the sandbox → `uv` panicked in macOS `system-configuration` while creating the backend runtime. Re-run the same repository-owned QA command with elevated local-service access; classify this as sandbox/environment until an assertion runs.
-## 2026-07-26 22:22 — Codex
+## 2026-07-26 22:22 — GPT-5.6-Terra
 
 Running a frontend command from `frontend_new/` with a repository-prefixed test path → `sed` could not find the file. Use paths relative to the command worktree when checking a scoped file.
-## 2026-07-26 22:43 — Codex
+## 2026-07-26 22:43 — GPT-5.6-Terra
 
 Adding an AI Chat integration fixture in the same shared test-user/date range as API-parity analytics → the full backend suite saw the fixture's rows. Namespace alone does not isolate unfiltered date-range tests; use a disjoint future date window for cross-suite seed data.
 
-## 2026-07-27 08:15 — Codex
+## 2026-07-27 08:15 — GPT-5.6-Terra
 
 Linting a new exact-prompt assertion → an unwrapped literal exceeded Ruff's 120-character limit. Split long assertion text into adjacent literals before running the focused lint check.
 
-## 2026-08-02  — Codex
+## 2026-08-02  — GPT-5.6-Terra
 
 Refactoring the AI Chat prompt and tool list → a combined patch assumed stale prompt wording and applied nothing. Re-read the exact prompt before applying broad multi-file edits.
 
-## 2026-08-02 08:15 — Codex
+## 2026-08-02 08:15 — GPT-5.6-Terra
 
 Adding typed widget-data models → Ruff caught an import-order issue and a self-referential return annotation without postponed evaluation. Add `from __future__ import annotations` before using a model name in its own method return type, then run the focused formatter and lint check.
 
-## 2026-08-02 08:15 — Codex
+## 2026-08-02 08:15 — GPT-5.6-Terra
 
 Building the free-form table response validator → Vite's project build applied stricter narrowing than the standalone typecheck for `Record<string, unknown>` fields. Assign and narrow `columns` and `rows` once before using their lengths in callbacks.
 
-## 2026-08-02 16:04 — Codex
+## 2026-08-02 16:04 — GPT-5.6-Terra
 
 Starting the backend for a live Telegram smoke test with the README's `test-token` example → application startup contacted Telegram and correctly rejected the placeholder token. For a real Mini App smoke test, restart the already confirmed port-8000 service using the repository `.env`; reserve `test-token` for test-only runs that do not initialise Telegram.
 
-## 2026-08-02 20:37 — Codex
+## 2026-08-02 20:37 — GPT-5.6-Terra
 
 Correcting the AI Chat composer after a device screenshot → a near-zero geometry assertion turned an oversized gap into a flush control. Express the intended visual gutter as an exact named product token with a small rendering tolerance, and exercise both full-height and normal-host Telegram viewport states before accepting a fixed-control layout.
 
-## 2026-08-02 20:55 — Codex
+## 2026-08-02 20:55 — GPT-5.6-Terra
 
 Searching scoped frontend files with `rg` → placing `-g` after positional paths made ripgrep treat it as a file and Zsh reported a glob error. Put all `rg` options before the pattern and paths, and quote globs.
 
-## 2026-08-02 23:02 — Codex
+## 2026-08-02 23:02 — GPT-5.6-Terra
 
 Updating a nested malformed-widget test fixture → one closing object delimiter was omitted and Vite's transform failed before assertions ran. Run the focused test file immediately after reshaping deeply nested API fixtures.
 
-## 2026-08-03 — Codex
+## 2026-08-03 — GPT-5.6-Terra
 
 Inspecting a Phase QA helper → assumed `scaffold-utils.mjs` was directly under `tests/qa/`, but it is scoped under `tests/qa/phases/`. Follow imports when locating test utilities rather than inferring their directory from the caller.
 
-## 2026-08-12 20:22 — Codex
+## 2026-08-12 20:22 — GPT-5.6-Terra
 
 Inspecting a supplied mobile screenshot → a local variable shadowed the conversation image-output helper, so the first visual-inspection call failed. Avoid helper-name collisions when forwarding image-tool output.
 
-## 2026-08-12 20:23 — Codex
+## 2026-08-12 20:23 — GPT-5.6-Terra
 
 Tracing global frontend styles → looked for a conventional `src/index.css`, but this project uses `frontend_new/src/styles.css`. Follow the actual Vite entry imports when locating global CSS.
 
-## 2026-08-12 20:24 — Codex
+## 2026-08-12 20:24 — GPT-5.6-Terra
 
 Checking whether local QA services were already running → macOS sandbox policy denied `ps -ef`. Use the approved elevated process inspection when service discovery is needed.
 
-## 2026-08-12 20:29 — Codex
+## 2026-08-12 20:29 — GPT-5.6-Terra
 
 Starting the root Phase 2 frontend QA → an unrelated persistent frontend on the default QA port left a partial stack, which the runner correctly refused to reuse. Choose isolated QA ports instead of stopping user-owned services.
 
-## 2026-08-14 — Codex
+## 2026-08-14 — GPT-5.6-Terra
 
 Tracing the transaction API schema → assumed a conventional `app/schemas/requests.py`, but transaction request models live in `app/schemas/transactions.py`. Use `rg --files app/schemas` before opening schema modules by convention.
 
-## 2026-08-14 — Codex
+## 2026-08-14 — GPT-5.6-Terra
 
 Previewing an inline visualization → the renderer wraps the fragment in a sandboxed `srcdoc` iframe, and the in-app-browser screenshot was blank although frame-DOM interaction worked. Verify mockups through frame locators or the inline visualization surface rather than relying on that screenshot.
 
-## 2026-08-14 21:49 — Codex
+## 2026-08-14 21:49 — GPT-5.6-Terra
 
 Reloading the visualization instructions → first used the old system-skills path, but the active visualization skill is plugin-cached. Read the exact path listed in the available-skills catalog.
 
-## 2026-08-14 21:56 — Codex
+## 2026-08-14 21:56 — GPT-5.6-Terra
 
 Reading frontend source-of-truth documents → `frontend_new/AGENTS.MD` names three docs under `docs/`, but they live under `frontend_new/docs/`. Resolve project-local documentation paths before batching reads.
 
-## 2026-08-14 21:56 — Codex
+## 2026-08-14 21:56 — GPT-5.6-Terra
 
 Fetching shadcn component docs → the web connector returns a plain string rather than a content-block object in this runtime. Send its value directly to output instead of reading `.content`.
 
-## 2026-08-14 21:59 — Codex
+## 2026-08-14 21:59 — GPT-5.6-Terra
 
 Inspecting backend test helpers → guessed singular fixture filenames, but the repository uses `backend_new/tests/fixtures/db_helpers.py`. List fixture files before opening helpers.
 
-## 2026-08-14 22:02 — Codex
+## 2026-08-14 22:02 — GPT-5.6-Terra
 
 Checking Piccolo migrations → used a conventional `migrations status` subcommand, but this CLI exposes `migrations check`. Run `piccolo migrations --help` before relying on generic migration commands.
 
-## 2026-08-14 22:19 — Codex
+## 2026-08-14 22:19 — GPT-5.6-Terra
 
 Running mobile QA → the runner generated fresh screenshots for every phone profile, but `.codex-tmp/qa-mobile-report.json` retained a stale run. Locate the newest screenshot directory and inspect it when the report path is not refreshed.
 
-## 2026-08-14 22:21 — Codex
+## 2026-08-14 22:21 — GPT-5.6-Terra
 
 Appending a guardrail → an exact heading-level patch did not match an older section. Inspect the local tail and anchor additions to the actual document structure.
 
-## 2026-08-15 00:00 — Codex
+## 2026-08-15 00:00 — GPT-5.6-Terra
 
 Disabling the real-LLM integration test → its helper loads `backend_new/.env` into the process after startup, overriding `RUN_LLM_E2E=0`. Treat that check as opt-in configuration from the file, not the shell command.
 
-## 2026-08-15 12:25 — Codex
+## 2026-08-15 12:25 — GPT-5.6-Terra
 
 Running mobile QA in the sandbox → the runner stopped after backend startup without a fresh artifact directory. Rerun the same command with local-process permission before diagnosing product code.
 
@@ -278,3 +278,15 @@ Capturing a live evaluator result → an accidental bare `text` call dropped the
 ## 2026-08-27 20:37 — GPT-5.6
 
 Inspecting the in-app Platform Logs table → rows can show a reasoning summary instead of the structured JSON output. Open the individual response detail and wait for its output block before recording an expected eval label.
+
+## 2026-10-23 21:45 — GPT-6
+
+Running the Luna 6 LLM evals → `uv` first hit a restricted `~/.cache/uv` path, then panicked when its cache moved under `/private/tmp`; invoking the repository's existing `.venv/bin/pytest` bypassed `uv`, but the integration autouse fixture then hit sandbox permission denial connecting to local PostgreSQL. Use the existing venv and request the required network permission for this eval run.
+
+## 2026-10-24 12:15 — GPT-6
+
+Running only the SMS/category LLM evals → the shared integration `db_cleanup_session` autouse fixture required a local PostgreSQL even though these test bodies only call OpenAI. When evaluating these two standalone files, use `pytest --noconftest` with the existing backend venv; keep DB fixtures enabled for tests that actually use the database.
+
+## 2026-10-24 12:45 — GPT-6
+
+Benchmarking Cloudflare Clairic → an unmatched quote in `CF_MODELS_API_TOKEN` survived dotenv parsing, causing authentication errors even though the token itself was active. Strip copied quote delimiters only in the test settings and verify account tokens with `/accounts/{id}/tokens/verify`; do not infer token validity from a fixed token length. Dumping OpenAI's generic parsed response also produced noisy Pydantic serializer warnings; use `model_dump(mode="json", warnings=False)` for the raw eval artifact.

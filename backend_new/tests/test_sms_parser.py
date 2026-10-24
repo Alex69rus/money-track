@@ -68,7 +68,7 @@ def test_luna_request_uses_hardcoded_low_reasoning_with_auto_summary(monkeypatch
     assert parsed.note == "Katrina Sweet Confectionery"
     assert len(responses.calls) == 1
     request = responses.calls[0]
-    assert request["model"] == SMS_PARSER_MODEL == "gpt-5.6-luna"
+    assert request["model"] == SMS_PARSER_MODEL == "gpt-6-luna"
     assert (
         request["reasoning"]
         == {

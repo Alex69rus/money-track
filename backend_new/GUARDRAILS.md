@@ -163,10 +163,10 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: API parity coverage confirmed full refunds reach zero, list reads return persisted logs, and an edited expense SMS updates parent fields while retaining the refund log.
 - Prevention rule: Require the final `refunds` array on every transaction update; validate unique positive two-decimal entries before mutation, and let SMS reprocessing update refunded expenses without allowing them to become income.
 
-### 2026-08-27 - GPT-5.6 Luna SMS Parser Contract
-- Takeaway: Do not send Pydantic's default `Decimal | None` schema to GPT-5.6 strict structured outputs; its nullable string branch contains a rejected regex lookaround.
+### 2026-08-27 - SMS Parser Structured Output Contract
+- Takeaway: Do not send Pydantic's default `Decimal | None` schema to OpenAI strict structured outputs; its nullable string branch contains a rejected regex lookaround.
 - Exploration: `Annotated[Decimal, WithJsonSchema({"type": "number"})] | None` emits `number | null`, is accepted by Luna, and returns a runtime `Decimal` without a wire-model conversion.
-- Prevention rule: Keep the established parser prompt unchanged during model migration; inspect `model_json_schema()`, pass a typed `Reasoning` object with `summary: "auto"`, and omit unsupported `temperature` for GPT-5.6 requests. Expect no summary item when a trivial request uses zero reasoning tokens.
+- Prevention rule: Keep the established parser prompt unchanged during model migration; inspect `model_json_schema()`, pass a typed `Reasoning` object with `summary: "auto"`, and omit unsupported `temperature` for reasoning-model requests. Expect no summary item when a trivial request uses zero reasoning tokens.
 
 ### 2026-08-27 - GPT-5.6 Luna AI Chat Tool Schemas
 - Takeaway: Do not expose Pydantic's default nullable `Decimal` schema in an Agents tool; Luna rejects its string branch's regex lookaround before it can call a tool.
@@ -187,3 +187,8 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: Build category-selection regressions from verified production payloads, not shared local or CI traces.
 - Exploration: Eight calls using the real IDs 50–99 passed at both medium (32.43s) and low (19.57s); calls containing `it_` category names were ruled out as test data.
 - Prevention rule: Preserve each source response ID, categories, examples, and expected `top_category_id`; rerun this corpus before changing the category model, prompt, or reasoning default.
+
+### 2026-10-24 - SMS Extraction Model
+- Takeaway: Use `gpt-6-luna` with explicit low reasoning and automatic summaries for SMS extraction; retain generative note descriptions.
+- Exploration: The 16-case corpus repeated three times passed 33/33 signed amount/currency checks and 15/15 abstentions; six note-similarity failures concerned Apple/CORK and CBD descriptions.
+- Prevention rule: Maintain one extraction implementation and its shared test suite. Keep balance-only and AED-priority cases in migration validation, report note differences separately, and do not disable reasoning without demonstrating equivalent financial behavior.
