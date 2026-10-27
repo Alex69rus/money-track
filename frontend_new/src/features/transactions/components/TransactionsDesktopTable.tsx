@@ -1,3 +1,5 @@
+import { memo } from "react";
+import { fullDateFormatter } from "@/lib/formatters";
 import { PencilLineIcon, TagsIcon } from "lucide-react";
 import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
@@ -21,15 +23,7 @@ interface TransactionsDesktopTableProps {
   onEditTransaction: (transaction: Transaction) => void;
 }
 
-function formatDateLabel(value: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
-
-export function TransactionsDesktopTable({
+export const TransactionsDesktopTable = memo(function TransactionsDesktopTable({
   transactions,
   onEditCategory,
   onEditTags,
@@ -58,7 +52,7 @@ export function TransactionsDesktopTable({
               <TableRow data-testid={`tx-desktop-row-${transaction.id}`} key={transaction.id}>
                 <TableCell>
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">{formatDateLabel(transaction.transactionDate)}</span>
+                    <span className="font-medium">{fullDateFormatter.format(transaction.transactionDate)}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatTransactionTime(transaction.transactionDate)}
                     </span>
@@ -149,4 +143,4 @@ export function TransactionsDesktopTable({
       </Table>
     </div>
   );
-}
+});

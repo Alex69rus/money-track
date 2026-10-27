@@ -1,3 +1,4 @@
+import { dateTimeFormatter, fullDateFormatter, getCurrencyFormatter, integerFormatter, shortDateFormatter } from "@/lib/formatters";
 import type { AnalyticsDateRange, DecimalMoney } from "@/features/analytics/types";
 
 type MoneyValue = DecimalMoney | number;
@@ -22,10 +23,6 @@ function toDecimalParts(value: MoneyValue): DecimalParts {
   const fraction = (match[3] ?? "").padEnd(2, "0").slice(0, 2);
   const negative = match[1] === "-" && (integer !== "0" || fraction !== "00");
   return { fraction, integer, negative };
-}
-
-function decimalPartsToValue(parts: DecimalParts): DecimalMoney {
-  return `${parts.negative ? "-" : ""}${parts.integer}.${parts.fraction}`;
 }
 
 function asDateKey(date: Date): string {
@@ -65,44 +62,23 @@ export function formatDateRangeLabel(range: AnalyticsDateRange): string {
   }
 
   if (!range.fromDate) {
-    return `Until ${new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(`${range.toDate}T00:00:00`))}`;
+    return `Until ${fullDateFormatter.format(new Date(`${range.toDate}T00:00:00`))}`;
   }
 
   if (!range.toDate) {
-    return `From ${new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(`${range.fromDate}T00:00:00`))}`;
+    return `From ${fullDateFormatter.format(new Date(`${range.fromDate}T00:00:00`))}`;
   }
 
   const from = new Date(`${range.fromDate}T00:00:00`);
   const to = new Date(`${range.toDate}T00:00:00`);
 
-  return `${new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-  }).format(from)} - ${new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(to)}`;
+  return `${shortDateFormatter.format(from)} - ${fullDateFormatter.format(to)}`;
 }
 
-export function formatMoney(value: MoneyValue, currency: string): string {
-  const decimal = toDecimalParts(value);
+function formatDecimalMoney(decimal: DecimalParts, currency: string): string {
   try {
-    const formatter = new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    const groupedInteger = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(BigInt(decimal.integer));
+    const formatter = getCurrencyFormatter(currency);
+    const groupedInteger = integerFormatter.format(BigInt(decimal.integer));
     return formatter
       .formatToParts(decimal.negative ? -0 : 0)
       .map((part) => {
@@ -120,10 +96,14 @@ export function formatMoney(value: MoneyValue, currency: string): string {
   }
 }
 
+export function formatMoney(value: MoneyValue, currency: string): string {
+  return formatDecimalMoney(toDecimalParts(value), currency);
+}
+
 export function formatSignedMoney(value: MoneyValue, currency: string): string {
   const decimal = toDecimalParts(value);
   const sign = decimal.negative ? "-" : "+";
-  return `${sign}${formatMoney(decimalPartsToValue({ ...decimal, negative: false }), currency)}`;
+  return `${sign}${formatDecimalMoney({ ...decimal, negative: false }, currency)}`;
 }
 
 export function moneyToChartMagnitude(value: DecimalMoney): number {
@@ -138,12 +118,7 @@ export function moneyToChartMagnitude(value: DecimalMoney): number {
 }
 
 export function formatTransactionDateTime(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  return dateTimeFormatter.format(date);
 }
 
 export function toTestIdSegment(value: string): string {

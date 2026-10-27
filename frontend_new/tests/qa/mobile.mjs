@@ -88,7 +88,7 @@ function buildFixtures() {
       amount: -12000,
       note: "Mobile QA transport payment",
       categoryId: 401,
-      tags: ["commute", "qa"],
+      tags: ["commute", "qa", "travel", "mobile", "extra"],
       currency: "AED",
       smsText: null,
       messageId: null,
@@ -209,6 +209,9 @@ async function installApiFixtures(page) {
       body: JSON.stringify([
         "commute",
         "qa",
+        "travel",
+        "mobile",
+        "extra",
         "household",
         ...Array.from({ length: 118 }, (_, index) => `mobile-qa-tag-${index + 1}`),
         "very-long-system-generated-filter-tag-that-must-never-overflow-the-phone-screen",
@@ -625,6 +628,9 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
 
     await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page.waitForSelector('[data-testid="tx-mobile-row-9001"]', { timeout: 30000 });
+    if (!(await page.locator('[data-testid="tx-mobile-row-9001"]').getByText("+2", { exact: true }).isVisible())) {
+      throw new Error("Mobile transaction cards must disclose tags beyond the first three.");
+    }
     await assertThemePalette(page, colorScheme);
     await assertNoHorizontalOverflow(page, "transactions");
     const customNavCount = await page.locator('[data-testid="app-shell-nav"]').count();

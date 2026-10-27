@@ -19,11 +19,6 @@ Pitfalls: when user deletes category, user should be prompted, that all the tran
 Add ability for user to share it's accout/wallet with other users, so the have full controll over the shared account/wallet.
 Sending bot messages also should be supported per wallet, so I can have my wallet and shared one and being able to choose which wallet will be used for adding transactions from parsed text in bot
 
-### 4. How can user represent refunds in our app
-We need to come up with UX for representing refunds in our app. 
-For example, if user has a transaction with amount 100 and then he got a refund of 20, how can he represent it in our app? Should we have a separate transaction type for refunds or should we have a way to link refund to the original transaction or should we provide convinient way to edit existing transaction?
-
-
 
 To adjust AI Chat tools:
 - extract pagination fields from filter object to the tool params level

@@ -1,3 +1,4 @@
+import { fullDateFormatter, getCurrencyFormatter, shortDateFormatter, timeFormatter } from "@/lib/formatters";
 import type { Transaction } from "@/types/transactions";
 
 export interface TransactionGroup {
@@ -9,12 +10,7 @@ export interface TransactionGroup {
 
 function formatCurrency(value: number, currency: string): string {
   try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+    return getCurrencyFormatter(currency).format(value);
   } catch {
     return `${currency} ${value.toFixed(2)}`;
   }
@@ -30,10 +26,7 @@ export function isExpenseTransaction(transaction: Transaction): boolean {
 }
 
 export function formatTransactionTime(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  return timeFormatter.format(date);
 }
 
 function dayKey(date: Date): string {
@@ -52,18 +45,14 @@ function formatDayLabel(date: Date): string {
   const current = dayKey(date);
 
   if (current === today) {
-    return `Today, ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date)}`;
+    return `Today, ${shortDateFormatter.format(date)}`;
   }
 
   if (current === yesterday) {
-    return `Yesterday, ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date)}`;
+    return `Yesterday, ${shortDateFormatter.format(date)}`;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  return fullDateFormatter.format(date);
 }
 
 export function groupTransactionsByDay(transactions: Transaction[]): TransactionGroup[] {

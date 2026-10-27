@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import type { Category, Transaction } from "@/types/transactions";
+import * as transactionUtils from "@/features/transactions/utils";
 
 const { fetchCategories, fetchTags, useTransactionSummary } = vi.hoisted(() => ({
   fetchCategories: vi.fn(),
@@ -99,6 +100,32 @@ describe("TransactionsPage", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("keeps unchanged list formatting out of search draft updates", () => {
+    const formatAmount = vi.spyOn(transactionUtils, "formatSignedAmount");
+    render(<MemoryRouter initialEntries={["/transactions"]}><TransactionsPage /></MemoryRouter>);
+    expect(formatAmount).toHaveBeenCalled();
+    formatAmount.mockClear();
+
+    fireEvent.change(screen.getByLabelText("Search transactions"), { target: { value: "groceries" } });
+
+    expect(screen.getByLabelText("Search transactions")).toHaveValue("groceries");
+    expect(screen.getByTestId("tx-mobile-row-1")).toHaveTextContent("Older list item");
+    expect(formatAmount).not.toHaveBeenCalled();
+  });
+
+  it("refreshes relative day headings on the next interaction after midnight", () => {
+    vi.setSystemTime(new Date("2026-07-01T12:00:00"));
+    render(<MemoryRouter initialEntries={["/transactions"]}><TransactionsPage /></MemoryRouter>);
+    expect(screen.getByRole("heading", { name: /Yesterday/ })).toBeInTheDocument();
+
+    vi.setSystemTime(new Date("2026-07-02T12:00:00"));
+    fireEvent.change(screen.getByLabelText("Search transactions"), { target: { value: "older" } });
+
+    expect(screen.queryByRole("heading", { name: /Yesterday/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Jun 30/ })).toBeInTheDocument();
   });
 
   it("uses the shared backend current-month summary for the snapshot and omits the retired list header", () => {

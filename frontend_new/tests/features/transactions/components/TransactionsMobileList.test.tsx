@@ -37,6 +37,20 @@ const selectedCategoryWithoutIconTransaction: Transaction = {
 };
 
 describe("TransactionsMobileList", () => {
+  it("discloses tags beyond the three shown and reflects changed records", () => {
+    const props = {
+      onEditCategory: vi.fn(), onEditTags: vi.fn(), onEditTransaction: vi.fn(),
+      transactions: [{ ...uncategorizedTransaction, tags: ["one", "two", "three", "four", "five"] }],
+    };
+    const { rerender } = render(<TransactionsMobileList {...props} />);
+    expect(screen.getByText("+2")).toBeInTheDocument();
+    expect(screen.queryByText("#four")).not.toBeInTheDocument();
+
+    rerender(<TransactionsMobileList {...props} transactions={[{ ...uncategorizedTransaction, amount: -5, tags: ["one"] }]} />);
+    expect(screen.queryByText("+2")).not.toBeInTheDocument();
+    expect(screen.getByTestId("tx-mobile-amount-77")).toHaveTextContent("5.00");
+  });
+
   it("uses an explicit uncategorized affordance, keeps the amount intact, and makes the card the edit target", () => {
     const onEditCategory = vi.fn();
     const onEditTags = vi.fn();

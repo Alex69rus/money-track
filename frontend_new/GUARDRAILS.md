@@ -172,3 +172,9 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Use one compact icon-only `+` to open a refund row; reserve the row's Add action for confirmation.
 - Exploration: The 390px phone capture kept the empty Refunds section to its title and a centered `+`, without table headers or empty-state filler.
 - Prevention rule: Keep the `+` button accessible by name, optically center its glyph, and keep refund inputs borderless inside the shared section surface.
+
+## Lazy Chat and transaction render boundaries — 2026-10-25
+
+- Takeaway: Stabilize list callbacks before memoizing lists; share Intl instances while retaining decimal-string/BigInt money semantics.
+- Exploration: Use `npm run qa:chat-loading` against production chunks to verify deferred download, navigation during loading, and full-reload recovery after a failed import; dev-module loading alone cannot prove bundle isolation.
+- Prevention rule: Refresh memoized Today/Yesterday headings when the local calendar day changes on a subsequent page render; cover the midnight transition as well as unchanged-list formatting during search.

@@ -30,6 +30,7 @@ interface TransactionTagSelectorDialogProps {
 
 function dedupeTags(tags: string[]): string[] {
   const deduped: string[] = [];
+  const seen = new Set<string>();
 
   for (const tag of tags) {
     const normalized = normalizeTag(tag);
@@ -37,10 +38,11 @@ function dedupeTags(tags: string[]): string[] {
       continue;
     }
 
-    if (deduped.some((existing) => normalizeTag(existing) === normalized)) {
+    if (seen.has(normalized)) {
       continue;
     }
 
+    seen.add(normalized);
     deduped.push(tag.trim());
   }
 
@@ -89,6 +91,7 @@ export function TransactionTagSelectorDialog({
   ]);
 
   const normalizedSearch = normalizeTag(search);
+  const selectedTagKeys = useMemo(() => new Set(selectedTags.map(normalizeTag)), [selectedTags]);
 
   const filteredAvailableTags = useMemo(() => {
     if (!normalizedSearch) {
@@ -107,7 +110,7 @@ export function TransactionTagSelectorDialog({
 
   const toggleTag = (tag: string): void => {
     const normalized = normalizeTag(tag);
-    const exists = selectedTags.some((item) => normalizeTag(item) === normalized);
+    const exists = selectedTagKeys.has(normalized);
 
     if (exists) {
       setSelectedTags((current) => current.filter((item) => normalizeTag(item) !== normalized));
@@ -280,7 +283,7 @@ export function TransactionTagSelectorDialog({
             </h3>
             <div className="flex flex-wrap gap-3">
               {filteredAvailableTags.map((tag) => {
-                const isSelected = selectedTags.some((item) => normalizeTag(item) === normalizeTag(tag));
+                const isSelected = selectedTagKeys.has(normalizeTag(tag));
 
                 return (
                   <button

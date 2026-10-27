@@ -8,8 +8,16 @@ Use this file only for approved, active multi-iteration work that needs decompos
 | --- | ----------------- | -------- | ----- | ------- |
 | BR-018 | `bugs_reports/ai-chat-widget-limits-2026-08-02.md` | P2 | Verified | Removed arbitrary line/bar widget caps, added card-scoped bar scrolling, and disclosed the table row limit to the agent. |
 | AI-CHAT-07 | `bugs_reports/ai-chat-review-findings-2026-07-26.md` (BR-013) | P2 | Planned | Decide how a comparison must rank growth when either period has more than 100 category/tag groups. |
+| FE-PERF-01 | Frontend review and user approval, 2026-10-25 | P3 | Verified | Chat loads on demand; list rendering and formatter reuse improved; automated checks passed and user reported working UI in Telegram. |
 
 <!-- Add active multi-iteration work here. -->
+
+## FE-PERF-01 — Focused frontend performance improvements
+
+- Scope: lazy Chat with loading/reload recovery, shared Intl instances with decimal-safe money formatting, memoized lists with stable callbacks, Set-based tag lookup, and mobile +N counts. No new dependencies or API changes.
+- Validation: frontend lint/typecheck/build; 83 unit tests; Phases 2/3/4; production chunk loading/recovery; 8 phone/theme combinations with screenshots inspected. Entry JS gzip: 226.34 → 107.24 kB.
+- Manual check: user reported working Telegram UI on 2026-10-27. SMS delivery was separately restored by restarting with the configured webhook/secret and real Telegram authorization; no parser code changed.
+- Review: checked lazy-load recovery, callback freshness, financial precision, tag identity, and midnight date headings. Added Chromium fallback to the production browser check. No remaining correctness findings.
 
 ## BR-018 — Usable extended AI Chat charts
 

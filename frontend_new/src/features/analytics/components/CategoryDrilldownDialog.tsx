@@ -1,3 +1,4 @@
+import { shortDateFormatter, timeFormatter } from "@/lib/formatters";
 import { useMemo } from "react";
 import { PencilIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +36,8 @@ function formatDrilldownExpense(amount: DecimalMoney, currency: string): string 
 }
 
 function formatTransactionMeta(date: Date): string {
-  const dateLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
-  const timeLabel = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
+  const dateLabel = shortDateFormatter.format(date);
+  const timeLabel = timeFormatter.format(date);
   return `${dateLabel} • ${timeLabel}`;
 }
 

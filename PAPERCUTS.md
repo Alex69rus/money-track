@@ -298,3 +298,18 @@ Inspecting new Decisions API types after the SDK upgrade → guessed `openai.typ
 ## 2026-10-24 00:00 — GPT-6
 
 Running the migrated category live corpus → automatic approval review rejected sending its 14 SMS/category fixtures to OpenAI despite earlier experiment authorization. Obtain explicit approval naming the corpus and destination before retrying; local mocks and checks remain available.
+
+
+## 2026-10-25 09:50 — GPT-6
+
+Validating the frontend review → batching full page components into one read exceeded the tool output budget and hid relevant sections. Use targeted line ranges and symbol searches for large TSX pages; the app entry is `frontend_new/src/app/App.tsx`.
+
+
+## 2026-10-25 10:14 — GPT-6
+
+Running consecutive root frontend QA commands → the mobile runner briefly found a partial stack immediately after Phase 4 teardown. Wait for the previous runner to finish and verify both listener ports are closed before starting the next runner; rerun the same command with escalation for sandbox localhost/uv failures.
+
+
+## 2026-10-25 11:01 — GPT-6
+
+Preparing the manual Telegram stack → automatic approval review rejected a public ngrok `/api/categories` readiness request because it could transfer private API data. Verify public health/static endpoints only; those checks confirmed both nginx upstreams and the existing tunnel without reading product data.

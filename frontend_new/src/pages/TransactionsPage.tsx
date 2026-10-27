@@ -407,6 +407,20 @@ export function TransactionsPage(): JSX.Element {
     [location.pathname, navigate],
   );
 
+  const openCategorySelector = useCallback((transaction: Transaction): void => {
+    setCategoryUpdateError(null);
+    openTransactionRoute(`/transactions/${transaction.id}/category`, transaction);
+  }, [openTransactionRoute]);
+
+  const openTagSelector = useCallback((transaction: Transaction): void => {
+    setTagUpdateError(null);
+    openTransactionRoute(`/transactions/${transaction.id}/tags`, transaction);
+  }, [openTransactionRoute]);
+
+  const openTransactionEditor = useCallback((transaction: Transaction): void => {
+    openTransactionRoute(`/transactions/${transaction.id}/edit`, transaction);
+  }, [openTransactionRoute]);
+
   const closeCategorySelector = useCallback(() => {
     setCategoryUpdateError(null);
     setCategoryUpdatePending(false);
@@ -599,31 +613,17 @@ export function TransactionsPage(): JSX.Element {
       {!error && transactions.length > 0 ? (
         <>
           <TransactionsMobileList
-            onEditCategory={(transaction) => {
-              setCategoryUpdateError(null);
-              openTransactionRoute(`/transactions/${transaction.id}/category`, transaction);
-            }}
-            onEditTags={(transaction) => {
-              setTagUpdateError(null);
-              openTransactionRoute(`/transactions/${transaction.id}/tags`, transaction);
-            }}
-            onEditTransaction={(transaction) => {
-              openTransactionRoute(`/transactions/${transaction.id}/edit`, transaction);
-            }}
+            // Recompute Today/Yesterday labels on the next render after a date change.
+            key={new Date().toDateString()}
+            onEditCategory={openCategorySelector}
+            onEditTags={openTagSelector}
+            onEditTransaction={openTransactionEditor}
             transactions={transactions}
           />
           <TransactionsDesktopTable
-            onEditCategory={(transaction) => {
-              setCategoryUpdateError(null);
-              openTransactionRoute(`/transactions/${transaction.id}/category`, transaction);
-            }}
-            onEditTags={(transaction) => {
-              setTagUpdateError(null);
-              openTransactionRoute(`/transactions/${transaction.id}/tags`, transaction);
-            }}
-            onEditTransaction={(transaction) => {
-              openTransactionRoute(`/transactions/${transaction.id}/edit`, transaction);
-            }}
+            onEditCategory={openCategorySelector}
+            onEditTags={openTagSelector}
+            onEditTransaction={openTransactionEditor}
             transactions={transactions}
           />
         </>

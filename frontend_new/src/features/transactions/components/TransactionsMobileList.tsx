@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { PlusIcon } from "lucide-react";
 import { getCategoryIconPalette } from "@/components/category-color";
 import { CategoryIconGlyph } from "@/components/category-icon-glyph";
@@ -26,7 +27,7 @@ function amountClassName(transaction: Transaction): string {
   return "text-sm font-bold text-foreground";
 }
 
-export function TransactionsMobileList({
+export const TransactionsMobileList = memo(function TransactionsMobileList({
   transactions,
   onEditCategory,
   onEditTags,
@@ -118,6 +119,11 @@ export function TransactionsMobileList({
                                     #{tag}
                                   </Badge>
                                 ))}
+                                {transaction.tags.length > 3 ? (
+                                  <Badge className="rounded-md text-[10px]" variant="outline">
+                                    +{transaction.tags.length - 3}
+                                  </Badge>
+                                ) : null}
                               </div>
                             ) : (
                               <span className="text-[11px] text-muted-foreground">No tags</span>
@@ -144,4 +150,4 @@ export function TransactionsMobileList({
       ))}
     </div>
   );
-}
+});

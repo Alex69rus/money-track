@@ -18,6 +18,7 @@
     "qa:phase4": "node tests/qa/run-phase.mjs phase4",
     "qa:phase5": "node tests/qa/run-phase.mjs phase5",
     "qa:mobile": "node tests/qa/mobile.mjs",
+    "qa:chat-loading": "npm run build && node tests/qa/chat-loading.mjs",
     "qa:telegram-device": "../scripts/run_telegram_device_qa.sh"
   },
   "dependencies": {

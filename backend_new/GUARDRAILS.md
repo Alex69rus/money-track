@@ -67,6 +67,7 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: local test boot fails when `.env` enables `TELEGRAM_WEBHOOK_URL` and startup uses a dummy bot token.
 - Exploration: ruled out API regressions after reproducing `InvalidToken` during lifespan startup and confirming tests pass when webhook env is cleared.
 - Prevention rule: for local integration/full test orchestration, always set `TELEGRAM_WEBHOOK_URL=` and `TELEGRAM_WEBHOOK_SECRET=` with explicit `ENVIRONMENT=Development`.
+- For manual Telegram/SMS checks, preserve the real webhook URL and secret from `.env` and use `ENVIRONMENT=Production` so Mini App authentication and ingested SMS share the real Telegram user ID; never reuse the isolated-test overrides above.
 
 ### 2026-03-22 - Sandbox-Safe E2E Execution
 - Takeaway: sandboxed `uv` runs can panic or fail with cache/system permission errors, causing false infrastructure failures.
