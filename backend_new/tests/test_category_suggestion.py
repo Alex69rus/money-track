@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from openai.types.decision import Decision
@@ -61,7 +62,7 @@ def _category(
 def _transaction(
     *,
     category_id: int | None = None,
-    amount: float = 107.68,
+    amount: float = -107.68,
     sms_text: str = "Payment of AED 107.68 was done at Amazon",
 ) -> TransactionResponse:
     return TransactionResponse(
@@ -195,7 +196,7 @@ def test_suggestion_applies_valid_top_category(monkeypatch) -> None:
     assert [option.category_id for option in result.top3_options] == [3, 1, 2]
 
 
-def test_build_default_category_actions_prioritizes_income_for_positive_amount(monkeypatch) -> None:
+def test_build_default_category_actions_only_offers_income_for_positive_amount(monkeypatch) -> None:
     categories = [
         _category(category_id=1, name="Groceries", order_index=1, category_type="Expense"),
         _category(category_id=2, name="Salary", order_index=2, category_type="Income"),
@@ -210,7 +211,89 @@ def test_build_default_category_actions_prioritizes_income_for_positive_amount(m
 
     result = asyncio.run(build_default_category_actions(amount=120.0))
 
-    assert [option.category_id for option in result.top3_options] == [2, 4, 1]
+    assert [option.category_id for option in result.top3_options] == [2, 4]
+
+
+@pytest.mark.parametrize("amount, expected_ids", [(-50.0, [1, 3]), (50.0, [2]), (0.0, [1, 2, 3]), (None, [1, 2, 3])])
+def test_default_actions_filter_direction_even_for_saved_category(monkeypatch, amount, expected_ids) -> None:
+    categories = [
+        _category(category_id=1, name="Clothing & Shoes", order_index=1),
+        _category(category_id=2, name="Salary", order_index=2, category_type="Income"),
+        _category(category_id=3, name="Groceries", order_index=3),
+    ]
+    monkeypatch.setattr("app.services.category_suggestion.fetch_categories", AsyncMock(return_value=categories))
+    result = asyncio.run(build_default_category_actions(preferred_category_id=1, amount=amount))
+    assert [option.category_id for option in result.top3_options] == expected_ids
+    assert result.applied_category_id == 1
+    assert result.applied_category_name == "Clothing & Shoes"
+
+
+@pytest.mark.parametrize("amount, allowed_id, rejected_id", [(-50.0, 1, 2), (50.0, 2, 1)])
+@pytest.mark.parametrize("outcome", ["valid", "wrong_direction", "unavailable", "exception"])
+def test_suggestion_filters_direction_for_model_and_buttons(monkeypatch, amount, allowed_id, rejected_id, outcome):
+    categories = [
+        _category(category_id=1, name="Clothing & Shoes", order_index=1),
+        _category(category_id=2, name="Other income", order_index=2, category_type="Income"),
+    ]
+    monkeypatch.setattr("app.services.category_suggestion.fetch_categories", AsyncMock(return_value=categories))
+    monkeypatch.setattr("app.services.category_suggestion.fetch_similar_category_examples", AsyncMock(return_value=[]))
+    output = CategorySuggestionLlmOutput(
+        top_category_id=rejected_id if outcome == "wrong_direction" else allowed_id,
+        alternatives=[rejected_id, allowed_id],
+    )
+    call = AsyncMock(return_value=None if outcome == "unavailable" else output)
+    if outcome == "exception":
+        call.side_effect = RuntimeError("Model unavailable")
+    monkeypatch.setattr("app.services.category_suggestion._call_category_suggestion_llm", call)
+    update = AsyncMock(return_value=_transaction(category_id=allowed_id, amount=amount))
+    monkeypatch.setattr("app.services.category_suggestion.update_transaction_category_for_user", update)
+
+    result = asyncio.run(suggest_and_apply_transaction_category(user_id=123, transaction=_transaction(amount=amount)))
+
+    assert [category["id"] for category in call.call_args.kwargs["categories"]] == [allowed_id]
+    assert [option.category_id for option in result.top3_options] == [allowed_id]
+    assert result.applied_category_id == (allowed_id if outcome == "valid" else None)
+    assert update.await_count == (1 if outcome == "valid" else 0)
+
+
+@pytest.mark.parametrize("saved_category_id", [None, 2])
+def test_suggestion_without_direction_candidates_skips_model(monkeypatch, saved_category_id) -> None:
+    categories = [_category(category_id=2, name="Salary", order_index=1, category_type="Income")]
+    monkeypatch.setattr("app.services.category_suggestion.fetch_categories", AsyncMock(return_value=categories))
+    call = AsyncMock()
+    monkeypatch.setattr("app.services.category_suggestion._call_category_suggestion_llm", call)
+    result = asyncio.run(
+        suggest_and_apply_transaction_category(
+            user_id=123, transaction=_transaction(amount=-50, category_id=saved_category_id)
+        )
+    )
+    assert result.top3_options == []
+    assert result.applied_category_id == saved_category_id
+    assert result.applied_category_name == ("Salary" if saved_category_id is not None else None)
+    call.assert_not_awaited()
+
+
+def test_direction_filter_preserves_model_order_for_valid_alternatives(monkeypatch) -> None:
+    categories = [
+        _category(category_id=1, name="Groceries", order_index=1),
+        _category(category_id=2, name="Salary", order_index=2, category_type="Income"),
+        _category(category_id=3, name="Clothing & Shoes", order_index=3),
+        _category(category_id=4, name="Entertainment", order_index=4),
+    ]
+    monkeypatch.setattr("app.services.category_suggestion.fetch_categories", AsyncMock(return_value=categories))
+    monkeypatch.setattr("app.services.category_suggestion.fetch_similar_category_examples", AsyncMock(return_value=[]))
+    call = AsyncMock(return_value=CategorySuggestionLlmOutput(top_category_id=3, alternatives=[4, 1]))
+    monkeypatch.setattr("app.services.category_suggestion._call_category_suggestion_llm", call)
+    monkeypatch.setattr(
+        "app.services.category_suggestion.update_transaction_category_for_user",
+        AsyncMock(return_value=_transaction(category_id=3)),
+    )
+
+    result = asyncio.run(suggest_and_apply_transaction_category(user_id=123, transaction=_transaction()))
+
+    assert [category["id"] for category in call.call_args.kwargs["categories"]] == [1, 3, 4]
+    assert [option.category_id for option in result.top3_options] == [3, 4, 1]
+    assert result.applied_category_id == 3
 
 
 def test_suggestion_sends_sms_text_to_llm(monkeypatch) -> None:

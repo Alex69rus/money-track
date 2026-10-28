@@ -88,21 +88,16 @@ def _build_top3_ids(
     return merged[:3]
 
 
-def _build_fallback_priority(
+def _filter_categories_by_direction(
     *,
     amount: float | None,
     categories: list[CategoryResponse],
-) -> list[int]:
-    ordered_category_ids = [category.id for category in categories]
+) -> list[CategoryResponse]:
     if amount is None or amount == 0:
-        return ordered_category_ids
+        return categories
 
     desired_type = "income" if amount > 0 else "expense"
-    sign_matched_ids = [category.id for category in categories if category.type.strip().lower() == desired_type]
-    if not sign_matched_ids:
-        return ordered_category_ids
-
-    return _dedup_keep_order(sign_matched_ids + ordered_category_ids)
+    return [category for category in categories if category.type.strip().lower() == desired_type]
 
 
 async def _call_category_suggestion_llm(
@@ -212,10 +207,10 @@ async def build_default_category_actions(
 ) -> CategorySuggestionResult:
     categories = await fetch_categories()
     category_map = {category.id: category for category in categories}
-    fallback_ids = _build_fallback_priority(amount=amount, categories=categories)
+    fallback_ids = [category.id for category in _filter_categories_by_direction(amount=amount, categories=categories)]
 
     seed_ids: list[int] = []
-    if preferred_category_id is not None and preferred_category_id in category_map:
+    if preferred_category_id is not None and preferred_category_id in fallback_ids:
         seed_ids.append(preferred_category_id)
     top3_ids = _build_top3_ids(seed_ids=seed_ids, fallback_ids=fallback_ids)
 
@@ -246,20 +241,24 @@ async def suggest_and_apply_transaction_category(
     with tracer.start_as_current_span("category_suggestion.resolve"):
         try:
             categories = await fetch_categories()
-            if not categories:
+            category_map = {category.id: category for category in categories}
+            candidates = _filter_categories_by_direction(amount=transaction.amount, categories=categories)
+            if not candidates:
                 logger.info(
-                    "event=category_suggestion_skipped_no_candidates user_id=%s transaction_id=%s reason=no_categories",
+                    "event=category_suggestion_skipped_no_candidates "
+                    "user_id=%s transaction_id=%s reason=no_direction_candidates",
                     user_id,
                     transaction.id,
                 )
                 return CategorySuggestionResult(
                     applied_category_id=transaction.categoryId,
-                    applied_category_name=None,
+                    applied_category_name=(
+                        category_map[transaction.categoryId].name if transaction.categoryId in category_map else None
+                    ),
                     top3_options=[],
                 )
 
-            category_map = {category.id: category for category in categories}
-            fallback_ids = _build_fallback_priority(amount=transaction.amount, categories=categories)
+            fallback_ids = [category.id for category in candidates]
 
             note_prefix = (transaction.note or "").strip()
             similar_examples = await fetch_similar_category_examples(
@@ -274,7 +273,7 @@ async def suggest_and_apply_transaction_category(
                 user_id,
                 transaction.id,
                 len(similar_examples),
-                len(categories),
+                len(candidates),
             )
 
             llm_output = await _call_category_suggestion_llm(
@@ -297,11 +296,11 @@ async def suggest_and_apply_transaction_category(
                         "name": category.name,
                         "type": category.type,
                     }
-                    for category in categories
+                    for category in candidates
                 ],
             )
 
-            valid_category_ids = set(category_map.keys())
+            valid_category_ids = set(fallback_ids)
             llm_seed_ids: list[int] = []
             top_category_id: int | None = None
             if llm_output is not None:

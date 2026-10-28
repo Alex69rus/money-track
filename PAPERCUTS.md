@@ -313,3 +313,11 @@ Running consecutive root frontend QA commands → the mobile runner briefly foun
 ## 2026-10-25 11:01 — GPT-6
 
 Preparing the manual Telegram stack → automatic approval review rejected a public ngrok `/api/categories` readiness request because it could transfer private API data. Verify public health/static endpoints only; those checks confirmed both nginx upstreams and the existing tunnel without reading product data.
+
+## 2026-10-28 08:43 — GPT-6
+
+Building a standalone category reproduction → guessed response DTO fields failed Pydantic validation (`parentCategoryId` and `createdAt` are required). Read `app/schemas/responses.py` or reuse existing test factories before constructing service inputs.
+
+## 2026-10-28 08:50 — GPT-6
+
+Running backend pytest with `RUN_LLM_E2E=0` → SMS/category live-test helpers unconditionally copied `.env` values into `os.environ` before checking the gate, overriding the explicit opt-out and starting real API calls. Stop the run and explicitly exclude the three real-LLM test files for deterministic local validation; preserve explicit environment values in a future helper fix.

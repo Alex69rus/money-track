@@ -203,3 +203,10 @@ Keep entries short, actionable, and repository-specific.
 - Takeaway: Category selection uses Decisions `choice` on `gpt-6-luna`; the endpoint does not accept a reasoning setting.
 - Exploration: Explicit `abstain` preserves non-assignment, and category probabilities supply ordered Telegram alternatives. The canonical live corpus includes production history, new merchants, and missing-category abstention cases; the temporary comparison harness and results were removed after selection.
 - Prevention rule: Validate the complete answer distribution before applying a category. Refusals, unknown IDs, and invalid distributions use the existing fallback. Include abstention in the 255-choice limit (at most 254 categories); never truncate the catalog silently.
+
+### 2026-10-28 — Validate category alternatives independently (BR-027)
+
+- Takeaway: Validate Telegram alternative buttons independently of primary-category accuracy; a correct assignment can coexist with unrelated income suggestions on expenses.
+- Exploration: A synthetic Decisions distribution with 0.999 on Clothing & Shoes reproduced both income buttons; zero-probability candidates also survive decoding. Existing 18 unit tests passed, and the live corpus checks only the primary category.
+- Prevention rule: When changing category selection, cover alternative relevance, transaction direction, negligible probabilities, and tied probabilities; do not assume the second and third ranked choices are meaningful suggestions.
+- Direction-filter delivery: use one eligible category set for model choices, returned-ID validation, and fallback/edit buttons. Return fewer buttons when necessary; preserve existing assignments while excluding incompatible buttons. Direction regressions cover both signs, no candidates, invalid model output, unavailable model, and exception fallback.
