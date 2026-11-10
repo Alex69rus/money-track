@@ -1,4 +1,5 @@
-FROM node:20-alpine AS build
+# Build static assets natively; only the nginx runtime targets the deployment platform.
+FROM --platform=$BUILDPLATFORM node:20-alpine AS build
 
 WORKDIR /app
 

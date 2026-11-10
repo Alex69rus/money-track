@@ -91,9 +91,11 @@ jobs:
           - service: frontend
             context: ./frontend_new
             image_name: alex69rus/money-track/frontend-new
+            cache_mode: max
           - service: backend
             context: ./backend_new
             image_name: alex69rus/money-track/backend
+            cache_mode: min
 
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +144,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.service }}-arm64
-          cache-to: type=gha,mode=min,scope=${{ matrix.service }}-arm64
+          cache-to: type=gha,mode=${{ matrix.cache_mode }},scope=${{ matrix.service }}-arm64
           build-args: ${{ steps.build_args.outputs.value }}
 
   deploy:

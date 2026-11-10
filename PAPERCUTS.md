@@ -355,3 +355,13 @@ Checking app import and /health with an in-process TestClient → Piccolo attemp
 ## 2026-11-10 20:30 — GPT-6
 
 Preparing the delivery commit → git diff --check before staging ignored untracked runtime evidence; the staged check found trailing spaces from the original traceback. Normalize trailing whitespace in text evidence and run the staged check with fail-fast execution before committing.
+
+
+## 2026-11-10 20:30 — GPT-6
+
+Reading GitHub Actions timings with gh → sandbox network access reported an api.github.com connection error. The identical read-only request succeeded with network escalation; treat this as sandbox connectivity rather than a GitHub outage.
+
+
+## 2026-11-10 20:38 — GPT-6
+
+Validating workflow YAML → system Python lacks PyYAML and frontend node_modules lacks the yaml package. The existing js-yaml dependency parsed the workflows successfully; use installed dependencies or actionlint instead of assuming a parser package is available.

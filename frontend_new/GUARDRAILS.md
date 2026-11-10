@@ -47,6 +47,12 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Run one QA runtime owner at a time. Classify a failure as startup, sandbox, connectivity, environment, or contract before changing code.
 - Persist only net-new lessons after an iteration; remove a rule when a better, current rule supersedes it.
 
+## Container builds — 2026-11-10
+
+- Build architecture-independent frontend assets with `FROM --platform=$BUILDPLATFORM`; leave the nginx runtime on the requested target platform.
+- Verify both target image architectures and reuse of the native build stage when changing cross-platform assembly; keep `/version.json` and SPA fallback smoke checks.
+- Export intermediate frontend stages with `mode=max`; do not assume `mode=min` excludes dependency layers in a single-stage Dockerfile. Check required GitHub statuses before removing a duplicate workflow.
+
 ## Latest iteration — 2026-07-12
 
 - Takeaway: Assert bounded filter choices through their accessible button name, not a layout-specific test ID.

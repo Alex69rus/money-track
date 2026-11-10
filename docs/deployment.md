@@ -8,6 +8,8 @@ Merges to `main` run [the production workflow](../.github/workflows/deploy.yml).
 - A push to `main` additionally builds and publishes ARM64 frontend and backend images to GHCR, then deploys to `/opt/money-track` over SSH.
 - The deployment selects the immutable `frontend-new:<full-commit-sha>` image. The backend service continues to use the freshly pulled `backend:latest` image.
 
+Frontend quality checks run once in `deploy.yml` (`validate-frontend`), including a production Docker build check. The frontend Dockerfile builds static assets on `$BUILDPLATFORM` so Node, TypeScript, and Vite run natively even when publishing an ARM64 nginx image from an x86 runner. Keep the runtime stage on the target platform. The frontend Actions cache uses `mode=max` to retain intermediate dependency and build layers; the single-stage backend keeps `mode=min`.
+
 The server-side deployment script generates `.env.prod` and the Cloudflare Origin Certificate files from GitHub configuration; do not create or commit a production `.env.prod` file in the repository.
 
 ## Frontend deployment and rollback
