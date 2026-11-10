@@ -1,0 +1,11 @@
+{
+  "result": "reproduced",
+  "parser_calls": 1,
+  "upsert_calls": 1,
+  "category_calls": 1,
+  "send_attempts": 2,
+  "first_send": "saved confirmation; synthetic network failure",
+  "second_send": "Cannot parse the transaction",
+  "same_reply_target": true,
+  "network_or_database_calls": 0
+}

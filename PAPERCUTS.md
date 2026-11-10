@@ -321,3 +321,37 @@ Building a standalone category reproduction → guessed response DTO fields fail
 ## 2026-10-28 08:50 — GPT-6
 
 Running backend pytest with `RUN_LLM_E2E=0` → SMS/category live-test helpers unconditionally copied `.env` values into `os.environ` before checking the gate, overriding the explicit opt-out and starting real API calls. Stop the run and explicitly exclude the three real-LLM test files for deterministic local validation; preserve explicit environment values in a future helper fix.
+
+
+## 2026-11-02 15:45 — GPT-6
+
+Inspecting the deployed backend over SSH → sandboxed SSH failed at DNS resolution for the configured EC2 host. The same read-only command succeeded with network escalation; classify this as sandbox connectivity before assuming the host is unavailable.
+
+
+## 2026-11-02 15:45 — GPT-6
+
+Running a standalone Telegram confirmation probe from the repository root → callback keyboard signing loads Settings and failed on missing DATABASE_URL / TELEGRAM_BOT_TOKEN before reaching send_message. Supply a mock webhook-secret settings object for the callback signer in offline probes; do not load production credentials for mocked transport tests.
+
+
+## 2026-11-02 15:50 — GPT-6
+
+Moving investigation artifacts into a worktree → a preflight assertion incorrectly expected seven evidence files instead of six. Verify the explicit file manifest before transfer; the failed preflight made no file changes.
+
+
+## 2026-11-02 20:20 — GPT-6
+
+Preparing Telegram regression tests → a root-relative evidence path was used while the command cwd was backend_new, so the preparation stopped before edits and the following pytest invocation ran only the old six tests. Use an explicit repository-root cwd for preparation and inspect the collected test count before treating a run as regression coverage.
+
+## 2026-11-02 20:20 — GPT-6
+
+Starting the local backend verification API → port 8000 was already occupied. Allocate a free loopback port, pass its BASE_URL explicitly, poll health, and terminate only the process created by this verification run.
+
+
+## 2026-11-10 20:21 — GPT-6
+
+Checking app import and /health with an in-process TestClient → Piccolo attempted to fetch the local PostgreSQL server version while importing the engine and emitted a sandbox permission warning, even without lifespan startup. The health check passed; distinguish this metadata probe from API startup/readiness or database integration verification.
+
+
+## 2026-11-10 20:30 — GPT-6
+
+Preparing the delivery commit → git diff --check before staging ignored untracked runtime evidence; the staged check found trailing spaces from the original traceback. Normalize trailing whitespace in text evidence and run the staged check with fail-fast execution before committing.

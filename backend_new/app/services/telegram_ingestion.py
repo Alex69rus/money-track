@@ -23,6 +23,8 @@ from app.services.telegram_callback_data import (
     decode_category_callback_data,
     encode_category_callback_data,
 )
+from app.services.telegram_delivery import send_telegram_reply
+from app.services.telegram_updates import claim_telegram_update
 from app.services.transaction_category_actions import (
     GENERIC_UPDATE_ERROR_TEXT,
     apply_category_callback_action,
@@ -32,6 +34,7 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.telegram-ingestion")
 
 UNPARSED_REPLY_TEXT = "Cannot parse the transaction"
+PROCESSING_ERROR_TEXT = "Could not process the transaction. Please try again later."
 
 
 @dataclass(frozen=True)
@@ -74,7 +77,9 @@ def _normalize_message_update(update: Update) -> NormalizedTelegramMessage | Non
 
 
 async def _send_unparsed(bot: Bot, *, chat_id: int, reply_to_message_id: int) -> None:
-    await bot.send_message(
+    await send_telegram_reply(
+        bot,
+        reply_kind="unparsed",
         chat_id=chat_id,
         text=UNPARSED_REPLY_TEXT,
         reply_to_message_id=reply_to_message_id,
@@ -140,7 +145,9 @@ async def _send_create_reply(
         f"Currency: {transaction.currency}\n"
         f"Note: {note}"
     )
-    await bot.send_message(
+    await send_telegram_reply(
+        bot,
+        reply_kind="transaction_saved",
         chat_id=chat_id,
         text=text,
         reply_to_message_id=reply_to_message_id,
@@ -240,7 +247,9 @@ async def _handle_callback_query(
                 callback_query.id,
                 callback_query.from_user.id,
             )
-            await context.bot.send_message(chat_id=chat_id, text=GENERIC_UPDATE_ERROR_TEXT)
+            await send_telegram_reply(
+                context.bot, chat_id=chat_id, text=GENERIC_UPDATE_ERROR_TEXT, reply_kind="category_invalid"
+            )
             return
 
         result = await apply_category_callback_action(
@@ -258,10 +267,12 @@ async def _handle_callback_query(
             callback_payload.action,
             result.success,
         )
-        await context.bot.send_message(chat_id=chat_id, text=result.message)
+        await send_telegram_reply(context.bot, chat_id=chat_id, text=result.message, reply_kind="category_result")
     except Exception as exc:
         logger.error("Failed to process Telegram callback query: %s", exc, exc_info=True)
-        await context.bot.send_message(chat_id=chat_id, text=GENERIC_UPDATE_ERROR_TEXT)
+        await send_telegram_reply(
+            context.bot, chat_id=chat_id, text=GENERIC_UPDATE_ERROR_TEXT, reply_kind="category_error"
+        )
     finally:
         callback_query_id = callback_query.id
         if callback_query_id is not None:
@@ -276,6 +287,14 @@ async def handle_telegram_update(update: object, context: ContextTypes.DEFAULT_T
         return
 
     with tracer.start_as_current_span("telegram.update.process"):
+        try:
+            claimed = await claim_telegram_update(update_id=update.update_id)
+        except Exception as exc:
+            logger.error("Failed to claim Telegram update update_id=%s: %s", update.update_id, exc, exc_info=True)
+            return
+        if not claimed:
+            logger.info("Duplicate Telegram update ignored update_id=%s", update.update_id)
+            return
         logger.info(
             (
                 "Telegram update processing started "
@@ -297,8 +316,10 @@ async def handle_telegram_update(update: object, context: ContextTypes.DEFAULT_T
             if normalized is None:
                 return
             try:
-                await _send_unparsed(
+                await send_telegram_reply(
                     context.bot,
+                    text=PROCESSING_ERROR_TEXT,
+                    reply_kind="processing_error",
                     chat_id=normalized.chat_id,
                     reply_to_message_id=normalized.message_id,
                 )

@@ -1,0 +1,159 @@
+2026-11-02T11:20:13.664275903Z INFO:     172.28.0.5:59186 - "POST /api/telegram/webhook HTTP/1.0" 200 OK
+
+2026-11-02T11:20:13.663574357Z 2026-11-02 11:20:13,663 INFO [app.api.routes.telegram_router] trace_id=a8f4c797d9852eec4fea1d7691388888 span_id=9e34b90739ea69f0 Telegram webhook request received from 172.28.0.5
+2026-11-02T11:20:13.664104338Z 2026-11-02 11:20:13,663 INFO [app.api.routes.telegram_router] trace_id=a8f4c797d9852eec4fea1d7691388888 span_id=9e34b90739ea69f0 Telegram webhook update parsed update_id=490336313 has_message=True has_edited_message=False has_callback_query=False
+2026-11-02T11:20:13.664751344Z 2026-11-02 11:20:13,664 INFO [app.services.telegram_ingestion] trace_id=5325112bbf8206c8054262884365ae83 span_id=bc24e7bac9a19d4a Telegram update processing started update_id=490336313 has_message=True has_edited_message=False has_callback_query=False
+2026-11-02T11:20:20.721281796Z 2026-11-02 11:20:20,720 INFO [httpx2] trace_id=5325112bbf8206c8054262884365ae83 span_id=6dd2b3d34a48bf34 HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-11-02T11:20:20.783187479Z 2026-11-02 11:20:20,782 INFO [app.services.category_suggestion] trace_id=5325112bbf8206c8054262884365ae83 span_id=fc5f73000b3188ed event=category_suggestion_attempted user_id=459885395 transaction_id=3400 examples=3 categories=44
+2026-11-02T11:20:23.454627536Z 2026-11-02 11:20:23,454 INFO [httpx2] trace_id=5325112bbf8206c8054262884365ae83 span_id=0553f941f9c5b46b HTTP Request: POST https://api.openai.com/v1/decisions "HTTP/1.1 200 OK"
+2026-11-02T11:20:23.461954800Z 2026-11-02 11:20:23,461 INFO [app.services.category_suggestion] trace_id=5325112bbf8206c8054262884365ae83 span_id=fc5f73000b3188ed event=category_suggestion_applied user_id=459885395 transaction_id=3400 category_id=50
+2026-11-02T11:20:24.643429805Z 2026-11-02 11:20:24,615 ERROR [app.services.telegram_ingestion] trace_id=5325112bbf8206c8054262884365ae83 span_id=bc24e7bac9a19d4a Failed to process Telegram update: httpx.ConnectError:
+2026-11-02T11:20:24.643473900Z Traceback (most recent call last):
+2026-11-02T11:20:24.643477945Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+2026-11-02T11:20:24.643498221Z     yield
+2026-11-02T11:20:24.643501150Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+2026-11-02T11:20:24.643503817Z     resp = await self._pool.handle_async_request(req)
+2026-11-02T11:20:24.643505958Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643508174Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+2026-11-02T11:20:24.643510816Z     raise exc from None
+2026-11-02T11:20:24.643512949Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+2026-11-02T11:20:24.643515476Z     response = await connection.handle_async_request(
+2026-11-02T11:20:24.643517626Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643519686Z         pool_request.request
+2026-11-02T11:20:24.643521745Z         ^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643523911Z     )
+2026-11-02T11:20:24.643525872Z     ^
+2026-11-02T11:20:24.643527760Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+2026-11-02T11:20:24.643530213Z     raise exc
+2026-11-02T11:20:24.643532305Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+2026-11-02T11:20:24.643534890Z     stream = await self._connect(request)
+2026-11-02T11:20:24.643537155Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643539280Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 156, in _connect
+2026-11-02T11:20:24.643541824Z     stream = await stream.start_tls(**kwargs)
+2026-11-02T11:20:24.643544014Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643546673Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 67, in start_tls
+2026-11-02T11:20:24.643549323Z     with map_exceptions(exc_map):
+2026-11-02T11:20:24.643551481Z          ~~~~~~~~~~~~~~^^^^^^^^^
+2026-11-02T11:20:24.643553557Z   File "/usr/local/lib/python3.13/contextlib.py", line 162, in __exit__
+2026-11-02T11:20:24.643555797Z     self.gen.throw(value)
+2026-11-02T11:20:24.643557898Z     ~~~~~~~~~~~~~~^^^^^^^
+2026-11-02T11:20:24.643560007Z   File "/app/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+2026-11-02T11:20:24.643562558Z     raise to_exc(exc) from exc
+2026-11-02T11:20:24.643564971Z httpcore.ConnectError
+2026-11-02T11:20:24.643567408Z
+2026-11-02T11:20:24.643569328Z The above exception was the direct cause of the following exception:
+2026-11-02T11:20:24.643573578Z
+2026-11-02T11:20:24.643577074Z Traceback (most recent call last):
+2026-11-02T11:20:24.643579363Z   File "/app/.venv/lib/python3.13/site-packages/telegram/request/_httpxrequest.py", line 279, in do_request
+2026-11-02T11:20:24.643581833Z     res = await self._client.request(
+2026-11-02T11:20:24.643584097Z           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643586296Z     ...<6 lines>...
+2026-11-02T11:20:24.643588750Z     )
+2026-11-02T11:20:24.643590941Z     ^
+2026-11-02T11:20:24.643592828Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+2026-11-02T11:20:24.643595207Z     return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+2026-11-02T11:20:24.643597636Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643599934Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+2026-11-02T11:20:24.643602198Z     response = await self._send_handling_auth(
+2026-11-02T11:20:24.643604315Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643606449Z     ...<4 lines>...
+2026-11-02T11:20:24.643608590Z     )
+2026-11-02T11:20:24.643610584Z     ^
+2026-11-02T11:20:24.643612471Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+2026-11-02T11:20:24.643614876Z     response = await self._send_handling_redirects(
+2026-11-02T11:20:24.643616984Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643619192Z     ...<3 lines>...
+2026-11-02T11:20:24.643621350Z     )
+2026-11-02T11:20:24.643623319Z     ^
+2026-11-02T11:20:24.643625444Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+2026-11-02T11:20:24.643627865Z     response = await self._send_single_request(request)
+2026-11-02T11:20:24.643629990Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643632369Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+2026-11-02T11:20:24.643634880Z     response = await transport.handle_async_request(request)
+2026-11-02T11:20:24.643637087Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643639434Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+2026-11-02T11:20:24.643641863Z     with map_httpcore_exceptions():
+2026-11-02T11:20:24.643643963Z          ~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-11-02T11:20:24.643645990Z   File "/usr/local/lib/python3.13/contextlib.py", line 162, in __exit__
+2026-11-02T11:20:24.643648263Z     self.gen.throw(value)
+2026-11-02T11:20:24.643651857Z     ~~~~~~~~~~~~~~^^^^^^^
+2026-11-02T11:20:24.643654261Z   File "/app/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+2026-11-02T11:20:24.643656673Z     raise mapped_exc(message) from exc
+2026-11-02T11:20:24.643658930Z httpx.ConnectError
+2026-11-02T11:20:24.643661055Z
+2026-11-02T11:20:24.643662991Z The above exception was the direct cause of the following exception:
+2026-11-02T11:20:24.643665166Z
+2026-11-02T11:20:24.643667127Z Traceback (most recent call last):
+2026-11-02T11:20:24.643678442Z   File "/app/app/services/telegram_ingestion.py", line 293, in handle_telegram_update
+2026-11-02T11:20:24.643683349Z     await _handle_message_update(update=update, context=context)
+2026-11-02T11:20:24.643685745Z   File "/app/app/services/telegram_ingestion.py", line 206, in _handle_message_update
+2026-11-02T11:20:24.643688116Z     await _send_create_reply(
+2026-11-02T11:20:24.643690110Z     ...<6 lines>...
+2026-11-02T11:20:24.643692260Z     )
+2026-11-02T11:20:24.643694188Z   File "/app/app/services/telegram_ingestion.py", line 143, in _send_create_reply
+2026-11-02T11:20:24.643696535Z     await bot.send_message(
+2026-11-02T11:20:24.643698529Z     ...<4 lines>...
+2026-11-02T11:20:24.643714660Z     )
+2026-11-02T11:20:24.643717516Z   File "/app/.venv/lib/python3.13/site-packages/telegram/ext/_extbot.py", line 3118, in send_message
+2026-11-02T11:20:24.643719977Z     return await super().send_message(
+2026-11-02T11:20:24.643722004Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643724096Z     ...<23 lines>...
+2026-11-02T11:20:24.643726205Z     )
+2026-11-02T11:20:24.643728125Z     ^
+2026-11-02T11:20:24.643730062Z   File "/app/.venv/lib/python3.13/site-packages/telegram/_bot.py", line 1123, in send_message
+2026-11-02T11:20:24.643732425Z     return await self._send_message(
+2026-11-02T11:20:24.643734443Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643736511Z     ...<21 lines>...
+2026-11-02T11:20:24.643738521Z     )
+2026-11-02T11:20:24.643740507Z     ^
+2026-11-02T11:20:24.643742427Z   File "/app/.venv/lib/python3.13/site-packages/telegram/ext/_extbot.py", line 630, in _send_message
+2026-11-02T11:20:24.643744938Z     result = await super()._send_message(
+2026-11-02T11:20:24.643747014Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643749082Z     ...<23 lines>...
+2026-11-02T11:20:24.643751092Z     )
+2026-11-02T11:20:24.643753053Z     ^
+2026-11-02T11:20:24.643754957Z   File "/app/.venv/lib/python3.13/site-packages/telegram/_bot.py", line 820, in _send_message
+2026-11-02T11:20:24.643759166Z     result = await self._post(
+2026-11-02T11:20:24.643761365Z              ^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643763556Z     ...<7 lines>...
+2026-11-02T11:20:24.643765681Z     )
+2026-11-02T11:20:24.643767732Z     ^
+2026-11-02T11:20:24.643769685Z   File "/app/.venv/lib/python3.13/site-packages/telegram/_bot.py", line 704, in _post
+2026-11-02T11:20:24.643772155Z     return await self._do_post(
+2026-11-02T11:20:24.643774190Z            ^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643778498Z     ...<6 lines>...
+2026-11-02T11:20:24.643780672Z     )
+2026-11-02T11:20:24.643782740Z     ^
+2026-11-02T11:20:24.643784652Z   File "/app/.venv/lib/python3.13/site-packages/telegram/ext/_extbot.py", line 370, in _do_post
+2026-11-02T11:20:24.643787105Z     return await super()._do_post(
+2026-11-02T11:20:24.643789279Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643791298Z     ...<6 lines>...
+2026-11-02T11:20:24.643793530Z     )
+2026-11-02T11:20:24.643795458Z     ^
+2026-11-02T11:20:24.643797550Z   File "/app/.venv/lib/python3.13/site-packages/telegram/_bot.py", line 733, in _do_post
+2026-11-02T11:20:24.643799848Z     result = await request.post(
+2026-11-02T11:20:24.643801899Z              ^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643803877Z     ...<6 lines>...
+2026-11-02T11:20:24.643805879Z     )
+2026-11-02T11:20:24.643807766Z     ^
+2026-11-02T11:20:24.643809858Z   File "/app/.venv/lib/python3.13/site-packages/telegram/request/_baserequest.py", line 198, in post
+2026-11-02T11:20:24.643812328Z     result = await self._request_wrapper(
+2026-11-02T11:20:24.643814568Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643816923Z     ...<7 lines>...
+2026-11-02T11:20:24.643818933Z     )
+2026-11-02T11:20:24.643820993Z     ^
+2026-11-02T11:20:24.643823381Z   File "/app/.venv/lib/python3.13/site-packages/telegram/request/_baserequest.py", line 305, in _request_wrapper
+2026-11-02T11:20:24.643825875Z     code, payload = await self.do_request(
+2026-11-02T11:20:24.643827959Z                     ^^^^^^^^^^^^^^^^^^^^^^
+2026-11-02T11:20:24.643830027Z     ...<7 lines>...
+2026-11-02T11:20:24.643832021Z     )
+2026-11-02T11:20:24.643834113Z     ^
+2026-11-02T11:20:24.643836148Z   File "/app/.venv/lib/python3.13/site-packages/telegram/request/_httpxrequest.py", line 303, in do_request
+2026-11-02T11:20:24.643838585Z     raise NetworkError(f"httpx.{err.__class__.__name__}: {err}") from err
+2026-11-02T11:20:24.643840883Z telegram.error.NetworkError: httpx.ConnectError:
+2026-11-02T11:20:25.581660303Z 2026-11-02 11:20:25,581 INFO [httpx] trace_id=5325112bbf8206c8054262884365ae83 span_id=bc24e7bac9a19d4a HTTP Request: POST https://api.telegram.org/bot***/sendMessage "HTTP/1.1 200 OK"
+
+4480b179b4b14202181975acaecba9e4df81e65e31ec111ebd82147e3ba8e786  /app/app/services/telegram_ingestion.py
+7f071ea9a139b6cf4493fb990d7199302cf0794c565d1c5c5b10eeb7eed665cf  /app/app/services/telegram_runtime.py
+4c42af05ce0b2bb01f6e4a55e1f7b2b22bff1036c7413ffc5f045d5684f7b947  /app/app/api/routes/telegram_router.py
+db9f9f871a2875bd356d39fc2cc77311ef93daf6d701973c41b4512d31b5faa6  /app/app/db/queries.py

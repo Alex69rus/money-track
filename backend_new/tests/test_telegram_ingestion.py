@@ -4,8 +4,12 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
+import pytest
 from telegram import Bot, InlineKeyboardMarkup, Update
+from telegram.error import BadRequest, Forbidden, NetworkError, TimedOut
 
 from app.schemas.responses import TransactionResponse
 from app.services.category_suggestion import CategoryActionOption, CategorySuggestionResult
@@ -13,6 +17,17 @@ from app.services.sms_parser import ParsedSmsTransaction
 from app.services.telegram_callback_data import CategoryCallbackPayload
 from app.services.telegram_ingestion import handle_telegram_update
 from app.services.transaction_category_actions import CategoryActionResult
+
+
+@pytest.fixture(autouse=True)
+def _isolate_update_receipts(monkeypatch):
+    claim = AsyncMock(return_value=True)
+    monkeypatch.setattr("app.services.telegram_ingestion.claim_telegram_update", claim)
+    monkeypatch.setattr(
+        "app.services.telegram_callback_data.get_settings",
+        lambda: SimpleNamespace(telegram_webhook_secret="offline-test-secret"),
+    )
+    return claim
 
 
 @dataclass
@@ -278,3 +293,169 @@ def test_telegram_ingestion_callback_query_invalid_payload(monkeypatch) -> None:
     assert len(context.bot.sent_messages) == 1
     assert context.bot.sent_messages[0]["text"] == "Could not update category. Please try again."
     assert context.bot.answered_callback_query_ids == ["cbq-1"]
+
+
+@pytest.fixture
+def pipeline(monkeypatch):
+    parser = AsyncMock(
+        return_value=ParsedSmsTransaction(amount=Decimal("-49.31"), currency="AED", note="Amazon grocery")
+    )
+    upsert = AsyncMock(return_value=_sample_transaction(user_id=123))
+    suggest = AsyncMock(
+        return_value=CategorySuggestionResult(
+            applied_category_id=50,
+            applied_category_name="Groceries",
+            top3_options=[],
+        )
+    )
+    monkeypatch.setattr("app.services.telegram_ingestion.parse_sms_transaction", parser)
+    monkeypatch.setattr("app.services.telegram_ingestion.upsert_transaction_by_message_id", upsert)
+    monkeypatch.setattr("app.services.telegram_ingestion.suggest_and_apply_transaction_category", suggest)
+    return parser, upsert, suggest
+
+
+@pytest.mark.parametrize("failures", [[], [NetworkError("TLS")], [TimedOut(), NetworkError("TLS")]])
+def test_saved_reply_retries_same_payload_without_reprocessing(monkeypatch, pipeline, failures):
+    bot = AsyncMock()
+    bot.send_message.side_effect = [*failures, None]
+    pause = AsyncMock()
+    monkeypatch.setattr("asyncio.sleep", pause)
+    asyncio.run(handle_telegram_update(_build_message_update(from_id=123), _FakeContext(bot=bot)))
+    assert bot.send_message.await_count == len(failures) + 1
+    attempts = bot.send_message.await_args_list
+    assert all(call.kwargs == attempts[0].kwargs for call in attempts)
+    assert attempts[0].kwargs["text"].startswith("Transaction was saved.")
+    assert [call.args for call in pause.await_args_list] == [(1,)] * len(failures)
+    assert all(step.await_count == 1 for step in pipeline)
+
+
+@pytest.mark.parametrize(
+    "failure,expected_attempts",
+    [
+        (NetworkError("TLS"), 3),
+        (Forbidden("blocked"), 1),
+        (BadRequest("bad payload"), 1),
+    ],
+)
+def test_saved_reply_failure_never_sends_parse_failure(monkeypatch, pipeline, failure, expected_attempts, caplog):
+    bot = AsyncMock()
+    bot.send_message.side_effect = failure
+    pause = AsyncMock()
+    monkeypatch.setattr("asyncio.sleep", pause)
+    asyncio.run(handle_telegram_update(_build_message_update(from_id=123), _FakeContext(bot=bot)))
+    assert bot.send_message.await_count == expected_attempts
+    assert all(call.kwargs["text"].startswith("Transaction was saved.") for call in bot.send_message.await_args_list)
+    assert pause.await_count == expected_attempts - 1
+    assert all(step.await_count == 1 for step in pipeline)
+    assert "Telegram reply delivery failed" in caplog.text
+
+
+def test_duplicate_update_is_ignored_before_business_processing(pipeline, _isolate_update_receipts):
+    _isolate_update_receipts.side_effect = [True, False]
+    context = _FakeContext(bot=_FakeBot())
+    update = _build_message_update(from_id=123)
+
+    async def run():
+        await handle_telegram_update(update, context)
+        await handle_telegram_update(update, context)
+
+    asyncio.run(run())
+    assert _isolate_update_receipts.await_count == 2
+    assert all(call.kwargs == {"update_id": update.update_id} for call in _isolate_update_receipts.await_args_list)
+    assert all(step.await_count == 1 for step in pipeline)
+    assert len(context.bot.sent_messages) == 1
+
+
+def test_receipt_storage_failure_does_not_process_or_send_parse_failure(pipeline, _isolate_update_receipts):
+    _isolate_update_receipts.side_effect = RuntimeError("database unavailable")
+    context = _FakeContext(bot=_FakeBot())
+    asyncio.run(handle_telegram_update(_build_message_update(from_id=123), context))
+    assert all(step.await_count == 0 for step in pipeline)
+    assert not context.bot.sent_messages
+
+
+def test_processing_exception_uses_processing_error_not_parse_failure(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.telegram_ingestion.parse_sms_transaction", AsyncMock(side_effect=RuntimeError("failure"))
+    )
+    context = _FakeContext(bot=_FakeBot())
+    asyncio.run(handle_telegram_update(_build_message_update(from_id=123), context))
+    assert len(context.bot.sent_messages) == 1
+    assert context.bot.sent_messages[0]["text"] != "Cannot parse the transaction"
+
+
+def test_duplicate_callback_does_not_repeat_category_action(monkeypatch, _isolate_update_receipts):
+    _isolate_update_receipts.side_effect = [True, False]
+    monkeypatch.setattr(
+        "app.services.telegram_ingestion.decode_category_callback_data",
+        lambda _: CategoryCallbackPayload(
+            user_id=123,
+            transaction_id=15,
+            action="s",
+            category_id=11,
+        ),
+    )
+    apply = AsyncMock(return_value=CategoryActionResult(success=True, message="Category updated"))
+    monkeypatch.setattr("app.services.telegram_ingestion.apply_category_callback_action", apply)
+    context = _FakeContext(bot=_FakeBot())
+    update = _build_callback_update(from_id=123, callback_data="test")
+
+    async def run():
+        await handle_telegram_update(update, context)
+        await handle_telegram_update(update, context)
+
+    asyncio.run(run())
+    assert apply.await_count == 1
+    assert len(context.bot.sent_messages) == 1
+
+
+def test_duplicate_update_does_not_restart_exhausted_delivery(monkeypatch, pipeline, _isolate_update_receipts):
+    _isolate_update_receipts.side_effect = [True, False]
+    bot = AsyncMock()
+    bot.send_message.side_effect = NetworkError("TLS")
+    pause = AsyncMock()
+    monkeypatch.setattr("asyncio.sleep", pause)
+    update = _build_message_update(from_id=123)
+    context = _FakeContext(bot=bot)
+
+    async def run():
+        await handle_telegram_update(update, context)
+        await handle_telegram_update(update, context)
+
+    asyncio.run(run())
+    assert bot.send_message.await_count == 3
+    assert pause.await_count == 2
+    assert all(step.await_count == 1 for step in pipeline)
+
+
+def test_edited_message_with_new_update_id_is_not_suppressed(pipeline, _isolate_update_receipts):
+    context = _FakeContext(bot=_FakeBot())
+    original = _build_message_update(from_id=123)
+    edited_payload = original.to_dict()
+    edited_payload["update_id"] = original.update_id + 1
+    edited_payload["edited_message"] = edited_payload.pop("message")
+    edited_payload["edited_message"]["text"] = "Corrected payment"
+    edited = Update.de_json(edited_payload, Bot("123456:ABCDEF"))
+
+    async def run():
+        await handle_telegram_update(original, context)
+        await handle_telegram_update(edited, context)
+
+    asyncio.run(run())
+    assert [call.kwargs["update_id"] for call in _isolate_update_receipts.await_args_list] == [1, 2]
+    assert all(step.await_count == 2 for step in pipeline)
+    assert len(context.bot.sent_messages) == 2
+
+
+def test_unparsed_reply_retry_exhaustion_does_not_start_another_fallback(monkeypatch):
+    parser = AsyncMock(return_value=None)
+    monkeypatch.setattr("app.services.telegram_ingestion.parse_sms_transaction", parser)
+    pause = AsyncMock()
+    monkeypatch.setattr("asyncio.sleep", pause)
+    bot = AsyncMock()
+    bot.send_message.side_effect = NetworkError("TLS")
+    asyncio.run(handle_telegram_update(_build_message_update(from_id=123), _FakeContext(bot=bot)))
+    assert parser.await_count == 1
+    assert bot.send_message.await_count == 3
+    assert pause.await_count == 2
+    assert all(call.kwargs["text"] == "Cannot parse the transaction" for call in bot.send_message.await_args_list)

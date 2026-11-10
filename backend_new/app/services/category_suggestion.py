@@ -4,11 +4,13 @@ import json
 import logging
 from dataclasses import dataclass
 from functools import lru_cache
+from time import perf_counter
 from typing import TypedDict
+from uuid import uuid4
 
-from openai import APIError, APIStatusError, AsyncOpenAI
+from openai import APIError, APIResponseValidationError, APIStatusError, AsyncOpenAI
 from openai.types.decision import Decision
-from openai.types.decision_create_params import QuestionQuestionParamChoiceChoice
+from openai.types.decision_create_params import DecisionCreateParams, QuestionQuestionParamChoiceChoice
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 
@@ -108,6 +110,8 @@ async def _call_category_suggestion_llm(
     currency: str,
     examples: list[dict[str, object]],
     categories: list[CategoryCandidate],
+    user_id: int | None = None,
+    transaction_id: int | None = None,
 ) -> CategorySuggestionLlmOutput | None:
     with tracer.start_as_current_span("category_suggestion.llm_call"):
         settings = get_settings()
@@ -136,41 +140,65 @@ async def _call_category_suggestion_llm(
             {"value": CATEGORY_ABSTAIN, "description": "No supplied category is supported by sufficient evidence."}
         )
         client = _get_openai_client()
+        request: DecisionCreateParams = {
+            "model": CATEGORY_SUGGESTION_MODEL,
+            "input": json.dumps(payload, ensure_ascii=True),
+            "questions": [
+                {
+                    "type": "choice",
+                    "name": "category",
+                    "instructions": CATEGORY_DECISION_INSTRUCTIONS,
+                    "choices": choices,
+                }
+            ],
+        }
+        call_meta: dict[str, object] = {
+            "decision_call_id": uuid4().hex,
+            "endpoint": "/v1/decisions",
+            "model": CATEGORY_SUGGESTION_MODEL,
+            "user_id": user_id,
+            "transaction_id": transaction_id,
+        }
+        logger.info("event=category_decision_requested", extra={**call_meta, "request": request})
+        started = perf_counter()
         try:
-            decision = await client.decisions.create(
-                model=CATEGORY_SUGGESTION_MODEL,
-                input=json.dumps(payload, ensure_ascii=True),
-                questions=[
-                    {
-                        "type": "choice",
-                        "name": "category",
-                        "instructions": CATEGORY_DECISION_INSTRUCTIONS,
-                        "choices": choices,
-                    }
-                ],
-            )
-        except APIStatusError as exc:
-            logger.error(
-                "Category suggestion OpenAI request failed with status %s: %s (%s)",
-                exc.status_code,
-                exc.response.text if exc.response is not None else "<no-body>",
-                exc,
-                exc_info=True,
-            )
-            return None
+            decision = await client.decisions.create(**request)
         except APIError as exc:
+            response = exc.response if isinstance(exc, APIStatusError | APIResponseValidationError) else None
             logger.error(
-                "Failed to classify category via OpenAI SDK: %s",
+                "event=category_decision_failed error=%s",
                 exc,
+                extra={
+                    **call_meta,
+                    "elapsed_ms": round((perf_counter() - started) * 1000, 3),
+                    "request_id": response.headers.get("x-request-id") if response is not None else None,
+                    "status_code": response.status_code if response is not None else None,
+                    "error_type": type(exc).__name__,
+                    "response": response.text if response is not None else exc.body,
+                },
                 exc_info=True,
             )
             return None
 
+        response_meta = {
+            **call_meta,
+            "elapsed_ms": round((perf_counter() - started) * 1000, 3),
+            "request_id": getattr(decision, "_request_id", None),
+        }
+        # Preserve the full output even when application-level validation rejects it.
+        logger.info(
+            "event=category_decision_response",
+            extra={**response_meta, "response": decision.model_dump(mode="json", warnings=False)},
+        )
         try:
-            return _decode_category_decision(decision, categories)
+            decoded = _decode_category_decision(decision, categories)
         except ValueError as exc:
-            logger.error("Invalid category decision: %s", exc, exc_info=True)
+            logger.error("event=category_decision_invalid error=%s", exc, extra=response_meta, exc_info=True)
             return None
+        logger.info(
+            "event=category_decision_decoded", extra={**response_meta, "result": decoded.model_dump(mode="json")}
+        )
+        return decoded
 
 
 def _decode_category_decision(result: Decision, categories: list[CategoryCandidate]) -> CategorySuggestionLlmOutput:
@@ -277,6 +305,8 @@ async def suggest_and_apply_transaction_category(
             )
 
             llm_output = await _call_category_suggestion_llm(
+                user_id=user_id,
+                transaction_id=transaction.id,
                 note=transaction.note,
                 sms_text=transaction.smsText,
                 amount=transaction.amount,

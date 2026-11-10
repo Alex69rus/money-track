@@ -1,5 +1,6 @@
 import logging
 
+import pytest
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -21,6 +22,28 @@ def test_redact_raw_telegram_bot_token() -> None:
     message = "Token leaked: 1234567890:TEST_TOKEN_FOR_LOG_REDACTION_123456"
     redacted = _redact_secrets(message)
     assert redacted == "Token leaked: 1234567890:***"
+
+
+@pytest.mark.parametrize("prefix", ["sk-", "sk-proj-", "sk-admin-"])
+def test_redact_openai_key_patterns(prefix) -> None:
+    secret = prefix + "syntheticKeyForRedaction123456789"
+    assert _redact_secrets(f"Echoed key: {secret}") == "Echoed key: sk-***"
+
+
+def test_formatter_redacts_exact_configured_credential_in_message_extras_and_traceback() -> None:
+    secret = 'synthetic-credential-with-"quote"'
+    try:
+        raise ValueError(f"Synthetic failure: {secret}")
+    except ValueError:
+        import sys
+
+        record = logging.LogRecord("test", logging.ERROR, __file__, 1, "API error: %s", (secret,), sys.exc_info())
+    record.payload = {"echo": secret, "transaction": "Coffee"}
+    rendered = RedactingFormatter(secrets=(secret,)).format(record)
+    assert secret not in rendered
+    assert "synthetic-credential" not in rendered
+    assert '"transaction": "Coffee"' in rendered
+    assert "ValueError: Synthetic failure: ***" in rendered
 
 
 def test_opentelemetry_filter_injects_zero_ids_without_active_span() -> None:

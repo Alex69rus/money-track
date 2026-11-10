@@ -8,6 +8,7 @@ from opentelemetry.trace import format_span_id, format_trace_id
 
 _TELEGRAM_BOT_URL_PATTERN = re.compile(r"(https?://api\.telegram\.org/bot)([^/\s]+)")
 _TELEGRAM_BOT_TOKEN_PATTERN = re.compile(r"\b(\d{6,12}:)([A-Za-z0-9_-]{20,})\b")
+_OPENAI_API_KEY_PATTERN = re.compile(r"\bsk-[A-Za-z0-9_-]{20,}")
 _RESERVED_LOG_RECORD_FIELDS = set(logging.makeLogRecord({}).__dict__.keys())
 _DERIVED_FORMATTER_FIELDS = {"message", "asctime"}
 
@@ -15,10 +16,15 @@ _DERIVED_FORMATTER_FIELDS = {"message", "asctime"}
 def _redact_secrets(message: str) -> str:
     redacted = _TELEGRAM_BOT_URL_PATTERN.sub(r"\1***", message)
     redacted = _TELEGRAM_BOT_TOKEN_PATTERN.sub(r"\1***", redacted)
+    redacted = _OPENAI_API_KEY_PATTERN.sub("sk-***", redacted)
     return redacted
 
 
 class RedactingFormatter(logging.Formatter):
+    def __init__(self, fmt: str | None = None, *, secrets: tuple[str, ...] = ()) -> None:
+        super().__init__(fmt=fmt)
+        self._secrets = tuple(secret for secret in secrets if secret)
+
     def format(self, record: logging.LogRecord) -> str:
         rendered = super().format(record)
         extra_fields: dict[str, Any] = {
@@ -32,6 +38,11 @@ class RedactingFormatter(logging.Formatter):
         if extra_fields:
             serialized = json.dumps(extra_fields, ensure_ascii=False, default=str, sort_keys=True)
             rendered = f"{rendered} | extra={serialized}"
+        # Redact after rendering extras and tracebacks, including arbitrary
+        # configured credentials that don't match a recognizable token prefix.
+        for secret in self._secrets:
+            rendered = rendered.replace(secret, "***")
+            rendered = rendered.replace(json.dumps(secret, ensure_ascii=False)[1:-1], "***")
         return _redact_secrets(rendered)
 
 
@@ -48,12 +59,13 @@ class OpenTelemetryContextFilter(logging.Filter):
         return True
 
 
-def configure_logging() -> None:
+def configure_logging(*, openai_api_key: str = "") -> None:
     handler = logging.StreamHandler()
     handler.addFilter(OpenTelemetryContextFilter())
     handler.setFormatter(
         RedactingFormatter(
             fmt="%(asctime)s %(levelname)s [%(name)s] trace_id=%(trace_id)s span_id=%(span_id)s %(message)s",
+            secrets=(openai_api_key,),
         )
     )
     logging.basicConfig(

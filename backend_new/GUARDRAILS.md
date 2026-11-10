@@ -210,3 +210,27 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: A synthetic Decisions distribution with 0.999 on Clothing & Shoes reproduced both income buttons; zero-probability candidates also survive decoding. Existing 18 unit tests passed, and the live corpus checks only the primary category.
 - Prevention rule: When changing category selection, cover alternative relevance, transaction direction, negligible probabilities, and tied probabilities; do not assume the second and third ranked choices are meaningful suggestions.
 - Direction-filter delivery: use one eligible category set for model choices, returned-ID validation, and fallback/edit buttons. Return fewer buttons when necessary; preserve existing assignments while excluding incompatible buttons. Direction regressions cover both signs, no candidates, invalid model output, unavailable model, and exception fallback.
+
+
+### 2026-11-02 — Telegram reply failure after persistence (BR-028)
+
+- Takeaway: Check confirmation transport separately when a saved transaction receives a parse-failure reply; the broad ingestion exception handler can send the same unparsed text after persistence.
+- Exploration: Deployed-source hashes, one production trace, boolean DB comparisons, and an offline first-send NetworkError reproduced saved confirmation → unparsed fallback with one parser/upsert/category invocation.
+- Prevention rule: Preserve processing-stage distinctions in error replies and cover confirmation-send failure after persistence; do not infer outbound text from OpenAI/category HTTP success. Correlate handler branches and trace/span, and document when HTTP payloads were not logged.
+
+
+### 2026-11-02 — Telegram update receipts and bounded reply retries (BR-028)
+
+- Takeaway: Claim exact update IDs with an atomic PostgreSQL unique insert before processing; preserve separate message-key upserts for edits. Never use a last-ID watermark.
+- Exploration: Eight concurrent claims admitted one handler; a fresh event loop still rejected the duplicate and accepted an unseen lower ID. Reply tests cover recovery, exhaustion, permanent errors, edits, callbacks, and one parser/upsert/category invocation despite retries.
+- Prevention rule: Retry only transient reply transport failures with the same payload, three attempts total and one-second pauses; exclude BadRequest despite its NetworkError inheritance. Keep delivery errors out of parse-failure fallbacks and document admission receipts versus crash recovery. Use naive UTC with Piccolo Timestamp columns.
+
+
+### 2026-11-10 — Decisions request/result observability
+
+- Takeaway: Log the exact typed SDK request, full response before application validation, and decoded outcome with one decision_call_id plus user/transaction IDs; preserve the provider request ID and elapsed time.
+- Exploration: Native HTTPX2 mock transport verifies full wire-input/output/usage, abstention/refusal, invalid category choices, API status failures and connection failures; formatter checks cover Unicode/newlines and absence of authentication/header values.
+- Prevention rule: Keep payload logs on the existing structured formatter and preserve fallback behavior. Inspect installed SDK response fields instead of assuming Decisions exposes Responses identifiers; distinguish logical SDK calls from automatic HTTP retries.
+
+- Review follow-up: Redact the exact configured OpenAI credential after final formatting, including JSON-escaped extras and tracebacks; provider error bodies can echo keys even when no headers/settings are logged. Keep common sk-* key-pattern redaction as a fallback.
+- Verification: 109 non-integration tests, Ruff, mypy (75 source files), and in-process app import/health passed. Fresh-context subagent reviewed all backend changes, then re-reviewed credential handling with 18 targeted passing tests; no remaining P1/P2 findings. No live OpenAI/Telegram calls or production changes were made. Existing DB/API integration suite was not repeated for this logging-only iteration.

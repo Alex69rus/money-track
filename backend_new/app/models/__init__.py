@@ -1,3 +1,3 @@
-from app.models.tables import Category, Transaction, TransactionsWithCategory
+from app.models.tables import Category, TelegramUpdateReceipt, Transaction, TransactionsWithCategory
 
-__all__ = ["Category", "Transaction", "TransactionsWithCategory"]
+__all__ = ["Category", "TelegramUpdateReceipt", "Transaction", "TransactionsWithCategory"]

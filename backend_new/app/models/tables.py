@@ -15,6 +15,11 @@ from piccolo.columns import (
 from piccolo.table import Table
 
 
+class TelegramUpdateReceipt(Table, tablename="telegram_update_receipt"):
+    update_id = BigInt(primary_key=True)
+    received_at = Timestamp(required=True)
+
+
 class Category(Table, tablename="category"):
     id = Serial(primary_key=True)
     name = Varchar(length=100, required=True)
