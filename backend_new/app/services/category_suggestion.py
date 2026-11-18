@@ -12,6 +12,7 @@ from openai import APIError, APIResponseValidationError, APIStatusError, AsyncOp
 from openai.types.decision import Decision
 from openai.types.decision_create_params import DecisionCreateParams, QuestionQuestionParamChoiceChoice
 from opentelemetry import trace
+from opentelemetry.trace import StatusCode
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
@@ -113,7 +114,7 @@ async def _call_category_suggestion_llm(
     user_id: int | None = None,
     transaction_id: int | None = None,
 ) -> CategorySuggestionLlmOutput | None:
-    with tracer.start_as_current_span("category_suggestion.llm_call"):
+    with tracer.start_as_current_span("category_suggestion.llm_call", kind=trace.SpanKind.CLIENT) as span:
         settings = get_settings()
         if not settings.openai_api_key:
             logger.error("OpenAI API key is not configured for category suggestion")
@@ -152,6 +153,13 @@ async def _call_category_suggestion_llm(
                 }
             ],
         }
+        span.set_attributes(
+            {
+                "decision.provider": "openai",
+                "decision.request.model_name": CATEGORY_SUGGESTION_MODEL,
+                "decision.request.body": json.dumps(request, ensure_ascii=False),
+            }
+        )
         call_meta: dict[str, object] = {
             "decision_call_id": uuid4().hex,
             "endpoint": "/v1/decisions",
@@ -165,6 +173,13 @@ async def _call_category_suggestion_llm(
             decision = await client.decisions.create(**request)
         except APIError as exc:
             response = exc.response if isinstance(exc, APIStatusError | APIResponseValidationError) else None
+            span.set_status(StatusCode.ERROR)
+            span.set_attribute("error.type", type(exc).__name__)
+            if response is not None:
+                span.set_attribute("http.response.status_code", response.status_code)
+                span.set_attribute("decision.response.body", response.text)
+            elif exc.body is not None:
+                span.set_attribute("decision.response.body", json.dumps(exc.body, default=str))
             logger.error(
                 "event=category_decision_failed error=%s",
                 exc,
@@ -185,16 +200,27 @@ async def _call_category_suggestion_llm(
             "elapsed_ms": round((perf_counter() - started) * 1000, 3),
             "request_id": getattr(decision, "_request_id", None),
         }
+        response_data = decision.model_dump(mode="json", warnings=False)
+        span.set_attribute("decision.response.body", json.dumps(response_data, ensure_ascii=False))
+        span.set_attribute("decision.response.model_name", decision.model)
+        if decision.usage is not None:
+            if decision.usage.input_tokens is not None:
+                span.set_attribute("decision.token_count.input", decision.usage.input_tokens)
+            if decision.usage.output_tokens is not None:
+                span.set_attribute("decision.token_count.output", decision.usage.output_tokens)
         # Preserve the full output even when application-level validation rejects it.
         logger.info(
             "event=category_decision_response",
-            extra={**response_meta, "response": decision.model_dump(mode="json", warnings=False)},
+            extra={**response_meta, "response": response_data},
         )
         try:
             decoded = _decode_category_decision(decision, categories)
         except ValueError as exc:
+            span.set_status(StatusCode.ERROR)
+            span.set_attribute("error.type", type(exc).__name__)
             logger.error("event=category_decision_invalid error=%s", exc, extra=response_meta, exc_info=True)
             return None
+        span.set_status(StatusCode.OK)
         logger.info(
             "event=category_decision_decoded", extra={**response_meta, "result": decoded.model_dump(mode="json")}
         )

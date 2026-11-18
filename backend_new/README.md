@@ -33,6 +33,8 @@ uv run mypy .
 uv run pytest -q
 ```
 
+The `/health` readiness endpoint is excluded from HTTP tracing. Uvicorn
+omits successful health probes from its access logs and keeps failed probes.
 
 ## Telegram update handling and reply delivery
 
@@ -74,6 +76,10 @@ parse-failure fallback. Unexpected processing exceptions use a distinct
 processing-error reply. Reply kind, attempt, and result are logged on the update
 trace without logging full SMS or reply text.
 
+The parser logs the inbound SMS text as a separate event before the OpenAI call.
+The webhook also passes its trace context through the Telegram queue so parser
+logs and model spans can be opened from the originating HTTP trace.
+
 If Telegram accepted a send but its response was lost, a transport retry can
 produce a duplicate confirmation. Incoming update idempotency does not provide
 outgoing message deduplication.
@@ -110,4 +116,5 @@ redaction remains enabled. The production formatter also redacts the configured
 OpenAI credential and recognizable OpenAI key patterns after rendering the full
 message, structured extras, and traceback, including a key echoed by an API error.
 The additional payload volume consumes the existing
-Docker log rotation budget sooner; there is no extra permanent log store.
+Docker log rotation budget sooner. See the [deployment guide](../docs/deployment.md#backend-telemetry-in-new-relic)
+for New Relic export and rollback.

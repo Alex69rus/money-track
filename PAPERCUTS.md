@@ -402,3 +402,11 @@ Rechecking the Node migration in a later session → the prior temporary Node bi
 ## 2026-11-18 18:08 — GPT-6.2 Sol
 
 Rebuilding with Node 26.13.1 on Linux x64 → Docker's `npm ci` exited with `ECONNRESET` despite downloading the base image successfully. Retry the unchanged build before editing dependency metadata or Docker configuration.
+
+## 2026-11-18 19:07 — GPT-6.2 Sol
+
+Checking Actions settings for the New Relic rollout → GitHub CLI found a stored account with an invalid token. Check `gh auth status` before relying on the CLI to verify repository secrets or variables.
+
+## 2026-11-18 19:31 — GPT-6.2 Sol
+
+Launching Codex CLI review → the local configuration pins a model unavailable for the signed-in ChatGPT account. Check the available model catalog before launching a CLI review and use local inspection if an external review is unavailable.

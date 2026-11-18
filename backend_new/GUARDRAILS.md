@@ -234,3 +234,10 @@ Keep entries short, actionable, and repository-specific.
 
 - Review follow-up: Redact the exact configured OpenAI credential after final formatting, including JSON-escaped extras and tracebacks; provider error bodies can echo keys even when no headers/settings are logged. Keep common sk-* key-pattern redaction as a fallback.
 - Verification: 109 non-integration tests, Ruff, mypy (75 source files), and in-process app import/health passed. Fresh-context subagent reviewed all backend changes, then re-reviewed credential handling with 18 targeted passing tests; no remaining P1/P2 findings. No live OpenAI/Telegram calls or production changes were made. Existing DB/API integration suite was not repeated for this logging-only iteration.
+
+### 2026-11-18 — OTLP export of financial and model content
+
+- Takeaway: Carry W3C trace context inside the Telegram queue item. Restore it around the existing handler and detach it when the item completes.
+- Exploration: Test FastAPI, Responses.parse, tool calls, and Decisions with native HTTPX2 mocks and a local receiver. Decode both OTLP signals to verify real span ancestry and catch credentials echoed in failures, nested JSON, and tool output.
+- Prevention rule: Sanitize both signals before network send, ahead of any attribute length limit or compression. Treat the Docker JSON-file collector as an independent log path and verify that backend logs reach New Relic once.
+- When upgrading Agents SDK, verify the native OpenAI ingest JSON alongside OTLP. Keep the credential in the authorization header and remove it from trace payloads before the SDK truncates fields.

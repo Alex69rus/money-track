@@ -65,7 +65,7 @@ class ChatAgent:
 
     def _get_chat_agent(self) -> Agent[ChatAgentContext]:
         settings = get_settings()
-        set_default_openai_key(settings.openai_api_key)
+        set_default_openai_key(settings.openai_api_key, use_for_tracing=False)
         return Agent[ChatAgentContext](
             name="ai_chat_agent",
             instructions=CHAT_AGENT_PROMPT,

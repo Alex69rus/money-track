@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,7 +24,10 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
     otel_service_name: str = Field(default="money-track-backend", alias="OTEL_SERVICE_NAME")
-    otel_traces_exporter: Literal["console", "none"] = Field(default="none", alias="OTEL_TRACES_EXPORTER")
+    otel_traces_exporter: Literal["console", "none", "otlp"] = Field(default="none", alias="OTEL_TRACES_EXPORTER")
+    otel_logs_exporter: Literal["none", "otlp"] = Field(default="none", alias="OTEL_LOGS_EXPORTER")
+    otlp_endpoint: str = Field(default="", alias="OTEL_EXPORTER_OTLP_ENDPOINT")
+    new_relic_license_key: SecretStr = Field(default=SecretStr(""), alias="NEW_RELIC_LICENSE_KEY")
 
     @property
     def business_tzinfo(self) -> ZoneInfo:

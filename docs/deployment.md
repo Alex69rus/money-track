@@ -61,6 +61,47 @@ DOMAIN=money-track.org
 TELEGRAM_WEBHOOK_URL=https://money-track.org/api/telegram/webhook
 ```
 
+### Backend telemetry in New Relic
+
+OTLP export is off by default. Set these values in the repository's GitHub
+**Settings → Secrets and variables → Actions** so the deploy job can read them.
+
+| Name | Actions setting | Value |
+| --- | --- | --- |
+| `NEW_RELIC_LICENSE_KEY` | Repository secret | New Relic **Ingest - License** key for the destination account |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Repository variable | HTTPS base URL for the account's region on port 443, such as `https://otlp.nr-data.net` (US) or `https://otlp.eu01.nr-data.net` (EU) |
+| `OTEL_TRACES_EXPORTER` | Repository variable | `otlp` |
+| `OTEL_LOGS_EXPORTER` | Repository variable | `otlp` |
+
+Use the base URL without `/v1/traces` or `/v1/logs`. The application adds
+those paths. The next push to `main` triggers the production workflow,
+which writes the values into `.env.prod` on EC2. Agents SDK chat tracing
+uses the existing `OPENAI_API_KEY`.
+[New Relic OTLP endpoints and limits](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/)
+
+The deployment sets `BACKEND_LOG_DRIVER=local` for the backend when OTLP logs
+are enabled. This setting is derived by the workflow. The host agent's
+`/var/lib/docker/containers/*/*.log` rule then
+skips the backend's local-driver files. `docker compose logs backend` still
+shows stdout and stderr, including migrations and exporter diagnostics.
+The OTLP bridge sends application and Uvicorn logs. Other containers keep
+their current logging configuration.
+[Docker local logging driver](https://docs.docker.com/engine/logging/drivers/local/)
+
+After deployment, use synthetic data to run one chat with a tool call and one
+Telegram SMS that reaches the parser and categorization. In New Relic, filter
+`Span` and `Log` by `service.name = 'money-track-backend'`. Check the
+request-to-model span tree, follow a trace to its logs, and search for the
+synthetic SMS to check for duplicate records. Check the AI Monitoring view for
+standard GenAI spans and Distributed Tracing for Decisions. Agents SDK chat
+traces also go to OpenAI. Both exporters remove credentials from trace payloads.
+New Relic may truncate individual span attributes over 4,095 characters.
+
+To roll back export, set both Actions exporter variables to `none` and run
+the production deployment from `main` with the updated variables. This also
+restores `json-file` forwarding for the backend. Agents SDK chat traces continue
+to go to OpenAI.
+
 The workflow derives these production-only backend settings from `DOMAIN`; do not point them to a development tunnel:
 
 ```text

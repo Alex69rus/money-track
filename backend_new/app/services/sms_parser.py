@@ -116,6 +116,7 @@ async def parse_sms_transaction(message_text: str) -> ParsedSmsTransaction | Non
             return None
 
         client = _get_openai_client()
+        logger.info("Parsing bank SMS", extra={"sms_text": message_text})
         try:
             parsed_response = await client.responses.parse(
                 model=SMS_PARSER_MODEL,
