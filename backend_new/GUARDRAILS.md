@@ -241,3 +241,15 @@ Keep entries short, actionable, and repository-specific.
 - Exploration: Test FastAPI, Responses.parse, tool calls, and Decisions with native HTTPX2 mocks and a local receiver. Decode both OTLP signals to verify real span ancestry and catch credentials echoed in failures, nested JSON, and tool output.
 - Prevention rule: Sanitize both signals before network send, ahead of any attribute length limit or compression. Treat the Docker JSON-file collector as an independent log path and verify that backend logs reach New Relic once.
 - When upgrading Agents SDK, verify the native OpenAI ingest JSON alongside OTLP. Keep the credential in the authorization header and remove it from trace payloads before the SDK truncates fields.
+
+### 2026-11-18 — PostgreSQL spans
+
+- Takeaway: Attach AsyncPGInstrumentor to the same provider as FastAPI before startup. Match its release to the installed OpenTelemetry Contrib release.
+- Exploration: Check span ancestry through an actual Piccolo pool and decode OTLP records from HTTP and queued Telegram work. Pool release can emit a separate PostgreSQL reset command.
+- Prevention rule: Keep data in bind parameters and leave parameter capture disabled. PostgreSQL can echo values in errors, so export only the exception type on asyncpg spans and check the serialized payload for synthetic values.
+
+### 2026-11-18 — AI Chat pagination feedback (BR-030)
+
+- Keep pagination bounds in the tool schema so the SDK validates arguments before executing a query.
+- Verify invalid tool arguments with SDK tool-data logging disabled. Under this policy the SDK omits the underlying validation details.
+- Use the run-level tool error formatter to return fixed guidance for invalid pagination fields. Validate with the same bounds and keep raw values and exception text out of model feedback.

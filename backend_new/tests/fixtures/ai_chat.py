@@ -4,10 +4,12 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
+from agents import RunConfig
 from agents.tool import FunctionTool
 from agents.tool_context import ToolContext
 
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
+from app.services.ai_chat.common import format_pagination_tool_error
 from tests.fixtures.db_helpers import DbHelper, SeedTransaction
 
 
@@ -56,5 +58,6 @@ async def invoke_ai_chat_tool(
         tool_name=tool.name,
         tool_call_id=f"integration-test-{tool.name}",
         tool_arguments=tool_arguments,
+        run_config=RunConfig(tool_error_formatter=format_pagination_tool_error),
     )
     return await tool.on_invoke_tool(context, tool_arguments)

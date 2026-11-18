@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from agents import Agent, ModelSettings, Runner, set_default_openai_key
+from agents import Agent, ModelSettings, RunConfig, Runner, set_default_openai_key
 from openai import APIError
 from openai.types.shared import Reasoning
 
@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.models import Category
 from app.services.ai_chat.aggregate_tool import aggregate_transactions
 from app.services.ai_chat.chat_agent_context import ChatAgentContext
-from app.services.ai_chat.common import current_business_date
+from app.services.ai_chat.common import current_business_date, format_pagination_tool_error
 from app.services.ai_chat.contracts import AgentResponse, ChatHistoryMessage, ChatResponseV1
 from app.services.ai_chat.select_tool import list_transactions
 from app.services.ai_chat.tags_tool import get_user_tags
@@ -99,6 +99,7 @@ class ChatAgent:
                 starting_agent=agent,
                 input=self._build_agent_input(message=message, history=history, categories=user_categories),
                 context=context,
+                run_config=RunConfig(tool_error_formatter=format_pagination_tool_error),
             )
             agent_response = result.final_output_as(AgentResponse)
         except APIError as exc:

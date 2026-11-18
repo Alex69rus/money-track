@@ -2,14 +2,48 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema, model_validator
+from agents import ModelBehaviorError, ToolErrorFormatterArgs
+from agents.tool_context import ToolContext
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, WithJsonSchema, model_validator
 
 from app.core.config import get_settings
+from app.services.ai_chat.chat_agent_context import ChatAgentContext
 
 TransactionFlow = Literal["expense", "income"]
 PaginationSkip = Annotated[int, Field(ge=0, description="Number of matching rows to skip for pagination")]
 PaginationTake = Annotated[int, Field(ge=1, le=100, description="Number of matching rows to return (1-100)")]
 ToolSchemaDecimal = Annotated[Decimal, WithJsonSchema({"type": "number"})]
+
+
+class _PaginationArguments(BaseModel):
+    skip: PaginationSkip = 0
+    take: PaginationTake = 10
+
+
+def format_pagination_tool_error(args: ToolErrorFormatterArgs[ChatAgentContext]) -> str | None:
+    if (
+        args.kind != "tool_exception"
+        or args.tool_name not in {"aggregate_transactions", "list_transactions", "get_user_tags"}
+        or not isinstance(args.error, ModelBehaviorError)
+        or not isinstance(args.run_context, ToolContext)
+    ):
+        return None
+
+    # The SDK intentionally omits validation details when tool-data logging is disabled.
+    try:
+        _PaginationArguments.model_validate_json(args.run_context.tool_arguments)
+    except ValidationError as error:
+        invalid_fields = {item["loc"] for item in error.errors(include_input=False)}
+        messages = [
+            message
+            for field, message in (
+                ("skip", "skip must be an integer greater than or equal to 0."),
+                ("take", "take must be an integer from 1 to 100."),
+            )
+            if (field,) in invalid_fields
+        ]
+        return " ".join(messages) or None
+    return None
 
 
 def current_business_date(*, now: datetime | None = None) -> date:

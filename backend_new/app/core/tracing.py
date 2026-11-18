@@ -13,6 +13,7 @@ from opentelemetry._logs import NoOpLoggerProvider
 from opentelemetry.exporter.otlp.proto.http import Compression
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 from opentelemetry.instrumentation.genai.openai import OpenAIInstrumentor
 from opentelemetry.instrumentation.genai.openai_agents import OpenAIAgentsInstrumentor
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest
@@ -101,6 +102,8 @@ def configure_telemetry(settings: Settings) -> Telemetry:
 
     openai_traces = BatchTraceProcessor(RedactingOpenAITraceExporter(settings.openai_api_key, redactor))
     set_trace_processors([openai_traces])
+    if settings.otel_traces_exporter == "console" or (otlp_enabled and settings.otel_traces_exporter == "otlp"):
+        AsyncPGInstrumentor(capture_parameters=False).instrument(tracer_provider=traces)  # type: ignore[no-untyped-call]
     if otlp_enabled and settings.otel_traces_exporter == "otlp":
         traces.add_span_processor(
             BatchSpanProcessor(

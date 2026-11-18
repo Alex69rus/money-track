@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 import requests
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
+from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
 from app.core.logging import SecretRedactor
 
@@ -22,6 +23,22 @@ def valid_endpoint(endpoint: str, *, production: bool) -> bool:
         return not production and url.scheme == "http" and url.hostname in ("127.0.0.1", "localhost", "::1")
     except ValueError:
         return False
+
+
+def _strip_database_error_details(request: ExportTraceServiceRequest) -> None:
+    for resource in request.resource_spans:
+        for scope in resource.scope_spans:
+            if scope.scope.name != "opentelemetry.instrumentation.asyncpg":
+                continue
+            for span in scope.spans:
+                # PostgreSQL error text can embed bound parameter values or entire rows.
+                if span.status.message:
+                    span.status.ClearField("message")
+                for event in span.events:
+                    if event.name == "exception":
+                        exception_type = [attr for attr in event.attributes if attr.key == "exception.type"]
+                        del event.attributes[:]
+                        event.attributes.extend(exception_type)
 
 
 class RedactingOtlpSession(requests.Session):
@@ -54,6 +71,8 @@ class RedactingOtlpSession(requests.Session):
             message = self._request_type()
             message.ParseFromString(request.body)
             message.DiscardUnknownFields()
+            if isinstance(message, ExportTraceServiceRequest):
+                _strip_database_error_details(message)
             self._redact_message(message)
             payload = gzip.compress(message.SerializeToString(), compresslevel=1)
             if len(payload) >= 1_000_000:

@@ -9,6 +9,7 @@ from threading import Thread
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import asyncpg
 import httpx
 import httpx2
 import pytest
@@ -16,10 +17,12 @@ from agents import Agent, OpenAIResponsesModel, function_tool
 from agents import trace as agent_trace
 from openai import AsyncOpenAI, DefaultAsyncHttpx2Client
 from opentelemetry import trace
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 from opentelemetry.instrumentation.genai.openai import OpenAIInstrumentor
 from opentelemetry.instrumentation.genai.openai_agents import OpenAIAgentsInstrumentor
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
+from opentelemetry.proto.trace.v1.trace_pb2 import Span
 from piccolo.engine.postgres import PostgresEngine
 from telegram import Bot
 
@@ -39,6 +42,8 @@ _SMS = "Payment of AED 25 at Coffee"
 _CHAT_PROMPT = "chat prompt retained"
 _CHAT_HISTORY = "chat history retained"
 _CHAT_ANSWER = "chat answer retained"
+_DB_PARAMETER = "synthetic-transaction-note"
+_DB_QUERY = "SELECT $1::text"
 
 
 @pytest.fixture
@@ -161,7 +166,7 @@ def _assert_telemetry(batches):
                 for scope in resource.scope_logs
                 for record in scope.log_records
             )
-        for secret in (_OPENAI_KEY, _INGEST_KEY, "synthetic-openai-key-with-", "header-marker"):
+        for secret in (_OPENAI_KEY, _INGEST_KEY, "synthetic-openai-key-with-", "header-marker", _DB_PARAMETER):
             assert secret.encode() not in payload
 
     by_id = {span.span_id: span for span in spans}
@@ -175,7 +180,14 @@ def _assert_telemetry(batches):
         return [span for span in spans if span.parent_span_id == parent.span_id]
 
     (chat,) = [span for span in spans if span.name == "POST /api/chat"]
-    (workflow,) = children(chat)
+    (chat_query,) = [span for span in children(chat) if span.name == "SELECT"]
+    (workflow,) = [span for span in children(chat) if span.name != "SELECT"]
+    assert chat_query.trace_id == chat.trace_id
+    assert chat_query.kind == Span.SPAN_KIND_CLIENT
+    assert any(
+        attr.key in {"db.statement", "db.query.text"} and attr.value.string_value == _DB_QUERY
+        for attr in chat_query.attributes
+    )
     (agent,) = children(workflow)
     chat_children = children(agent)
     assert len(chat_children) == 3
@@ -194,6 +206,8 @@ def _assert_telemetry(batches):
         assert webhook.name == "telegram.webhook.receive"
         assert server.name == "POST /api/telegram/webhook"
         assert server.trace_id == webhook.trace_id == job.trace_id
+        (db_query,) = [span for span in children(job) if span.name == "SELECT"]
+        assert db_query.trace_id == job.trace_id
         (parser,) = [span for span in children(job) if span.name == "sms.parse"]
         (model,) = children(parser)
         assert parser.trace_id == model.trace_id == job.trace_id
@@ -201,6 +215,11 @@ def _assert_telemetry(batches):
             record.trace_id == job.trace_id and record.span_id == parser.span_id and _SMS in record.body.string_value
             for record in logs
         )
+
+    (failed_query,) = [span for span in spans if span.name == "SELECT" and span.status.code == 2]
+    assert not failed_query.status.message
+    (db_exception,) = [event for event in failed_query.events if event.name == "exception"]
+    assert [attr.key for attr in db_exception.attributes] == ["exception.type"]
 
     decisions = [span for span in spans if span.name == "category_suggestion.llm_call"]
     assert sorted(span.status.code for span in decisions) == [1, 2]
@@ -232,6 +251,19 @@ def test_application_exports_correlated_telemetry_without_provider_credentials(m
         monkeypatch.setenv(key, value)
     get_settings.cache_clear()
     monkeypatch.setattr(PostgresEngine, "check_version", AsyncMock())
+    connection = object.__new__(asyncpg.Connection)
+    connection._aborted = True  # The test replaces fetch and never opens a socket.
+
+    async def fetch(_connection, _query, value, *, fail=False):
+        if fail:
+            raise asyncpg.DataError(f"Invalid value: {value}")
+        return []
+
+    async def claim_update(**_kwargs):
+        await connection.fetch(_DB_QUERY, _DB_PARAMETER)
+        return True
+
+    monkeypatch.setattr(asyncpg.Connection, "fetch", fetch)
 
     @function_tool
     def lookup(query: str) -> str:
@@ -274,7 +306,7 @@ def test_application_exports_correlated_telemetry_without_provider_credentials(m
                 assert result is not None
                 return result
 
-            query = SimpleNamespace(run=AsyncMock(return_value=[]))
+            query = SimpleNamespace(run=lambda: connection.fetch(_DB_QUERY, _DB_PARAMETER))
             monkeypatch.setattr(
                 main,
                 "get_engine",
@@ -283,7 +315,7 @@ def test_application_exports_correlated_telemetry_without_provider_credentials(m
             monkeypatch.setattr(main.TelegramBotRuntime, "is_enabled", True)
             monkeypatch.setattr(main.TelegramBotRuntime, "start", start)
             monkeypatch.setattr(main.TelegramBotRuntime, "stop", AsyncMock())
-            monkeypatch.setattr(telegram_ingestion, "claim_telegram_update", AsyncMock(return_value=True))
+            monkeypatch.setattr(telegram_ingestion, "claim_telegram_update", claim_update)
             monkeypatch.setattr(
                 telegram_ingestion, "upsert_transaction_by_message_id", AsyncMock(return_value=_transaction())
             )
@@ -327,6 +359,8 @@ def test_application_exports_correlated_telemetry_without_provider_credentials(m
                         assert response.text == "OK"
                     await asyncio.wait_for(job, timeout=3)
 
+                with pytest.raises(asyncpg.DataError):
+                    await connection.fetch(_DB_QUERY, _DB_PARAMETER, fail=True)
                 await category_suggestion._call_category_suggestion_llm(
                     note=_OPENAI_KEY,
                     sms_text="decline",
@@ -353,6 +387,7 @@ def test_application_exports_correlated_telemetry_without_provider_credentials(m
         assert _INGEST_KEY not in native_payload
         _assert_telemetry(batches)
     finally:
+        AsyncPGInstrumentor().uninstrument()
         OpenAIInstrumentor().uninstrument()
         OpenAIAgentsInstrumentor().uninstrument()
         root.handlers[:] = handlers

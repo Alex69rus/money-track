@@ -410,3 +410,19 @@ Checking Actions settings for the New Relic rollout → GitHub CLI found a store
 ## 2026-11-18 19:31 — GPT-6.2 Sol
 
 Launching Codex CLI review → the local configuration pins a model unavailable for the signed-in ChatGPT account. Check the available model catalog before launching a CLI review and use local inspection if an external review is unavailable.
+
+## 2026-11-18 20:52 — GPT-6
+
+Locating the OpenTelemetry dependency pins → including a root `pyproject.toml` gave `rg` exit code 2 because this repository keeps Python metadata under `backend_new/`. Search `backend_new/pyproject.toml` and `backend_new/uv.lock` directly for backend dependency versions.
+
+## 2026-11-18 21:07 — GPT-6
+
+Running backend integration tests with production checks disabled → an empty `PRODUCTION_BASE_URL` still activates those tests because the fixture only skips on `None`. Unset the variable for local-only runs.
+
+## 2026-11-18 21:07 — GPT-6
+
+Adding a telemetry regression with a multi-file patch → a numbered diff hunk was mixed into an `apply_patch` context and rejected. Use the tool's plain `@@` hunks and check the affected files after a rejected patch.
+
+## 2026-11-18 21:24 — GPT-6
+
+Reviewing a private working tree with a nested Codex CLI → approval rejected the external model transfer. Review the diff in the active session and use local tests for verification.
