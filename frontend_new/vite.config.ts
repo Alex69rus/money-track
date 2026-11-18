@@ -21,5 +21,12 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./tests/setup.ts",
+    poolOptions: {
+      forks: {
+        // Node 26's native localStorage global blocks Vitest 3 from copying
+        // jsdom's real Storage implementation into the test worker global.
+        execArgv: ["--no-experimental-webstorage"],
+      },
+    },
   },
 });

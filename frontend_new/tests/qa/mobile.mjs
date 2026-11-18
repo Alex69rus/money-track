@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
-import { assessAiChatComposerNavigationGutter } from "./ai-chat-layout.mjs";
+import { assessAiChatComposerNavigationGutter } from "./ai-chat-layout.ts";
 import { installTelegramFixture } from "./telegram-fixture.mjs";
 
 const PROFILES = [

@@ -10,6 +10,17 @@ The production Telegram Mini App frontend. Future work is an approved feature, d
 
 ## Daily commands
 
+The local, CI, and frontend Docker build runtime use Node 26.13.1; that Node release bundles npm 11.20.0. The `packageManager` field records the npm version, while `.nvmrc` selects the bundled Node/npm runtime; the metadata alone does not switch npm. From the repository root, activate that version and install from the lockfile:
+
+```bash
+nvm install # when Node 26.13.1 is not already installed in nvm
+nvm use
+cd frontend_new
+npm ci
+```
+
+CI reads the root `.nvmrc`, and the Docker build stage uses the matching `node:26.13.1-alpine` image. The shipped image still runs nginx; Node is only the build and QA tool runtime, so this pin says nothing about Telegram WebView capabilities. To roll back, restore the previous image/commit or change `.nvmrc`, the CI runtime input, and Docker build image together, then repeat the frontend gates before publishing.
+
 From `frontend_new`:
 
 ```bash

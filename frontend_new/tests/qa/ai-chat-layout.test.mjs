@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AI_CHAT_COMPOSER_NAVIGATION_GUTTER,
   assessAiChatComposerNavigationGutter,
-} from "./ai-chat-layout.mjs";
+} from "./ai-chat-layout.ts";
 
 const intendedLayout = {
   composerNavigationGap: 16,
