@@ -36,12 +36,17 @@ services:
       - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4.1-mini}
+      - OTEL_TRACES_EXPORTER=${OTEL_TRACES_EXPORTER:-none}
+      - OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER:-none}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - NEW_RELIC_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
+    stop_grace_period: 40s
     restart: unless-stopped
     logging:
-      driver: "json-file"
+      driver: "${BACKEND_LOG_DRIVER:-json-file}"
       options:
         max-size: "10m"
         max-file: "3"

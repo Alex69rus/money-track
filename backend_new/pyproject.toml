@@ -16,6 +16,13 @@ dependencies = [
   "opentelemetry-api>=1.38.0,<2.0.0",
   "opentelemetry-sdk>=1.38.0,<2.0.0",
   "openai-agents==0.24.0",
+  "opentelemetry-exporter-otlp-proto-http>=1.45.1,<2",
+  "opentelemetry-instrumentation-fastapi>=0.66b1,<1",
+  "opentelemetry-instrumentation-genai-openai==1.3b0",
+  "opentelemetry-instrumentation-genai-openai-agents==1.3b0",
+  "requests>=2.32,<3",
+  "protobuf>=5,<8",
+  "opentelemetry-proto>=1.45.1,<2",
 ]
 
 [dependency-groups]
@@ -25,6 +32,8 @@ dev = [
   "mypy>=1.17.0,<2.0.0",
   "ruff>=0.12.0,<1.0.0",
   "rapidfuzz>=3.14.3,<4.0.0",
+  "types-requests>=2.33.0.20261030",
+  "types-protobuf>=7.35.1.20260906",
 ]
 
 [build-system]

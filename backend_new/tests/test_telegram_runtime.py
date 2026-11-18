@@ -92,7 +92,7 @@ def test_telegram_runtime_registers_webhook_and_default_web_app_menu(monkeypatch
 
     assert fake_application.initialized is True
     assert fake_application.started is True
-    assert len(fake_application.handlers) == 1
+    assert len(fake_application.handlers) == 2
     assert fake_application.bot.webhook_calls == [
         {
             "url": "https://money-track.org/api/telegram/webhook",

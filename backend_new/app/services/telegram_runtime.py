@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
+from opentelemetry import context as otel_context
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from telegram import MenuButtonWebApp, Update, WebAppInfo
-from telegram.ext import Application, TypeHandler
+from telegram.ext import Application, ContextTypes, TypeHandler
 
 from app.core.config import get_settings
 from app.services.telegram_ingestion import handle_telegram_update
@@ -12,6 +15,27 @@ from app.services.telegram_ingestion import handle_telegram_update
 logger = logging.getLogger(__name__)
 
 ALLOWED_UPDATES = ["message", "edited_message", "callback_query"]
+_trace_context = TraceContextTextMapPropagator()
+
+
+@dataclass(frozen=True)
+class QueuedTelegramUpdate:
+    update: Update
+    trace_headers: dict[str, str]
+
+    @classmethod
+    def capture(cls, update: Update) -> QueuedTelegramUpdate:
+        headers: dict[str, str] = {}
+        _trace_context.inject(headers)
+        return cls(update, headers)
+
+
+async def handle_queued_telegram_update(item: QueuedTelegramUpdate, context: ContextTypes.DEFAULT_TYPE) -> None:
+    token = otel_context.attach(_trace_context.extract(item.trace_headers, context=otel_context.Context()))
+    try:
+        await handle_telegram_update(item.update, context)
+    finally:
+        otel_context.detach(token)
 
 
 class TelegramBotRuntime:
@@ -41,6 +65,7 @@ class TelegramBotRuntime:
 
         application = Application.builder().token(settings.telegram_bot_token).updater(None).build()
         application.add_handler(TypeHandler(type=Update, callback=handle_telegram_update))
+        application.add_handler(TypeHandler(type=QueuedTelegramUpdate, callback=handle_queued_telegram_update))
         await application.initialize()
         await application.start()
         await application.bot.set_webhook(

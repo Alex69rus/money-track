@@ -74,7 +74,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run mypy .
-          uv run pytest tests/test_telegram_runtime.py -q
+          uv run pytest -q tests/test_telegram_runtime.py tests/test_telegram_webhook.py tests/test_telemetry.py
 
   build-and-push:
     needs: [validate-frontend, validate-backend]
@@ -163,6 +163,10 @@ jobs:
       TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL || 'gpt-4.1-mini' }}
+      OTEL_TRACES_EXPORTER: ${{ vars.OTEL_TRACES_EXPORTER || 'none' }}
+      OTEL_LOGS_EXPORTER: ${{ vars.OTEL_LOGS_EXPORTER || 'none' }}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
       N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
       CLOUDFLARE_CERT: ${{ secrets.CLOUDFLARE_CERT }}
       CLOUDFLARE_KEY: ${{ secrets.CLOUDFLARE_KEY }}
@@ -177,11 +181,28 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DEPLOY_SHA,DOMAIN,POSTGRES_PASSWORD,TELEGRAM_BOT_TOKEN,TELEGRAM_WEBHOOK_URL,TELEGRAM_WEBHOOK_SECRET,OPENAI_API_KEY,OPENAI_MODEL,N8N_ENCRYPTION_KEY,CLOUDFLARE_CERT,CLOUDFLARE_KEY,GHCR_TOKEN
+          envs: DEPLOY_SHA,DOMAIN,POSTGRES_PASSWORD,TELEGRAM_BOT_TOKEN,TELEGRAM_WEBHOOK_URL,TELEGRAM_WEBHOOK_SECRET,OPENAI_API_KEY,OPENAI_MODEL,OTEL_TRACES_EXPORTER,OTEL_LOGS_EXPORTER,OTEL_EXPORTER_OTLP_ENDPOINT,NEW_RELIC_LICENSE_KEY,N8N_ENCRYPTION_KEY,CLOUDFLARE_CERT,CLOUDFLARE_KEY,GHCR_TOKEN
           script: |
             set -eu
             set -o pipefail
             umask 077
+
+            if [ "$OTEL_TRACES_EXPORTER" = otlp ] || [ "$OTEL_LOGS_EXPORTER" = otlp ]; then
+              : "${OTEL_EXPORTER_OTLP_ENDPOINT:?OTEL_EXPORTER_OTLP_ENDPOINT must be configured for OTLP}"
+              : "${NEW_RELIC_LICENSE_KEY:?NEW_RELIC_LICENSE_KEY must be configured for OTLP}"
+              case "$NEW_RELIC_LICENSE_KEY" in
+                *[!A-Za-z0-9_-]*) echo "ERROR: NEW_RELIC_LICENSE_KEY must be a single ingest license key"; exit 1 ;;
+              esac
+              otlp_endpoint_host="${OTEL_EXPORTER_OTLP_ENDPOINT%/}"
+              case "${otlp_endpoint_host%:443}" in
+                https://otlp.nr-data.net|https://otlp.eu01.nr-data.net|https://otlp.jp.nr-data.net|https://gov-otlp.nr-data.net) ;;
+                *) echo "ERROR: OTLP endpoint must be a New Relic HTTPS base URL on port 443"; exit 1 ;;
+              esac
+            fi
+            backend_log_driver=json-file
+            if [ "$OTEL_LOGS_EXPORTER" = otlp ]; then
+              backend_log_driver=local
+            fi
 
             cd /opt/money-track
 
@@ -257,6 +278,11 @@ jobs:
             CORS_ALLOW_ORIGINS=$frontend_origin
             OPENAI_API_KEY=$OPENAI_API_KEY
             OPENAI_MODEL=$OPENAI_MODEL
+            OTEL_TRACES_EXPORTER=$OTEL_TRACES_EXPORTER
+            OTEL_LOGS_EXPORTER=$OTEL_LOGS_EXPORTER
+            OTEL_EXPORTER_OTLP_ENDPOINT=$OTEL_EXPORTER_OTLP_ENDPOINT
+            NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY
+            BACKEND_LOG_DRIVER=$backend_log_driver
             N8N_ENCRYPTION_KEY=$N8N_ENCRYPTION_KEY
             ENVIRONMENT=Production
             API_HOST=0.0.0.0

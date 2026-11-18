@@ -11,7 +11,7 @@ from opentelemetry import trace
 from telegram import Update
 
 from app.core.config import get_settings
-from app.services.telegram_runtime import TelegramBotRuntime
+from app.services.telegram_runtime import QueuedTelegramUpdate, TelegramBotRuntime
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("money-track-backend-new.telegram-webhook")
@@ -68,5 +68,5 @@ async def telegram_webhook(
             parsed_update.edited_message is not None,
             parsed_update.callback_query is not None,
         )
-        await runtime.application.update_queue.put(parsed_update)
+        await runtime.application.update_queue.put(QueuedTelegramUpdate.capture(parsed_update))
         return PlainTextResponse("OK")
