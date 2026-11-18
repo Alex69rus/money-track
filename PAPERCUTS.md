@@ -365,3 +365,40 @@ Reading GitHub Actions timings with gh → sandbox network access reported an ap
 ## 2026-11-10 20:38 — GPT-6
 
 Validating workflow YAML → system Python lacks PyYAML and frontend node_modules lacks the yaml package. The existing js-yaml dependency parsed the workflows successfully; use installed dependencies or actionlint instead of assuming a parser package is available.
+
+
+## 2026-11-10 20:44 — GPT-6
+
+Assessing Node.js migration → version-specific `latest-v26.x` documentation URLs failed in web lookup, and a guessed frontend semver module path was absent. Use canonical `nodejs.org/api/` documentation and resolve npm’s bundled semver from the npm executable for lockfile engine checks.
+
+## 2026-11-10 20:54 — GPT-6.1 Luna
+
+Loading the frontend product guides → I guessed `frontend_new/docs/prds/frontend/`, while the maintained product guides are at root `docs/prds/frontend/`. Resolve guide paths with `rg --files` when a guessed path does not exist; do not skip reading the maintained guides.
+
+## 2026-11-10 21:12 — GPT-6.1 Luna
+
+Checking the existing PostgreSQL listener from the sandbox → localhost:5432 appeared closed, while the same read-only probe with escalation showed the healthy `money-track-postgres-1` on 5432. Retry the same loopback check with escalation before treating a user service as absent.
+
+## 2026-11-10 21:12 — GPT-6.1 Luna
+
+Running a zsh probe → `status` is a read-only shell variable, and ESM package resolution follows the command working directory. Use a distinct result variable and run imports from the package that owns the dependency.
+
+## 2026-11-10 21:12 — GPT-6.1 Luna
+
+Bootstrapping a task-only PostgreSQL role through `docker exec` → the first command failed to forward its generated password and PostgreSQL cleared the empty value. Explicitly pass the temporary variable into the container, verify TCP login, then migrate; the isolated role was corrected before use.
+
+## 2026-11-10 21:12 — GPT-6.1 Luna
+
+Running clean installs with npm 11.20.0 → npm warns about unapproved lifecycle scripts for `msw`, `esbuild`, and optional `fsevents`. Keep the default block unless a required build fails; clean frontend and Docker builds succeeded with the provided optional platform binaries.
+
+## 2026-11-10 21:14 — GPT-6.1 Luna
+
+Checking active Node 20 pins with a nested shell-quoted `rg` expression → zsh rejected the closing parenthesis before any search ran. Use a simpler literal pattern for version-pin scans; the follow-up scan found no active Node 20 pins.
+
+## 2026-11-18 17:45 — GPT-6.2 Sol
+
+Rechecking the Node migration in a later session → the prior temporary Node binary was no longer on PATH and Buildx rejected `type=cache` as an output exporter. Verify `node -v`, restore a checksum-verified temporary runtime if needed, and use a supported Buildx exporter for the installed driver.
+
+## 2026-11-18 18:08 — GPT-6.2 Sol
+
+Rebuilding with Node 26.13.1 on Linux x64 → Docker's `npm ci` exited with `ECONNRESET` despite downloading the base image successfully. Retry the unchanged build before editing dependency metadata or Docker configuration.

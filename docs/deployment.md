@@ -10,6 +10,8 @@ Merges to `main` run [the production workflow](../.github/workflows/deploy.yml).
 
 Frontend quality checks run once in `deploy.yml` (`validate-frontend`), including a production Docker build check. The frontend Dockerfile builds static assets on `$BUILDPLATFORM` so Node, TypeScript, and Vite run natively even when publishing an ARM64 nginx image from an x86 runner. Keep the runtime stage on the target platform. The frontend Actions cache uses `mode=max` to retain intermediate dependency and build layers; the single-stage backend keeps `mode=min`.
 
+Local development, frontend CI, and the frontend Docker build use Node 26.13.1 (`.nvmrc`, `actions/setup-node`, and `node:26.13.1-alpine` respectively); both package manifests require Node `>=26.13.1 <27`, and `.nvmrc` selects the Node release that bundles npm 11.20.0. The `packageManager` metadata records npm 11.20.0 but does not switch the npm binary by itself. `actions/setup-node@v7` runs its own action code on Node 24 while selecting Node 26 for project steps. Node runs build and QA tools only—the deployed frontend remains nginx, and this does not set the Telegram WebView's Node or browser capabilities. To roll back, restore the previous known-good image/commit and revert the Node declarations together, then rerun the frontend gates before publishing.
+
 The server-side deployment script generates `.env.prod` and the Cloudflare Origin Certificate files from GitHub configuration; do not create or commit a production `.env.prod` file in the repository.
 
 ## Frontend deployment and rollback

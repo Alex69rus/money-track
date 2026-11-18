@@ -9,6 +9,7 @@ Use this file only for approved, active multi-iteration work that needs decompos
 | BR-018 | `bugs_reports/ai-chat-widget-limits-2026-08-02.md` | P2 | Verified | Removed arbitrary line/bar widget caps, added card-scoped bar scrolling, and disclosed the table row limit to the agent. |
 | AI-CHAT-07 | `bugs_reports/ai-chat-review-findings-2026-07-26.md` (BR-013) | P2 | Planned | Decide how a comparison must rank growth when either period has more than 100 category/tag groups. |
 | FE-PERF-01 | Frontend review and user approval, 2026-10-25 | P3 | Verified | Chat loads on demand; list rendering and formatter reuse improved; automated checks passed and user reported working UI in Telegram. |
+| NODE-26 | User-approved migration, 2026-11-10 | P2 | Verified | Align local development, CI and frontend image on Node 26 LTS; verify existing stack, then pilot native TypeScript QA. |
 
 <!-- Add active multi-iteration work here. -->
 
@@ -55,6 +56,92 @@ Current response schemas impose arbitrary 12-point line and 10-bar limits. A 24-
 - Added backend, API-parser, component, Phase 4, and mobile regressions for 24 line points, 20 bars, card-only scrolling, server display facts, fixed controls, and page-overflow prevention.
 - Verification: backend format/lint/types and focused AI Chat tests — 18 passed; health-checked deterministic backend suite — passed, 2 expected skips; frontend lint/typecheck/tests — 19 files / 55 tests passed; build — passed; Phase 4 — all passed at 390×844 DPR 3; focused iPhone 12 Pro mobile QA — dark/light passed and screenshots inspected at `frontend_new/.codex-tmp/mobile-qa/2026-08-02T09-19-45-414Z`.
 - Remaining exception: a final full mobile-matrix terminal run ended without a report after its runner exited; a prior full-matrix run passed before the test-only screenshot capture adjustment. The final product behavior was independently verified on the required 390×844 dark/light profile.
+
+## NODE-26 — Migrate build and QA to Node 26 LTS
+
+### Goal and evidence
+
+User approved implementation on 2026-11-10 and explicitly requested a comprehensive plan executed by the Luna subagent. Node 20 is EOL. The official download page reports Node 26.13.0 LTS, supported through April 2029:
+- https://nodejs.org/en/download
+- https://nodejs.org/en/blog/release/v26.13.0
+- https://nodejs.org/api/typescript.html
+- https://nodejs.org/api/globals.html#localstorage
+
+Repository evidence: frontend Docker build uses node:20-alpine; deploy.yml setup-node uses 20; local node is 24.1.0. Frontend runtime is nginx and backend is Python. Root and frontend lockfiles contain 344 and 478 package entries; their declared Node engine ranges accept 26.13.0. This is not runtime compatibility proof.
+
+### Boundaries and ownership
+
+- Use the current checkout. Preserve the pre-existing PAPERCUTS.md modifications. Do not commit, push, deploy, update production services, install Node globally, edit secrets, or rewrite unrelated changes.
+- Allowed implementation: root/frontend package metadata and lockfiles, .nvmrc, frontend Dockerfile, frontend validation CI, directly relevant QA/type configuration, development/deployment docs, this register, scoped reusable guardrails and append-only papercuts.
+- Preserve React, Vite, Vitest, jsdom, Playwright and all other package versions unless a reproduced Node 26 incompatibility requires the smallest targeted change. No blanket npm update, npm audit fix or lockfile recreation.
+- Preserve nginx runtime, Python backend, API contracts, application UI, production browser targets, database content and Telegram bot configuration. n8n owns its own bundled runtime and is outside this migration.
+- One owner runs service-dependent checks sequentially. Never kill pre-existing user services; choose free QA ports if needed. Temporary processes must be cleaned up.
+
+### Step 1 — Read instructions and establish environment
+
+1. Read root AGENTS.md, frontend_new/AGENTS.MD, backend_new/tests/AGENTS.md, relevant frontend product/flow/decision and QA guides before edits. Read run-e2e-tests skill for service checks and iteration-retrospective-capture for completion.
+2. Capture git status and inspect exact current files; do not assume previous turn state. Update this entry to In progress.
+3. Obtain official Node 26.13.0 in a task-specific temporary directory, selecting host OS/architecture and checking the downloaded archive against official SHA256 checksums. Do not replace the user's global Node or shell configuration. If networking is sandbox-blocked, retry the same narrowly scoped command through escalation.
+4. Prepend its bin directory to PATH explicitly for every install/check and child process. Record node --version, npm --version, process.execPath. Do not claim Node 26 validation from Node 24 commands.
+5. Check Docker CLI/daemon, uv, Postgres availability, installed browser availability and whether TELEGRAM_DEVICE_NGROK_DOMAIN is set (report presence only, do not dump env or secrets).
+
+### Step 2 — Align runtime declarations
+
+1. Add root .nvmrc with 26.13.0 as the local/CI patch source. Set setup-node node-version-file to .nvmrc (path relative to repo root); retain dependency cache and existing validation jobs.
+2. Change frontend build stage to node:26.13.0-alpine; preserve BUILDPLATFORM and nginx runtime. Verify the tag exists through Docker build/manifest rather than guessing support.
+3. Add engines.node >=26.13.0 <27 to root and frontend package.json. Pin the actual bundled npm version in packageManager metadata consistently if supported by existing workflow. Do not add a new package manager or toolchain manager.
+4. Inspect registry availability of @types/node 26.x. Upgrade only that direct type dependency to an available version matching Node 26; if unavailable, document the precise limitation and retain usable types instead of inventing a version.
+5. Update both lockfiles using target npm; compare old/new package maps to detect accidental transitive churn. Retain unchanged library versions and explain every dependency change. Run npm ci in root and frontend under target Node with task-local npm cache if needed.
+6. Document the explicit nvm use/npm ci workflow, CI/Docker version synchronization, exact selected Node/npm, rollback to previous image/commit and the distinction between Node tooling and Telegram WebView capabilities.
+
+### Step 3 — Verify migration before adopting features
+
+1. From frontend_new under Node 26 run npm run lint, npm run typecheck, npm test, npm run build. Capture summary counts and concise logs in ignored .codex-tmp. Build already uses tsc -b; do not weaken it or replace Vitest with node:test.
+2. Watch for Node 26 global localStorage/DOMException interactions with Vitest/jsdom. Our application uses window.localStorage. Only fix a reproduced incompatibility, at the narrowest tooling boundary; do not add blanket mocks, suppress errors or disable tests. Capture raw evidence before fixing a discovered product defect, following bug-management skill.
+3. Run clean frontend production Docker build to exercise Alpine/native dependencies (Tailwind Oxide, Lightning CSS, Rollup, esbuild), preserving existing build arguments. Use a task-local image tag; do not push. Check nginx version.json and /transactions if container execution is available, with cleanup. The build stage uses host BUILDPLATFORM while shipped runtime targets linux/arm64: verify the existing production build path if buildx supports it; report exact platforms tested.
+4. For failures, first classify connectivity, sandbox/permission, auth/environment, dependency/runtime or contract regression. Retry sandbox-blocked commands with escalation; do not change code to compensate for unavailable Docker/Postgres/permissions.
+5. Do not proceed to Step 4 until core checks pass. If externally blocked, complete all independent work, report missing checks honestly and do not mark Verified.
+
+### Step 4 — Small native TypeScript QA pilot
+
+1. After migration gates pass, inspect QA modules and select one small leaf helper (for example tests/qa/ai-chat-layout.mjs) that is imported by existing browser QA. Prefer a pure helper with bounded scope over converting a browser runner or large Telegram fixture.
+2. Convert that helper to .ts with explicit input/output types, no any, type-only imports, erasable TypeScript syntax, relative imports with explicit .ts extensions. Update every importer and inspect shell/package references using rg.
+3. Ensure the pilot is included in real TypeScript checking and ESLint. Existing TS project uses Bundler resolution and app types: add minimal scoped config only if required, and make the validation script actually check it. Node native type stripping ignores tsconfig paths, does not typecheck and does not run TSX; retain Vite/tsc for the React app.
+4. Preserve helper behavior and assertions. Add no new runtime loader or dependency. Use existing behavioral tests/checks; a separate speculative test suite is unnecessary.
+5. If the pilot requires broad changes or encounters unsupported tooling beyond a focused fix, leave migration clean, record concrete evidence and report pilot deferred rather than expanding scope silently. Do not adopt Temporal, compile caching, SQLite or other unrelated features in this slice.
+
+### Step 5 — Full acceptance and evidence
+
+1. After final code changes rerun affected frontend lint/typecheck/test/build gates under Node 26, then sequential root npm run qa:phase2, qa:phase3, qa:phase4, qa:phase5 with explicit QA backend/frontend URLs and test database configuration as supported by existing runner. The root runner owns startup/readiness/cleanup; do not start a second owner. Never point QA writes at production.
+2. Run bash scripts/run_frontend_mobile_qa.sh under target PATH and inspect generated screenshots at least 390x844 DPR 3 in dark/light; report full matrix results. Use the real-device runner only if TELEGRAM_DEVICE_NGROK_DOMAIN is configured, otherwise record that exact exception. Do not invoke paid LLM E2E or alter Telegram bot settings.
+3. Inspect final git diff, git diff --check, Node20 references in active tooling, lockfile package changes, import references and process cleanup. Confirm no temporary archives/binaries/logs or credential values enter tracked changes.
+4. Update this register with exact commands, target Node/npm, passed/failed/skipped checks, artifact paths and concrete remaining limitations. Add concise reusable findings to frontend_new/GUARDRAILS.md using the retrospective skill; append unique workflow friction to PAPERCUTS.md with actual Asia/Dubai time. Do not label failed/unrun gates Verified.
+5. Return a reviewable handoff to the parent: changed files and rationale, dependency version deltas, runtime setup path, test counts/results, Docker platforms and smoke results, mobile screenshot paths, known risks and any blocker requiring user action. Parent reviews before final user delivery.
+
+### Acceptance criteria
+
+- Local instructions, CI and Docker consistently declare Node 26.13.0 and package engines agree; clean installs and four frontend gates actually pass on Node 26.
+- Production image builds successfully on the available supported build path; no backend/browser behavior change is introduced.
+- Phase 2–5 and mobile checks pass, or external blockers are explicitly documented with failed command and classification; blocked acceptance remains verification pending.
+- Native TS pilot runs through an existing QA path and is typechecked/linted, or a concrete reason for deferral is recorded.
+- Dependency changes remain minimal, worktree changes are preserved, no deployment or commit is performed, and parent receives evidence for review.
+
+### Delivery record — 2026-11-10
+
+- Added root `.nvmrc` at 26.13.0, `>=26.13.0 <27` engines and `npm@11.20.0` package metadata in both manifests, moved frontend CI to `.nvmrc` with `actions/setup-node@v7`, and set the Docker build stage to `node:26.13.0-alpine`; nginx remains the runtime. `setup-node@v7` runs its action code on Node 24 while the project steps use Node 26. The packageManager field records npm; `.nvmrc` selects the bundled Node/npm and the metadata does not switch npm itself. Added local setup/rollback documentation.
+- Downloaded the official `node-v26.13.0-darwin-arm64.tar.xz` into `/private/tmp/money-track-node26`, verified against Node's `SHASUMS256.txt` (`6f5b3187d9df9fc007e881167905bc7d69ad26450ddc377c83d63256a2495b6e`). Runtime was Node `v26.13.0`, npm `11.20.0`, executable `/private/tmp/money-track-node26/node-v26.13.0-darwin-arm64/bin/node`. Both root and frontend `npm ci --no-audit --no-fund` completed using a task-local npm cache.
+- Dependency delta: upgraded only direct `@types/node` 24.12.2 → 26.6.6 and its `undici-types` 7.16.0 → 8.9.0. npm 11 normalized six already bundled optional Tailwind Oxide WASI packages into the frontend lockfile; package versions otherwise did not change. Clean installs warned that `msw`, `esbuild`, and optional `fsevents` install scripts were not allowlisted. The optional platform binaries sufficed: local gates and both Docker builds passed, so no script approvals or package versions were added. The build/test warning `DEP0205 module.register()` traces to existing `@tailwindcss/node` 4.2.2 `dist/index.mjs`; it is non-fatal and remains for a focused upstream update later.
+- Node 26 initially exposed a Vitest 3 / Node global `localStorage` collision (19 chat/cache test failures); Node 24.1.0 with npm 11.3.0 passed the original 83 tests. Added `poolOptions.forks.execArgv: ["--no-experimental-webstorage"]` so Node 26 workers expose jsdom's real Storage implementation. A probe confirmed the flag reaches Vitest's default fork pool; an intentional temporary TypeScript mismatch produced TS2322 in `ai-chat-layout.ts` and was removed. `npm run typecheck` now runs `tsc -b --noEmit` so the helper is truly checked.
+- Converted the small AI Chat layout QA helper to `ai-chat-layout.ts`, with explicit generic input/output types and `.ts` specifiers in all `.mjs` imports. Preserved inferred caller fields and existing behavior; existing Vitest assertions remain.
+- Final frontend checks under the task-local Node 26 PATH: `npm run lint` — passed; `npm run typecheck` — passed; `npm test` — 22 files / 83 tests passed; `npm run build` — passed. Logs: `frontend_new/.codex-tmp/node26/`.
+- `npm run qa:phase2`, `npm run qa:phase3`, `npm run qa:phase4`, and `npm run qa:phase5` — all `all_pass: true`; Phase 4 executed the native TypeScript helper through the existing QA runner. Used `QA_BACKEND_URL=http://127.0.0.1:18002`, `QA_FRONTEND_URL=http://127.0.0.1:14174`, and explicit `DATABASE_URL` / `TEST_DATABASE_URL` for isolated `node26_qa_20261110`, migrated in the existing healthy local Postgres container. QA logs included expected route-cancellation `ERR_ABORTED` requests; Phase 4 exercised the intentional chat failure and Phase 5 intentionally simulated offline fallback (one `ERR_INTERNET_DISCONNECTED` plus a blocked external font); no QA assertion failed.
+- Clean no-push `docker buildx build --no-cache --pull` passed for `--platform linux/arm64` and `linux/amd64`, both using the native Docker Desktop `linux/arm64` `$BUILDPLATFORM` and `node:26.13.0-alpine` build stage. Each temporary nginx image served `/version.json` with revision `node26-migration-2026-11-10`, `/transactions` HTTP 200, and nginx 1.27.5; smoke containers were removed.
+- `bash scripts/run_frontend_mobile_qa.sh` — all dark/light iPhone 12 Pro, iPhone 15, iPhone 15 Pro Max, and iPhone SE profiles passed. Inspected 390×844 DPR3 dark/light AI Chat captures at `frontend_new/.codex-tmp/mobile-qa/2026-11-10T17-09-48-033Z/{dark,light}/iphone-12-pro/ai-chat.png`. Physical Telegram QA was not run because `TELEGRAM_DEVICE_NGROK_DOMAIN` is absent.
+- The task-scoped database, role, and generated credential were removed after QA; pre-existing `moneytrack` database and user services were left untouched. QA processes and both image smoke containers were cleaned up. No deployment, commit, or push occurred.
+### Security patch — 2026-11-18
+
+- Updated `.nvmrc`, the Docker build stage and both Node engine ranges to 26.13.1 after the [Node.js security release](https://nodejs.org/en/blog/release/v26.13.1). The bundled npm remains 11.20.0. Lint, typecheck, all 83 frontend tests and the production build passed again on 26.13.1. The Linux x64 Docker build, including a clean `npm ci`, passed on retry after a transient `ECONNRESET`.
+
 
 ## Task Detail Template
 

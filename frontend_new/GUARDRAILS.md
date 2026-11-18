@@ -59,6 +59,12 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Exploration: Phase-5 passed all five requirements after its stale pre-BFX selector was replaced; no application tag behavior changed.
 - Prevention rule: Run the matching root-owned phase gate after any component test-hook or bounded-list contract change.
 
+## Node 26 QA runtime — 2026-11-10
+
+- Takeaway: Vitest 3's default fork pool can let Node 26's native `localStorage` global block jsdom's real Storage global; pass `--no-experimental-webstorage` only to Vitest workers.
+- Exploration: Node 24 passed 83 tests; Node 26 failed 19 cache/chat tests until the fork flag restored jsdom storage, with no application mock or storage change.
+- Prevention rule: Keep a real `tsc -b --noEmit` gate for TS QA helpers and import native `.ts` files from `.mjs` runners using explicit `.ts` extensions and erasable syntax.
+
 ## Analytics editor and native date fields — 2026-07-12
 
 - Takeaway: Initialize an editor draft once per opened transaction ID; do not reset it when the same ID is refreshed into the list.

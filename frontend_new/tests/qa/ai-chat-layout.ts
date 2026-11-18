@@ -4,7 +4,22 @@
 export const AI_CHAT_COMPOSER_NAVIGATION_GUTTER = "1rem";
 export const AI_CHAT_COMPOSER_NAVIGATION_GUTTER_TOLERANCE_PX = 2;
 
-export function assessAiChatComposerNavigationGutter(layout) {
+export type AiChatComposerNavigationLayout = {
+  pageGutterPx: number;
+  composerNavigationGap: number;
+  pageGutterCssValue: string;
+};
+
+export function assessAiChatComposerNavigationGutter<
+  TLayout extends AiChatComposerNavigationLayout,
+>(
+  layout: TLayout,
+): TLayout & {
+  expectedGutterCssValue: typeof AI_CHAT_COMPOSER_NAVIGATION_GUTTER;
+  expectedGutterPx: number;
+  gapDeltaPx: number;
+  valid: boolean;
+} {
   const expectedGutterPx = layout.pageGutterPx;
   const gapDeltaPx = Math.abs(layout.composerNavigationGap - expectedGutterPx);
   const valid =

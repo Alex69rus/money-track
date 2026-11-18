@@ -1,5 +1,5 @@
 import { fail, pass } from "./scaffold-utils.mjs";
-import { assessAiChatComposerNavigationGutter } from "../ai-chat-layout.mjs";
+import { assessAiChatComposerNavigationGutter } from "../ai-chat-layout.ts";
 
 const PHASE4_FR_IDS = ["FR-023", "FR-024", "FR-025", "FR-026", "FR-027"];
 
