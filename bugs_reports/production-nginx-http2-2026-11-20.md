@@ -2,7 +2,7 @@
 
 ## BR-032 — Internet-reachable NGINX uses an affected HTTP/2 build
 
-Priority: P0. State: Fixed — verification pending.
+Priority: P0. State: Verified.
 
 Evidence: DigitalOcean's NGINX HTTP/2 security alert from 2026-11-20. [NGINX security advisories](https://nginx.org/en/security_advisories.html), [F5 CVE-2026-123007](https://my.f5.com/s/article/K000163926), [F5 CVE-2026-123633](https://my.f5.com/s/article/K000163928).
 
@@ -26,3 +26,7 @@ The public reverse proxy runs an official build with both CVE fixes. Deployments
 
 - The running edge image is an official build containing both fixes, with the recorded version and image digest.
 - NGINX configuration validation, `/health`, and the frontend `/version.json` succeed after deployment.
+
+### Production verification
+
+[GitHub Actions run 44796088544](https://github.com/Alex69rus/money-track/actions/runs/44796088544) deployed revision `a7ac79ec435881ca0d02c3150665a7770142ed3e`. It verified the pinned edge image at `sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3`, logged `nginx/1.30.7` for both containers, and passed `nginx -t` on the edge. After the job completed, both public endpoints returned HTTP 200 and `/version.json` reported the expected revision.

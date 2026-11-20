@@ -32,7 +32,7 @@ Before replacing the frontend, the server saves `/opt/money-track/.env.prod.prev
 
 ## Nginx routing and restart order
 
-Pin the outer Nginx image in `docker-compose.prod.yml` and the frontend runtime image in `frontend_new/Dockerfile` to the reviewed official image tag and multi-platform digest. The workflow pulls the pinned proxy image and verifies the running image ID, binary version, and configuration after deployment. Confirm each new pin includes `linux/arm64` for production.
+Pin the outer Nginx image in `docker-compose.prod.yml` and the frontend runtime image in `frontend_new/Dockerfile` to the reviewed official image tag and multi-platform digest. Compose downloads the pinned proxy image when that digest is missing locally. The workflow verifies the running image ID, logs the binary version, and checks the configuration after deployment. Confirm each new pin includes `linux/arm64` for production.
 
 Production mounts only [nginx/conf.d/default.conf](../nginx/conf.d/default.conf). The local [dev.compose.conf](../nginx/conf.d/dev.compose.conf) and [test.conf](../nginx/conf.d/test.conf) are intentionally not loaded: the development configuration proxies to `host.docker.internal`, which is unavailable on the production Linux host.
 

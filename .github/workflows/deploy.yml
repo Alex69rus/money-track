@@ -305,7 +305,6 @@ jobs:
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u alex69rus --password-stdin
             docker pull "$frontend_image"
             docker pull "$backend_image"
-            compose pull nginx
 
             mkdir -p ssl
             printf '%s\n' "$CLOUDFLARE_CERT" > ssl/cloudflare-cert.pem
