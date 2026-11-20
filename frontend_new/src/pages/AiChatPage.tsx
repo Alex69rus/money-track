@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, RotateCcwIcon, SendIcon } from "lucide-react";
+import Markdown, { type Components, type ExtraProps, type Options } from "react-markdown";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -39,6 +40,31 @@ interface FailedRequest {
 
 const MAX_HISTORY_CHARACTERS = 12_000;
 const MAX_HISTORY_MESSAGES = 12;
+const ASSISTANT_MARKDOWN_ELEMENTS = [
+  "p", "h1", "h2", "h3", "h4", "h5", "h6", "strong", "em", "ul", "ol", "li", "code", "br", "a",
+];
+
+const ASSISTANT_MARKDOWN_PLUGINS: NonNullable<Options["remarkPlugins"]> = [
+  function preserveTextAroundHtml() {
+    // Inline HTML is still skipped. Block HTML could swallow neighboring Markdown.
+    const data = this.data() as { micromarkExtensions?: unknown[] };
+    const extensions = (data.micromarkExtensions ??= []);
+    extensions.push({ disable: { null: ["htmlFlow"] } });
+  },
+];
+
+type MarkdownChild = NonNullable<ExtraProps["node"]>["children"][number];
+
+function markdownText(child: MarkdownChild): string {
+  if (child.type === "text") {
+    return child.value;
+  }
+  return child.type === "element" ? child.children.map(markdownText).join("") : "";
+}
+
+const ASSISTANT_MARKDOWN_COMPONENTS: Components = {
+  a: ({ node }) => node?.children.map(markdownText).join("") ?? "",
+};
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError && error.status === 503) {
@@ -330,7 +356,28 @@ export function AiChatPage(): JSX.Element {
                 </p>
               ) : (
                 <>
-                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  {message.role === "assistant" ? (
+                    <div
+                      className={cn(
+                        "min-w-0 wrap-anywhere [&>*+*]:mt-2 [&_p]:whitespace-pre-wrap",
+                        "[&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold",
+                        "[&_ol]:list-decimal [&_ul]:list-disc [&_:is(ol,ul)]:ps-5",
+                        "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-xs",
+                      )}
+                    >
+                      <Markdown
+                        allowedElements={ASSISTANT_MARKDOWN_ELEMENTS}
+                        components={ASSISTANT_MARKDOWN_COMPONENTS}
+                        remarkPlugins={ASSISTANT_MARKDOWN_PLUGINS}
+                        skipHtml
+                        unwrapDisallowed
+                      >
+                        {message.text}
+                      </Markdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{message.text}</p>
+                  )}
                   {message.visual ? <ChatVisual visual={message.visual} /> : null}
                 </>
               )}

@@ -60,7 +60,7 @@ export const phase4Definition = {
       }
       const responseMessage =
         requestIndex === 1
-          ? `Grounded answer: ${String(payload.message ?? "")}\n${"Supporting detail.\n".repeat(64)}`
+          ? `Grounded answer: ${String(payload.message ?? "")}\n\n<Transport>\n**AED 120**\n${"LongCategory".repeat(20)}\n${"Supporting detail.\n".repeat(64)}`
           : `Grounded answer: ${String(payload.message ?? "")}`;
       await route.fulfill({
         status: 200,
@@ -91,9 +91,12 @@ export const phase4Definition = {
       .getByText(`Grounded answer: ${enterPrompt}`, { exact: false })
       .isVisible()
       .catch(() => false);
+    const formattedAmount = page.locator('[data-role="assistant"] strong').filter({ hasText: /^AED 120$/ });
+    const formattedAmountVisible = await formattedAmount.isVisible();
     const barChartExperience = await page.evaluate(() => {
       const scrollRegion = document.querySelector('[data-testid="ai-chat-visual-bar-scroll"]');
       const barChart = document.querySelector('[data-testid="ai-chat-visual-bar"]');
+      const timeline = document.querySelector('[data-testid="ai-chat-timeline"]');
       if (!(scrollRegion instanceof HTMLElement) || !(barChart instanceof HTMLElement)) {
         return { present: false };
       }
@@ -102,6 +105,7 @@ export const phase4Definition = {
         chartHeight: barChart.getBoundingClientRect().height,
         chartMinimumWidth: barChart.style.minWidth,
         pageHasNoHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+        timelineHasNoHorizontalOverflow: timeline !== null && timeline.scrollWidth <= timeline.clientWidth + 1,
         present: true,
         scrollable: scrollRegion.scrollWidth > scrollRegion.clientWidth,
         scrolled: scrollRegion.scrollLeft > 0,
@@ -197,6 +201,7 @@ export const phase4Definition = {
       !barChartExperience.scrollable ||
       !barChartExperience.scrolled ||
       !barChartExperience.pageHasNoHorizontalOverflow ||
+      !barChartExperience.timelineHasNoHorizontalOverflow ||
       barChartExperience.chartMinimumWidth !== "1440px" ||
       barChartExperience.chartHeight > 300
     ) {
@@ -213,17 +218,20 @@ export const phase4Definition = {
         .isVisible()
         .catch(() => false),
       barChartPresent: await page.locator('[data-testid="ai-chat-visual-bar"]').count(),
+      formattedAmountVisible: await formattedAmount.isVisible(),
       userVisible: await page.getByText(enterPrompt, { exact: true }).isVisible().catch(() => false),
     };
     fr["FR-023"] =
       userMessagesAfterEnter === 1 &&
       assistantMessagesAfterEnter === 1 &&
       assistantVisible &&
+      formattedAmountVisible &&
       restoredAfterReload.userVisible &&
       restoredAfterReload.assistantVisible &&
+      restoredAfterReload.formattedAmountVisible &&
       restoredAfterReload.barChartPresent === 1
-        ? pass("Timeline renders distinct messages and restores completed chat content after a reload.")
-        : fail("Timeline roles, response rendering, or completed-chat reload restoration failed.");
+        ? pass("Timeline renders distinct messages and restores assistant formatting and widgets after a reload.")
+        : fail("Timeline roles, assistant formatting, or completed-chat reload restoration failed.");
     fr["FR-025"] =
       pendingVisible && sendDisabledWhilePending
         ? pass("Pending assistant state is visible and sending is disabled while awaiting a response.")

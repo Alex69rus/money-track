@@ -190,3 +190,10 @@ Keep this file concise. Record only a rule that prevents a repeatable failure; k
 - Takeaway: Stabilize list callbacks before memoizing lists; share Intl instances while retaining decimal-string/BigInt money semantics.
 - Exploration: Use `npm run qa:chat-loading` against production chunks to verify deferred download, navigation during loading, and full-reload recovery after a failed import; dev-module loading alone cannot prove bundle isolation.
 - Prevention rule: Refresh memoized Today/Yesterday headings when the local calendar day changes on a subsequent page render; cover the midnight transition as well as unchanged-list formatting during search.
+
+## AI Chat Markdown — 2026-11-20
+
+- Keep assistant message text in its original form in API payloads, cache, and dialogue history. Apply Markdown in the timeline for both new and restored replies.
+- Pair the 390px horizontal overflow check with a long unbroken word. A plain paragraph with natural wrapping does not exercise the overflow boundary.
+- Allow only the Markdown elements specified in the PRD. Skip raw HTML and images, unwrap links to their labels, and verify that the associated widget survives a reload.
+- Disable HTML block parsing so standalone HTML-like tags cannot hide adjacent answer text. Verify that formatted link labels render as plain text and keep personal screenshots outside the repository.

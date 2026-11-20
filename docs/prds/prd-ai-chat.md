@@ -45,6 +45,7 @@ The product needs to combine flexible, natural-language analysis with determinis
 - Users can open AI Transaction Chat from the Mini App and send questions in natural language.
 - Chat accepts text input only; it does not accept images, audio, video, files, or documents.
 - The chat displays a message timeline with distinct user and assistant messages.
+- The Mini App renders basic Markdown in new and restored assistant messages, including paragraphs, headings, bold, italics, bulleted and numbered lists, and inline code. It displays link labels as text and skips images and raw HTML. User messages display as plain text.
 - The UI shows a pending state while an answer is being prepared and a clear, retryable error when the answer cannot be produced.
 - Users can start a new dialogue from a dedicated button; it clears the current dialogue and begins a fresh one.
 - The assistant asks a concise follow-up question when the request remains ambiguous after applying documented defaults rather than silently making an unexpected assumption.

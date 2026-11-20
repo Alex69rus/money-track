@@ -81,6 +81,7 @@ Analytics MUST support category drilldown interaction that opens a category-filt
 ## 4. AI Chat Domain
 ### FR-023
 AI Chat MUST support a message timeline with separate user and assistant messages.
+AI Chat MUST render basic Markdown in new and restored assistant messages, including paragraphs, headings, bold, italics, bulleted and numbered lists, and inline code. Link labels MUST appear as plain text. The renderer MUST skip images and raw HTML. User messages MUST display as plain text.
 
 ### FR-024
 AI Chat MUST support message send by button and keyboard submit (`Enter`), while preserving multiline input (`Shift+Enter`).

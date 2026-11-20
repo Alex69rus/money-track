@@ -241,7 +241,14 @@ async function installApiFixtures(page) {
       body: JSON.stringify({
         version: "v1",
         kind: "answer",
-        message: `Mobile QA answer: ${String(payload.message ?? "")}\n${"Supporting detail.\n".repeat(64)}`,
+        message: [
+          `Mobile QA answer: ${String(payload.message ?? "")}`,
+          "### Spending summary",
+          "Total: **AED 120** for *July*.",
+          "- Groceries\n- Restaurants",
+          "1. Compare June\n2. Review July",
+          "Supporting detail.\n".repeat(64),
+        ].join("\n\n"),
         visual: {
           kind: "bar",
           title: "Spending by category",
@@ -1045,6 +1052,8 @@ async function runProfile(browser, profile, colorScheme, artifactDirectory, fron
       throw new Error("AI Chat long-bar chart was missing before screenshot capture.");
     }
     await screenshot(page, profileDirectory, "ai-chat");
+    await page.getByTestId("ai-chat-timeline").evaluate((timeline) => { timeline.scrollTop = 0; });
+    await screenshot(page, profileDirectory, "ai-chat-markdown");
 
     return {
       pass: true,

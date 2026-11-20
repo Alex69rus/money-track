@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatPage } from "@/pages/AiChatPage";
@@ -87,6 +87,70 @@ describe("AiChatPage", () => {
     expect(screen.getAllByTestId("ai-chat-message-user")).toHaveLength(1);
     expect(screen.getAllByTestId("ai-chat-message-assistant")).toHaveLength(1);
     expect(screen.getByText("You spent AED 1200 this month.")).toBeInTheDocument();
+  });
+
+  it("formats assistant replies while keeping user messages literal", async () => {
+    const markdown = [
+      "### Spending summary",
+      "",
+      "**AED 120** in *July*.",
+      "",
+      "See `Food` for details.",
+      "",
+      "- Groceries",
+      "- Restaurants",
+      "",
+      "1. Compare June",
+      "2. Review July",
+      "",
+      '[**Details** with *July results* and `Food tag`](https://example.com) ![Receipt](https://example.com/receipt.png) <img src="https://example.com/raw.png">',
+    ].join("\n");
+    global.fetch = vi.fn().mockResolvedValue(response(markdown)) as unknown as typeof fetch;
+    renderChatPage();
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "**Total?**" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+
+    expect(await screen.findByRole("heading", { name: "Spending summary", level: 3 })).toBeInTheDocument();
+    const assistantMessage = screen.getByTestId("ai-chat-message-assistant");
+    const assistant = within(assistantMessage);
+    expect(assistant.getByText("AED 120", { selector: "strong" })).toBeInTheDocument();
+    expect(assistant.getByText("July", { selector: "em" })).toBeInTheDocument();
+    expect(assistant.getByText("Food", { selector: "code" })).toBeInTheDocument();
+    expect(assistant.getByText("AED 120").closest("p")).toHaveTextContent("AED 120 in July.");
+    expect(assistant.getByText("Food").closest("p")).toHaveTextContent("See Food for details.");
+    expect(assistant.getAllByRole("list")).toHaveLength(2);
+    expect(assistant.getByText("Groceries").closest("ul")).toBeInTheDocument();
+    expect(assistant.getByText("Compare June").closest("ol")).toBeInTheDocument();
+    expect(assistant.getByText("Details with July results and Food tag")).toBeInTheDocument();
+    expect(assistant.queryByText("Details", { selector: "strong" })).not.toBeInTheDocument();
+    expect(assistant.queryByText("July results", { selector: "em" })).not.toBeInTheDocument();
+    expect(assistant.queryByText("Food tag", { selector: "code" })).not.toBeInTheDocument();
+    expect(assistant.queryByRole("link")).not.toBeInTheDocument();
+    expect(assistantMessage.querySelector("img")).toBeNull();
+    expect(assistantMessage).not.toHaveTextContent("**AED 120**");
+    expect(screen.getByTestId("ai-chat-message-user")).toHaveTextContent("**Total?**");
+  });
+
+  it("preserves assistant content next to standalone HTML-like tags", async () => {
+    global.fetch = vi.fn().mockResolvedValue(response([
+      "<Transport>",
+      "Total: **AED 120**.",
+      "",
+      "<div>",
+      "- Groceries",
+      "- Restaurants",
+      "</div>",
+    ].join("\n"))) as unknown as typeof fetch;
+    renderChatPage();
+
+    fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "Show my spending" } });
+    fireEvent.click(screen.getByTestId("ai-chat-send"));
+
+    expect(await screen.findByText("AED 120", { selector: "strong" })).toBeInTheDocument();
+    const assistant = within(screen.getByTestId("ai-chat-message-assistant"));
+    expect(assistant.getAllByRole("listitem").map((item) => item.textContent?.trim())).toEqual(["Groceries", "Restaurants"]);
+    expect(assistant.queryByText(/<\/?(?:Transport|div)>/i)).not.toBeInTheDocument();
   });
 
   it("does not send on Shift+Enter and preserves composer content", () => {
@@ -214,9 +278,9 @@ describe("AiChatPage", () => {
     expect(payload.history[11]).toEqual({ content: "answer:question:7", role: "assistant" });
   });
 
-  it("restores completed messages and visuals after a chat route remount", async () => {
+  it("restores formatted messages and visuals after a chat route remount", async () => {
     global.fetch = vi.fn().mockResolvedValue(
-      response("Your July total was AED 120.", {
+      response("Your July total was **AED 120**.", {
         columns: ["Category", "Spending"],
         kind: "table",
         period: { fromDate: "2099-07-01", label: "July 2099", toDate: "2099-07-31" },
@@ -228,13 +292,13 @@ describe("AiChatPage", () => {
     const firstMount = renderChatPage();
     fireEvent.change(screen.getByTestId("ai-chat-input"), { target: { value: "How much in July?" } });
     fireEvent.click(screen.getByTestId("ai-chat-send"));
-    expect(await screen.findByText("Your July total was AED 120.")).toBeInTheDocument();
+    expect(await screen.findByTestId("ai-chat-visual-table")).toBeInTheDocument();
     firstMount.unmount();
 
     renderChatPage();
 
     expect(screen.getByText("How much in July?")).toBeInTheDocument();
-    expect(screen.getByText("Your July total was AED 120.")).toBeInTheDocument();
+    expect(screen.getByText("AED 120", { selector: "strong" })).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-visual-table")).toBeInTheDocument();
     expect(screen.getByText("AED 120.00")).toBeInTheDocument();
   });

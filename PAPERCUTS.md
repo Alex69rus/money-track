@@ -426,3 +426,15 @@ Adding a telemetry regression with a multi-file patch → a numbered diff hunk w
 ## 2026-11-18 21:24 — GPT-6
 
 Reviewing a private working tree with a nested Codex CLI → approval rejected the external model transfer. Review the diff in the active session and use local tests for verification.
+
+## 2026-11-20 20:48 — GPT-6
+
+Installing the frontend Markdown renderer → the npm registry could not resolve inside the sandbox. The same npm install succeeded with network approval and a workspace-local cache.
+
+## 2026-11-20 20:53 — GPT-6
+
+Running the mobile matrix for a chat change → the iPhone 15 Pro Max profile stopped before opening AI Chat on editor focus positioning, and a repeat also hit an Analytics layout assertion. Use the chat-specific Phase 4 runner with the same viewport to verify the affected screen independently.
+
+## 2026-11-20 22:12 — GPT-6
+
+Configuring Markdown HTML blocks → the parser reads the `micromarkExtensions` data key at runtime, but the renderer's public TypeScript types do not expose the parser augmentation. Keep the type assertion local to the extension hook and verify with both typecheck and browser QA.
