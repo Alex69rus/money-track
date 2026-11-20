@@ -69,6 +69,13 @@ SMS_PARSER_E2E_CASES: list[SmsParserE2ECase] = [
         expected_currency="AED",
         expected_note="investments",
     ),
+    # SmsParserE2ECase(
+    #     name="russian_dirham_text",
+    #     input_text="-340 дирхам на носочки",
+    #     expected_amount=Decimal("-340"),
+    #     expected_currency="AED",
+    #     expected_note="на носочки",
+    # ),
     SmsParserE2ECase(
         name="cbd_loan_installment_compact_aed",
         input_text=("A loan installment of AED5211.56 for LMF*****3355 is debited from CBD account #xxx1234"),

@@ -26,7 +26,7 @@ def _invoke(monkeypatch, handler):
             )
             monkeypatch.setattr(category_suggestion, "_get_openai_client", lambda: client)
             return await category_suggestion._call_category_suggestion_llm(
-                note="\u041a\u043e\u0444\u0435\n" + "x" * 3000,
+                note="Кофе\n" + "x" * 3000,
                 sms_text="Payment at Coffee — اختبار",
                 amount=-10,
                 currency="AED",
@@ -62,7 +62,7 @@ def test_decision_logs_full_input_output_usage_and_correlation(monkeypatch, capl
     requested, response, decoded = _records(caplog)
     assert requested.getMessage() == "event=category_decision_requested"
     assert requested.request == wire_requests[0]
-    assert json.loads(requested.request["input"])["transaction"]["note"] == "\u041a\u043e\u0444\u0435\n" + "x" * 3000
+    assert json.loads(requested.request["input"])["transaction"]["note"] == "Кофе\n" + "x" * 3000
     assert response.response == output
     assert response.request_id == decoded.request_id == "req_log_success"
     assert decoded.result == result.model_dump(mode="json")
