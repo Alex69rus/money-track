@@ -24,6 +24,7 @@ Money Track is a Telegram-based personal money tracker. The FastAPI backend rece
 Keep the architecture monolithic and explicit. Use environment variables for runtime configuration, avoid unproven abstractions, and do not introduce caching without a demonstrated need.
 
 ## Development Principles
+- Keep the project and all project documentation in English.
 - **KISS (Keep It Simple, Stupid)** - Simplest solution that works
 - **YAGNI (You Aren't Gonna Need It)** - Don't build features until needed
 - **MVP First** - Build minimal viable features, iterate based on feedback

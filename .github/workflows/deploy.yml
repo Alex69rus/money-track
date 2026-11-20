@@ -305,6 +305,7 @@ jobs:
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u alex69rus --password-stdin
             docker pull "$frontend_image"
             docker pull "$backend_image"
+            compose pull nginx
 
             mkdir -p ssl
             printf '%s\n' "$CLOUDFLARE_CERT" > ssl/cloudflare-cert.pem
@@ -376,6 +377,20 @@ jobs:
             }
 
             wait_for check_api_health || { echo "ERROR: backend health check failed"; exit 1; }
+
+            nginx_image="$(compose config --images | grep -E '^nginx:[^@]+@sha256:[0-9a-f]{64}$')"
+            expected_nginx_image_id="$(docker image inspect --format '{{.Id}}' "$nginx_image")"
+            running_nginx_id="$(compose ps -q nginx)"
+            running_nginx_image_id="$(docker inspect --format '{{.Image}}' "$running_nginx_id")"
+            [ "$running_nginx_image_id" = "$expected_nginx_image_id" ] || {
+              echo "ERROR: nginx container image does not match the pinned production image"
+              exit 1
+            }
+            echo "Running nginx image: $nginx_image ($running_nginx_image_id)"
+            compose exec -T nginx nginx -v
+            compose exec -T nginx nginx -t
+            echo "Frontend nginx:"
+            compose exec -T frontend nginx -v
 
             telegram_menu_result="$(curl --fail --silent --show-error "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMenuButton")"
             printf '%s' "$telegram_menu_result" | grep -Fq "\"url\":\"${telegram_web_app_url}\"" || {

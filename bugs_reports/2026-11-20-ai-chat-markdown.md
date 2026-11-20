@@ -1,26 +1,26 @@
-# AI Chat показывает разметку в тексте ответа
+# AI Chat shows markup in reply text
 
-## BR-031 — Звёздочки вокруг выделенного текста в ответе AI Chat
+## BR-031 — Asterisks around emphasized text in an AI Chat reply
 
-Приоритет P3. Состояние: Triaged.
+Priority: P3. State: Triaged.
 
-Скриншот `2026-11-20-ai-chat-markdown.png` показывает форматирование после исправления на тестовых данных, в браузерной эмуляции iPhone 12 Pro.
+The screenshot `2026-11-20-ai-chat-markdown.png` shows the formatting after the fix, using test data in iPhone 12 Pro browser emulation.
 
-### Фактическое поведение
+### Actual behavior
 
-Когда ассистент возвращает текст с `**…**`, в ответе видны звёздочки. Компонент `frontend_new/src/pages/AiChatPage.tsx` выводит текст напрямую в абзаце с сохранением переносов.
+When the assistant returns text containing `**…**`, the reply displays the asterisks. The component at `frontend_new/src/pages/AiChatPage.tsx` renders the text directly in a paragraph and preserves line breaks.
 
-### Ожидаемое поведение
+### Expected behavior
 
-Выделение читается как часть ответа и отображается без служебных символов. PRD AI Chat описывает текстовые ответы и виджеты, а frontend PRD описывает ленту сообщений. Поддержка Markdown в этих требованиях явно не задана.
+Emphasis appears as part of the reply without visible markup. The AI Chat PRD describes text replies and widgets, and the frontend PRD describes the message feed. Neither explicitly specifies Markdown support.
 
-### Воспроизведение
+### Reproduction
 
-Открыть AI Chat в Telegram Mini App. Получить ответ ассистента, содержащий `**текст**`, и посмотреть, как отображается выделение.
+Open AI Chat in the Telegram Mini App. Get an assistant reply containing `**text**` and inspect how it displays emphasis.
 
-### Критерии приёмки при согласовании Markdown
+### Acceptance criteria for Markdown support
 
-- Фрагмент `**текст**` в ответе ассистента отображается жирным шрифтом без звёздочек.
-- Ответы сохраняют абзацы и отображают привязанные к ним виджеты.
-- Текст и суммы после отдельной строки `<Transport>` остаются видимыми. HTML не создаёт элементов на экране.
-- Если подпись Markdown-ссылки содержит жирный текст, курсив или inline-код, видимые слова подписи отображаются обычным текстом.
+- An assistant reply containing `**text**` displays the text in bold without asterisks.
+- Replies preserve paragraphs and display the widgets attached to them.
+- Text and amounts following a standalone `<Transport>` line stay visible. HTML creates no elements in the reply.
+- If a Markdown link label contains bold, italic, or inline code, the visible label renders as plain text.
